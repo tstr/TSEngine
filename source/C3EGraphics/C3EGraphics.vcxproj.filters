@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Include">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source\freetype">
+      <UniqueIdentifier>{583fbb7a-0f05-42ef-aed8-f42a6a25bd0e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\C3E\gfx\graphics.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\C3E\gfx\graphicsbase.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\C3E\gfx\graphicsmodel.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="libraryloader.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\C3E\gfx\abi\graphicsabi.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="freetype\ft\opengl.h">
+      <Filter>Source\freetype</Filter>
+    </ClInclude>
+    <ClInclude Include="freetype\ft\platform.h">
+      <Filter>Source\freetype</Filter>
+    </ClInclude>
+    <ClInclude Include="freetype\ft\texture-atlas.h">
+      <Filter>Source\freetype</Filter>
+    </ClInclude>
+    <ClInclude Include="freetype\ft\utf8-utils.h">
+      <Filter>Source\freetype</Filter>
+    </ClInclude>
+    <ClInclude Include="freetype\ft\vec234.h">
+      <Filter>Source\freetype</Filter>
+    </ClInclude>
+    <ClInclude Include="freetype\ft\vector.h">
+      <Filter>Source\freetype</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\C3E\gfx\graphicstext.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="freetype\ft\freetype-gl.h">
+      <Filter>Source\freetype</Filter>
+    </ClInclude>
+    <ClInclude Include="freetype\ft\texture-font.h">
+      <Filter>Source\freetype</Filter>
+    </ClInclude>
+    <ClInclude Include="freetype\ft\distance-field.h">
+      <Filter>Source\freetype</Filter>
+    </ClInclude>
+    <ClInclude Include="freetype\ft\edtaa3func.h">
+      <Filter>Source\freetype</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="graphicsqueue.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="graphicseffect.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="graphicscore.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="graphicsmodel.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="graphicstexture.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="graphicstext.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="freetype\ft\platform.c">
+      <Filter>Source\freetype</Filter>
+    </ClCompile>
+    <ClCompile Include="freetype\ft\texture-atlas.c">
+      <Filter>Source\freetype</Filter>
+    </ClCompile>
+    <ClCompile Include="freetype\ft\utf8-utils.c">
+      <Filter>Source\freetype</Filter>
+    </ClCompile>
+    <ClCompile Include="freetype\ft\vector.c">
+      <Filter>Source\freetype</Filter>
+    </ClCompile>
+    <ClCompile Include="freetype\ft\texture-font.c">
+      <Filter>Source\freetype</Filter>
+    </ClCompile>
+    <ClCompile Include="freetype\ft\distance-field.c">
+      <Filter>Source\freetype</Filter>
+    </ClCompile>
+    <ClCompile Include="freetype\ft\edtaa3func.c">
+      <Filter>Source\freetype</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,263 @@
+<Materials>
+	<DefaultMaterial>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.600000" g="0.600000" b="0.600000" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="0.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file=""/>
+		<TextureAmbient file=""/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</DefaultMaterial>
+	<sp_00_luk_mali>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.745098" g="0.709804" b="0.674510" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="SP_LUK.JPG"/>
+		<TextureAmbient file="SP_LUK.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_00_luk_mali>
+	<sp_svod_kapitel>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.713726" g="0.705882" b="0.658824" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="00_SKAP.JPG"/>
+		<TextureAmbient file="00_SKAP.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_svod_kapitel>
+	<sp_01_stub_kut>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.737255" g="0.709804" b="0.670588" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="01_STUB.JPG"/>
+		<TextureAmbient file="01_STUB.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_01_stub_kut>
+	<sp_00_stup>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.737255" g="0.709804" b="0.670588" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="01_STUB.JPG"/>
+		<TextureAmbient file="01_STUB.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_00_stup>
+	<sp_01_stub_baza>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.800000" g="0.784314" b="0.749020" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="01_S_BA.JPG"/>
+		<TextureAmbient file="01_S_BA.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_01_stub_baza>
+	<sp_00_luk_mal1>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.745098" g="0.709804" b="0.674510" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="01_ST_KP.JPG"/>
+		<TextureAmbient file="01_ST_KP.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_00_luk_mal1>
+	<sp_01_stub>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.737255" g="0.709804" b="0.670588" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="01_STUB.JPG"/>
+		<TextureAmbient file="01_STUB.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_01_stub>
+	<sp_01_stup>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.827451" g="0.800000" b="0.768628" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="X01_ST.JPG"/>
+		<TextureAmbient file="X01_ST.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_01_stup>
+	<sp_vijenac>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.713726" g="0.705882" b="0.658824" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="00_SKAP.JPG"/>
+		<TextureAmbient file="00_SKAP.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_vijenac>
+	<sp_00_svod>
+		<Ambient r="0.145098" g="0.145098" b="0.145098" a="1.000000"/>
+		<Diffuse r="0.941177" g="0.866667" b="0.737255" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.034039" g="0.032314" b="0.029333" a="1.000000"/>
+		<SpecularPower value="4.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="KAMEN-stup.JPG"/>
+		<TextureAmbient file="KAMEN-stup.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_00_svod>
+	<sp_02_reljef>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.529412" g="0.498039" b="0.490196" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="RELJEF.JPG"/>
+		<TextureAmbient file="RELJEF.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_02_reljef>
+	<sp_01_luk_a>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.745098" g="0.709804" b="0.674510" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="SP_LUK.JPG"/>
+		<TextureAmbient file="SP_LUK.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_01_luk_a>
+	<sp_zid_vani>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.627451" g="0.572549" b="0.560784" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="KAMEN.JPG"/>
+		<TextureAmbient file="KAMEN.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_zid_vani>
+	<sp_01_stup_baza>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.800000" g="0.784314" b="0.749020" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="01_S_BA.JPG"/>
+		<TextureAmbient file="01_S_BA.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_01_stup_baza>
+	<sp_00_zid>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.627451" g="0.572549" b="0.560784" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="KAMEN.JPG"/>
+		<TextureAmbient file="KAMEN.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_00_zid>
+	<sp_00_prozor>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="1.000000" g="1.000000" b="1.000000" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="PROZOR1.JPG"/>
+		<TextureAmbient file="PROZOR1.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_00_prozor>
+	<sp_00_vrata_krug>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.784314" g="0.784314" b="0.784314" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="79.999992"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="VRATA_KR.JPG"/>
+		<TextureAmbient file="VRATA_KR.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_00_vrata_krug>
+	<sp_00_pod>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.627451" g="0.572549" b="0.560784" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="200.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="KAMEN.JPG"/>
+		<TextureAmbient file="KAMEN.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_00_pod>
+	<sp_00_vrata_kock>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.784314" g="0.784314" b="0.784314" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="79.999992"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="VRATA_KO.JPG"/>
+		<TextureAmbient file="VRATA_KO.JPG"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sp_00_vrata_kock>
+</Materials>
+

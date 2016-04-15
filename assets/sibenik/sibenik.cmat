@@ -1,0 +1,211 @@
+<Materials>
+	<DefaultMaterial>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.600000" g="0.600000" b="0.600000" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="0.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file=""/>
+		<TextureAmbient file=""/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</DefaultMaterial>
+	<sprljci>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.784314" g="0.784314" b="0.784314" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="32.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file=""/>
+		<TextureAmbient file=""/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</sprljci>
+	<staklo>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.784314" g="0.784314" b="0.784314" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.784314" g="0.784314" b="0.784314" a="1.000000"/>
+		<SpecularPower value="1024.000000"/>
+		<Alpha value="0.100000"/>
+		<TextureDiffuse file=""/>
+		<TextureAmbient file=""/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</staklo>
+	<kamen_zid>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.734118" g="0.730588" b="0.674118" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="32.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="kamen.png"/>
+		<TextureAmbient file="kamen.png"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</kamen_zid>
+	<stupovi>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.734118" g="0.730588" b="0.674118" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="32.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="KAMEN-stup.png"/>
+		<TextureAmbient file="KAMEN-stup.png"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</stupovi>
+	<pod>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.734118" g="0.709412" b="0.674118" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="32.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="mramor6x6.png"/>
+		<TextureAmbient file="mramor6x6.png"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</pod>
+	<pod_tepih>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.546274" g="0.219608" b="0.183922" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="32.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file=""/>
+		<TextureAmbient file=""/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</pod_tepih>
+	<pod_rub>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.734118" g="0.730588" b="0.674118" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="32.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="kamen.png"/>
+		<TextureAmbient file="kamen.png"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</pod_rub>
+	<kamen_zid_prozor>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.734118" g="0.730588" b="0.674118" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="32.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="kamen.png"/>
+		<TextureAmbient file="kamen.png"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</kamen_zid_prozor>
+	<zid_vani>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.734118" g="0.730588" b="0.674118" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="32.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="kamen.png"/>
+		<TextureAmbient file="kamen.png"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</zid_vani>
+	<kamen_zid_parapet>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.734118" g="0.730588" b="0.674118" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="32.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="KAMEN-stup.png"/>
+		<TextureAmbient file="KAMEN-stup.png"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</kamen_zid_parapet>
+	<staklo_crveno>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.441176" g="0.103922" b="0.049020" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.882353" g="0.207843" b="0.098039" a="1.000000"/>
+		<SpecularPower value="1024.000000"/>
+		<Alpha value="0.800000"/>
+		<TextureDiffuse file=""/>
+		<TextureAmbient file=""/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</staklo_crveno>
+	<rozeta>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.734118" g="0.730588" b="0.674118" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<SpecularPower value="32.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file="KAMEN-stup.png"/>
+		<TextureAmbient file="KAMEN-stup.png"/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</rozeta>
+	<staklo_zeleno>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.033333" g="0.315686" b="0.037255" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.800000" g="0.800000" b="0.800000" a="1.000000"/>
+		<SpecularPower value="1024.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file=""/>
+		<TextureAmbient file=""/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</staklo_zeleno>
+	<staklo_plavo>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.041177" g="0.072549" b="0.392157" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.800000" g="0.800000" b="0.800000" a="1.000000"/>
+		<SpecularPower value="1024.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file=""/>
+		<TextureAmbient file=""/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</staklo_plavo>
+	<staklo_zuto>
+		<Ambient r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Diffuse r="0.500000" g="0.445098" b="0.003922" a="1.000000"/>
+		<Emissive r="0.000000" g="0.000000" b="0.000000" a="1.000000"/>
+		<Specular r="0.800000" g="0.800000" b="0.800000" a="1.000000"/>
+		<SpecularPower value="1024.000000"/>
+		<Alpha value="1.000000"/>
+		<TextureDiffuse file=""/>
+		<TextureAmbient file=""/>
+		<TextureDisplacement file=""/>
+		<TextureNormal file=""/>
+		<TextureSpecular file=""/>
+	</staklo_zuto>
+</Materials>
+

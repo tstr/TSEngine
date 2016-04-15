@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <UserIncludePath>$(SolutionDir)include\</UserIncludePath>
+    <UserOutputPath>$(SolutionDir)bin\$(Platform)\$(Configuration)\</UserOutputPath>
+    <UserIntermediatePath>$(UserOutputPath)obj\$(ProjectName)\</UserIntermediatePath>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutDir>$(UserOutputPath)</OutDir>
+    <IntDir>$(UserIntermediatePath)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(UserIncludePath)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>C3E_USE_DYNAMIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(UserOutputPath)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="UserIncludePath">
+      <Value>$(UserIncludePath)</Value>
+    </BuildMacro>
+    <BuildMacro Include="UserOutputPath">
+      <Value>$(UserOutputPath)</Value>
+    </BuildMacro>
+    <BuildMacro Include="UserIntermediatePath">
+      <Value>$(UserIntermediatePath)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>
