@@ -26,9 +26,7 @@
 *.exe
 *.out
 *.app
-/C3E.opensdf
-/C3E.v12.suo
-/Sponza.fbx
-/graphics_testing.cpp
-/materials.txt
-/sphere.fbx
+
+/bin
+/ipch
+*.sdf
