@@ -26,7 +26,7 @@
 		<Skybox>skybox.png</Skybox>
 		<Light>
 			<ConstantAttenuation>1</ConstantAttenuation>
-			<LinearAttenuation>0.06</LinearAttenuation>
+			<LinearAttenuation>0.08</LinearAttenuation>
 			<QuadraticAttenuation>0.001</QuadraticAttenuation>
 		</Light>
 	</Scene>

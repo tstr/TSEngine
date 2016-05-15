@@ -10,6 +10,8 @@
 #define MATERIAL_TEX_SPECULAR (1 << 2)
 #define MATERIAL_TEX_DISPLACE (1 << 3)
 
+#define PI 3.14159
+
 struct CScene
 {
 	matrix world;

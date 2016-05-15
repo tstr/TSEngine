@@ -122,35 +122,66 @@ float4 PS(PSinput input) : SV_TARGET
 	float3x3 tbn = float3x3( normalize(input.tangent), normalize(input.bitangent), normalize(input.normal) ); //transforms tangent=>world space
 	tbn = transpose(tbn); //inverse matrix - world to tangent
 	
+		
+	float3 lightDirection = (scene.lightPos - input.posw).xyz;
+	float lightdistance = length(lightDirection);
+	lightDirection = lightDirection / lightdistance; //normalize the direction vector
+	//float3 lightDirectionTangent = normalize(mul(lightDirection, tbn));
+	
 	float3 viewDirection = normalize((input.posw - scene.eyePos).xyz);
 	float3 viewDirectionTangent = normalize(mul(viewDirection, tbn));    //tangent space view direction vector
 	float3 normalTangent = normalize(mul(normalize(input.normal), tbn)); //tangent space vertex normal
 	
 	float2 texcoord = input.texcoord;
 	
-	[branch]
 	if (material.flags & MATERIAL_TEX_DISPLACE)
 	{
 		const float height_scale = 0.04f;
-		const float height_offset = 0.01f;
 	
 		float2 dx = ddx(input.texcoord);
 		float2 dy = ddy(input.texcoord);
 		
-		float minSamples = 10;
+		uint width, height, maxmiplevels;
+		texDisplacement.GetDimensions(0, width, height, maxmiplevels);
+		//float miplevel = log2(saturate(dx * (float)width));
+		const float size = width * height;
+				
+		float2 mipdx = ddx(input.texcoord * size);
+		float2 mipdy = ddy(input.texcoord * size);
+		float d = max(dot(mipdx, mipdx), dot(mipdy, mipdy));
+		
+		const float range = pow(2.0f, maxmiplevels - 1);
+		d = clamp(sqrt(d), 1.0f, range);
+		float miplevel = floor(log2(d));
+		
+		//return float4(miplevel / log2(max(width, height)), 0, 0, 1);
+		
+		//return float4(input.pos.z / input.pos.w, 0, 0, 1);
+		
+		//return float4(miplevel / float(maxmiplevels), 0, 0, 1);
+
+		//float maxSamples = max(50 / (float)(2 ^ (int)miplevel), minSamples);
+		//float maxSamples = max((-10 * (float)miplevel) + 60, 8);
+		//float maxSamples = max(50 * (input.pos.z / input.pos.w), 11);
+		//float maxSamples = 50 * (1.0f - miplevel / float(maxmiplevels));
+		//float maxSamples = max((64.0f / (float)(2 ^ miplevel)), 8.0f);
+		//float maxSamples = max(64 * (1.0f - (input.pos.z / input.pos.w)), 11);
+		
+		float minSamples = 5;
 		float maxSamples = 50;
 		
-		uint width, height; 
-		texDisplacement.GetDimensions(width, height);
-		float miplevel = log(max(1, dx * (float)width));
+		//return float4((float)(miplevel) / 128, 0, 0, 1);
+		//return float4(maxSamples / 64.0f, 0, 0, 1);
 		
 		float parallaxLimit = -length( viewDirectionTangent.xy ) / viewDirectionTangent.z;
 		parallaxLimit *= height_scale;
+
+		float2 maxOffsetDirection = normalize(viewDirectionTangent.xy) * parallaxLimit;
 		
-		float2 offsetDirection = normalize(viewDirectionTangent.xy);
-		float2 maxOffsetDirection = offsetDirection * parallaxLimit;
-		
-		int numSamples = (int)lerp(maxSamples, minSamples, dot( viewDirectionTangent, normalTangent ));
+		//int numSamples = (int)lerp(maxSamples, minSamples, dot( viewDirectionTangent, normalTangent) * (1.0f - (input.pos.z / input.pos.w)));
+		int numSamples = (int)lerp(maxSamples, minSamples, dot( viewDirectionTangent, normalTangent));
+		//int numSamples = (int)lerp(minSamples, maxSamples, dot( viewDirectionTangent, normalTangent));
+		//int numSamples = minSamples + (dot(viewDirectionTangent, normalTangent) * (maxSamples - minSamples));
 		
 		float stepSize = 1.0f / (float)numSamples;
 
@@ -173,7 +204,7 @@ float4 PS(PSinput input) : SV_TARGET
 
 				float ratio = delta1 / (delta1 + delta2);
 
-				offsetCurrent = (ratio) * offsetLast + (1.0f - ratio) * offsetCurrent;
+				offsetCurrent = (ratio * offsetLast) + ((1.0f - ratio) * offsetCurrent);
 
 				sampleCurrent = numSamples + 1;
 				//break;
@@ -198,6 +229,7 @@ float4 PS(PSinput input) : SV_TARGET
 
 	float4 colour = (material.flags & MATERIAL_TEX_DIFFUSE) ? texColour.Sample(texSampler, texcoord) : material.diffuseColour;
 	float specularPower = (material.flags & MATERIAL_TEX_SPECULAR) ? (material.specularPower * texSpecular.Sample(texSampler, texcoord).r) : material.specularPower;
+	//float specularPower = (material.flags & MATERIAL_TEX_SPECULAR) ? (texSpecular.Sample(texSampler, texcoord).r) : material.specularPower; specularPower = 0.5f;
 	//float specularPower = (material.flags & MATERIAL_TEX_SPECULAR) ? (sqrt(texSpecular.Sample(texSampler, texcoord).r) * 8192) : material.specularPower;
 	
 	//specularPower = material.specularPower;
@@ -223,16 +255,13 @@ float4 PS(PSinput input) : SV_TARGET
 	//if (ComputeVSMShadowFactor(depth.x, vectorToDepth(L.xyz)))
 	
 	float factor = ComputeVSMShadowFactor(depth, length(L.xyz));
-	
-	float3 lightdir = (scene.lightPos - input.posw).xyz;
-	float distance = length(lightdir);
-	
+
 	colour = ComputeLighting(
 		colour,
 		normal,
-		lightdir / distance,//Light Direction - relative to pixel world position
+		lightDirection,//Light Direction - relative to pixel world position
 		viewDirection,//normalize(scene.eyePos - input.posw), //View direction - from pixel to camera in world space
-		distance,
+		lightdistance,
 		specularPower,
 		factor
 	);

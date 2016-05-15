@@ -11,9 +11,9 @@
 #include <C3E\filesystem\filexml.h>
 
 //Freetype-gl
-#include <ft\texture-atlas.h>
-#include <ft\texture-font.h>
-#include <ft\distance-field.h>
+#include "ft\texture-atlas.h"
+#include "ft\texture-font.h"
+#include "ft\distance-field.h"
 
 using namespace C3E;
 using namespace ftgl;

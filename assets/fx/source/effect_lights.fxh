@@ -48,6 +48,11 @@ float4 ComputeAmbientLighting(float4 colour)
 	return float4(scene.globalAmbientColour.rgb * colour.rgb, colour.a);
 }
 
+float FresnelSchlick(float f0, float fd90, float view)
+{
+	return f0 + (fd90 - f0) * pow(max(1.0f - view, 0.1f), 5.0f);
+}
+
 float4 ComputeLighting(float4 colour, float3 normal, float3 lightDirection, float3 viewDirection, float distance, float specularPow, float shadowFactor)
 {
 	/*
@@ -96,6 +101,7 @@ float4 ComputeLighting(float4 colour, float3 normal, float3 lightDirection, floa
 		//Initial diffuse component
 		diffuse = diffuseIntensity * material.diffuseColour.rgb * scene.lightColour.rgb;
 		
+		//*
 		//Reflection Vector
 		float3 reflection = normalize(2 * diffuseIntensity * normal - lightDirection);
 		
@@ -103,6 +109,51 @@ float4 ComputeLighting(float4 colour, float3 normal, float3 lightDirection, floa
 		specularIntensity = pow(saturate(dot(reflection, -viewDirection)), specularPow) * attenuation;
 		
 		specular = specularIntensity.xxx;
+		//*/
+		
+		//if (specularPow > 1.0f)
+		//	return float4(diffuseIntensity, 0, 0, 1);
+		//else
+		//	return float4(0, diffuseIntensity, 0, 1);
+		
+		/*
+		float3 h = normalize(lightDirection + viewDirection);
+		float NdotH = saturate(dot(normal, h));
+		
+		float roughness = 0.65f;
+
+		float rough2 = max(roughness * roughness, 2.0e-3f); // capped so spec highlights don't disappear
+		float rough4 = rough2 * rough2;
+
+		float d = (NdotH * rough4 - NdotH) * NdotH + 1.0f;
+		float D = rough4 / (PI * (d * d));
+
+		// Fresnel
+		float3 reflectivity = specularPow;
+		float fresnel = 1.0;
+		float NdotL = saturate(dot(normal, lightDirection));
+		float LdotH = saturate(dot(lightDirection, h));
+		float NdotV = saturate(dot(normal, viewDirection));
+		float3 F = reflectivity + (fresnel - fresnel * reflectivity) * exp2((-5.55473f * LdotH - 6.98316f) * LdotH);
+
+		// geometric / visibility
+		float k = rough2 * 0.5f;
+		float G_SmithL = NdotL * (1.0f - k) + k;
+		float G_SmithV = NdotV * (1.0f - k) + k;
+		float G = 0.25f / (G_SmithL * G_SmithV);
+		
+		
+		float energyBias = lerp(0.0f, 0.5f, roughness);
+		float energyFactor = lerp(1.0f, 1.0f / 1.51f, roughness);
+		float fd90 = energyBias + 2.0f * (LdotH * LdotH) * roughness;
+		float f0 = 1.0f;
+
+		float lightScatter = FresnelSchlick(f0, fd90, NdotL);
+		float viewScatter = FresnelSchlick(f0, fd90, NdotV);
+		
+		diffuse = lightScatter * viewScatter * energyFactor;
+		specular = G * D * F * attenuation;
+		//*/
 	}
 	
 	//finalColour = finalColour * colour * scene.lightColour;

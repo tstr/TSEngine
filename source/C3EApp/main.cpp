@@ -93,6 +93,8 @@ atomic<uint32> g_inputMask;
 atomic<bool> g_mouseHeld = false;
 atomic<int> g_mousePosX = 0;
 atomic<int> g_mousePosY = 0;
+atomic<int> g_mouseDeltaX;
+atomic<int> g_mouseDeltaY;
 
 atomic<bool> g_wireframe = false; //Toggle wireframe mode
 atomic<bool> g_simulation = true; //Toggle light movement
@@ -337,6 +339,7 @@ public:
 		//cout << "Mouse pressed: x = " << LOWORD(e.a) << ", y = " << HIWORD(e.a) << endl;
 		g_mouseHeld = true;
 		ui_clicked = true;
+
 		Window::OnMouseDown(e);
 	}
 
@@ -785,8 +788,8 @@ int WINAPI WinMain(HMODULE Module, HMODULE prevModule, LPSTR cmdline, int showcm
 	//Vector light_colour = { 1, 1, 1, 1 };
 	//Vector ambient_colour = { 0.1f, 0.1f, 0.1f, 1 };
 
-	Vector light_colour = { 1, 0.9f, 0.85f, 1 };
-	Vector ambient_colour = { 0.2f, 0.19f, 0.17f, 1 };
+	Vector light_colour = { 1, 0.89f, 0.83f, 1 };
+	Vector ambient_colour = { 0.26f, 0.24f, 0.23f, 1 };
 
 	MainWindow win;
 
@@ -1553,9 +1556,14 @@ int WINAPI WinMain(HMODULE Module, HMODULE prevModule, LPSTR cmdline, int showcm
 					dp.SetEffectResources(7, shadowRenderTargetCube.AsTexture());
 
 					dp.SetEffect(submesh.material->m_fx.get());
-					//dp.SetEffect(g_quadFX.get());
+					dp.SetVertexTopology(VertexTopology::TopologyTriangleList);
 
-					dp.SetVertexTopology((g_wireframe) ? VertexTopology::TopologyLineList : VertexTopology::TopologyTriangleList);
+					if (g_wireframe)
+					{
+						dp.SetEffect(g_fxBasicTex.get());
+						dp.SetVertexTopology(VertexTopology::TopologyLineList);
+					}
+
 					dp.DrawIndexed(submesh.startIndex, submesh.vertexCount);
 
 					queue.Enqueue(dp);

@@ -7,6 +7,9 @@
 #include <map>
 
 #include <C3Ext\win32.h>
+#include <Windows.h>
+#include <windowsx.h> //todo: use the macros
+
 #include "window.h"
 #include <C3E\core\corecommon.h>
 #include <C3E\core\threading.h>

@@ -5,6 +5,8 @@
     <UserIncludePath>$(SolutionDir)include\</UserIncludePath>
     <UserOutputPath>$(SolutionDir)bin\$(Platform)\$(Configuration)\</UserOutputPath>
     <UserIntermediatePath>$(UserOutputPath)obj\$(ProjectName)\</UserIntermediatePath>
+    <UserLibPath>$(UserOutputPath)</UserLibPath>
+    <User3rdLibPath>$(SolutionDir)3rd\$(Platform)\</User3rdLibPath>
   </PropertyGroup>
   <PropertyGroup>
     <OutDir>$(UserOutputPath)</OutDir>
@@ -18,8 +20,16 @@
       <PreprocessorDefinitions>C3E_USE_DYNAMIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(UserOutputPath)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(UserLibPath)</AdditionalLibraryDirectories>
     </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="UserIncludePath">
@@ -30,6 +40,12 @@
     </BuildMacro>
     <BuildMacro Include="UserIntermediatePath">
       <Value>$(UserIntermediatePath)</Value>
+    </BuildMacro>
+    <BuildMacro Include="UserLibPath">
+      <Value>$(UserLibPath)</Value>
+    </BuildMacro>
+    <BuildMacro Include="User3rdLibPath">
+      <Value>$(User3rdLibPath)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>
