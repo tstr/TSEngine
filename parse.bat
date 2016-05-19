@@ -4,7 +4,4 @@
 %~dp0\bin\x64\debug\ModelParser.exe assets\sibenik\sibenik.obj
 %~dp0\bin\x64\debug\ModelParser.exe assets\sphere.obj
 
-
-%~dp0\bin\x64\debug\ModelParser.exe sphere.fbx
-
 pause
