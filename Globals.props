@@ -6,7 +6,7 @@
     <UserOutputPath>$(SolutionDir)bin\$(Platform)\$(Configuration)\</UserOutputPath>
     <UserIntermediatePath>$(UserOutputPath)obj\$(ProjectName)\</UserIntermediatePath>
     <UserLibPath>$(UserOutputPath)</UserLibPath>
-    <User3rdLibPath>$(SolutionDir)dependencies\$(Platform)\</User3rdLibPath>
+    <User3rdLibPath>$(SolutionDir)dependencies\$(PlatformTarget)\</User3rdLibPath>
   </PropertyGroup>
   <PropertyGroup>
     <OutDir>$(UserOutputPath)</OutDir>
