@@ -253,6 +253,15 @@ namespace C3E
 			m.r[3] = r3;
 		}
 
+		Matrix& operator=(const Matrix& M)
+		{
+			m.r[0] = M.m.r[0];
+			m.r[1] = M.m.r[1];
+			m.r[2] = M.m.r[2];
+			m.r[3] = M.m.r[3];
+			return *this;
+		}
+
 		explicit Matrix(_In_reads_(16) const float* _floats) { memcpy(&m, _floats, 16 * sizeof(float)); }
 		explicit Matrix(const Internal::SimdMatrix& mat) : m(mat) {}
 		VECTOR_INLINE Matrix& VECTOR_CALL operator=(const Internal::SimdMatrix& mat) { m = mat; return *this; }
