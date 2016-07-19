@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Settings>
+	<Graphics>
+		<Multisampling>
+			<Count>8</Count>
+			<Quality>0</Quality>
+		</Multisampling>
+		<AnisotropicFiltering>16</AnisotropicFiltering>
+		<ResW>1280</ResW>
+		<ResH>720</ResH>
+		<ShadowRes>1024</ShadowRes>
+	</Graphics>
+	<System>
+		<Font>C:\Windows\Fonts\verdana.ttf</Font>
+		<AssetDirectory>..\..\assets\</AssetDirectory>
+		<FX>
+			<Recompile>1</Recompile>
+			<Debug>0</Debug>
+			<WorkingDirectory>..\..\assets\fx\source\</WorkingDirectory>
+			<OutputDirectory>..\..\assets\fx\cache\</OutputDirectory>
+		</FX>
+	</System>
+	<Scene>
+		<fov>90</fov>
+		<Model>sponza-crytek\sponza.c3d</Model>
+		<Skybox>skybox.png</Skybox>
+		<Light>
+			<ConstantAttenuation>1</ConstantAttenuation>
+			<LinearAttenuation>0.08</LinearAttenuation>
+			<QuadraticAttenuation>0.001</QuadraticAttenuation>
+		</Light>
+	</Scene>
+</Settings>
+
