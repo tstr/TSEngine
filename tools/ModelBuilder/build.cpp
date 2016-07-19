@@ -2,10 +2,9 @@
 	Model parser tool
 */
 
-#include "pch.h"
-
-#include <C3E\gfx\graphicsmodel.h>
-#include <C3E\core\time.h>
+#include <ct\graphics\graphicsmodel.h>
+#include <ct\core\strings.h>
+#include <ct\core\time.h>
 
 #include <fstream>
 #include <sstream>
@@ -17,11 +16,11 @@
 #include "assimp\postprocess.h"
 #include "assimp\scene.h"
 
-LINK_LIB("C3EGraphics.lib")
-LINK_LIB("assimp.lib")
+//LINK_LIB("CTGraphics.lib")
+//LINK_LIB("assimp.lib")
 
 using namespace std;
-using namespace C3E;
+using namespace CT;
 
 enum ModelLoadFlags
 {
