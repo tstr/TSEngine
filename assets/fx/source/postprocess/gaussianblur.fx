@@ -4,7 +4,7 @@
 
 #include "..\effect_base.fxh"
 
-cbuffer SceneParams : register(c0)
+cbuffer SceneParams : register(b0)
 {
 	CScene scene;
 }

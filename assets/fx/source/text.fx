@@ -7,7 +7,7 @@
 Texture2D atlas : register(t0);
 SamplerState texsampler : register(s0);
 
-cbuffer SceneParams : register(c0)
+cbuffer SceneParams : register(b0)
 {
 	CScene scene;
 }

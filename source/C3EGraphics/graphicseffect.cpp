@@ -541,8 +541,8 @@ int EffectFactory::CompileEffectManifest(const char* manifest)
 
 				if (!pImpl->m_backend.f_compile(source_name.c_str(), sourcestring.c_str(), sourcestring.size(), outbuf, errbuf, size, target.entrypoint, target.type, flags))
 				{
-					cerr << "Effect error: """ << source_name << """\n";
-					cerr << errbuf.rdbuf();
+					cout << "Effect error: """ << source_name << """\n";
+					cout << errbuf.rdbuf();
 
 					return false;
 				}

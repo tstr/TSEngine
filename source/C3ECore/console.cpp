@@ -33,9 +33,9 @@ struct ConsoleInstance
 	ConsoleInstance()
 	{
 		int hConHandle;
-		INT64 lStdHandle;
+		INT64 lStdHandle = 0;
 		CONSOLE_SCREEN_BUFFER_INFO coninfo;
-		FILE *fp;
+		FILE* fp = nullptr;
 
 		//Attach a console to process
 		if (!AttachConsole(ATTACH_PARENT_PROCESS))
@@ -51,6 +51,7 @@ struct ConsoleInstance
 
 		////////////////////////////////////////////////////////////////////////////
 
+		/*
 		//STDOUT
 		lStdHandle = (INT64)GetStdHandle(STD_OUTPUT_HANDLE);
 		hConHandle = _open_osfhandle((intptr_t)lStdHandle, _O_TEXT);
@@ -58,6 +59,10 @@ struct ConsoleInstance
 
 		*stdout = *fp;
 		setvbuf(stdout, NULL, _IONBF, 0);
+		*/
+		
+		//freopen("CONOUT$", "w", stdout);
+		volatile errno_t e = freopen_s(&fp, "CONOUT$", "w", stdout);
 
 		//STDIN
 		lStdHandle = (INT64)GetStdHandle(STD_INPUT_HANDLE);

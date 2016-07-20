@@ -506,7 +506,7 @@ TextureCube::TextureCube(Graphics* renderer, const char* file) :
 			return;
 		}
 
-		m_buffers[i] = move(MemoryBuffer(subbmpData.Scan0, subbmpData.Height * subbmpData.Stride));
+		m_buffers[i] = MemoryBuffer(subbmpData.Scan0, subbmpData.Height * subbmpData.Stride);
 
 		data[i].memPitch = subbmpData.Stride;
 		data[i].mem = m_buffers[i].pointer();
