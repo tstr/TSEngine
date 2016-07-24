@@ -358,16 +358,23 @@ namespace C3E
 						&m_feature_level,
 						m_immediatecontext.GetAddressOf()
 					);
+
+					if (FAILED(hr))
+					{
+						throw _com_error(hr);
+					}
+
 				}
 				catch (_com_error& e)
 				{
-					cerr << "D3D11CreateDeviceAndSwapChain threw an exception:\n" << e.ErrorMessage() << endl;
+					cout << hex << "D3D11CreateDeviceAndSwapChain failure. HRESULT (0x" << hr << "): "
+						<< (const char*)e.ErrorMessage() << endl;
+
+					throw GraphicsException("Failed to create device and swapchain:\nD3D11CreateDeviceAndSwapChain()");
 				}
 
 				m_renderTargetDefault = DX11RenderTarget(m_dxgiSwapchain.Get());
 				m_depthBufferDefault = DX11DepthBuffer(m_device.Get(), settings.viewport.width, settings.viewport.height, DXGI_FORMAT_UNKNOWN, DXGI_SAMPLE_DESC{ settings.AAcount, settings.AAquality }, false, 0);
-
-				if (FAILED(hr)) throw GraphicsException("Failed to create device and swapchain: \nD3D11CreateDeviceAndSwapChain()");
 
 				SetDebugObjectName(m_immediatecontext.Get(), "D3D11:ImmediateContext");
 
@@ -461,7 +468,7 @@ namespace C3E
 				m_device->CreateBlendState(&bd, m_blendState.GetAddressOf());
 			}
 
-			~DX11Render() {}
+			~DX11Render() { SetFullscreen(false); }
 
 			////////////////////////////////////////////////////////////////////////////////////////////////////////
 			//Resource methods

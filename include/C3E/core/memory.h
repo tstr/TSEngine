@@ -81,8 +81,8 @@ namespace C3E
 			if (m_data = malloc(m_size)) {}
 			else
 				throw std::exception("malloc failed to allocate enough memory");
-
-			memcpy(m_data, data, m_size);
+			
+			memcpy_s(m_data, m_size, data, size);
 		}
 
 		explicit MemoryBuffer(const MemoryBuffer& copy)

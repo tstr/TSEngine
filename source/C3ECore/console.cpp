@@ -64,6 +64,7 @@ struct ConsoleInstance
 		//freopen("CONOUT$", "w", stdout);
 		volatile errno_t e = freopen_s(&fp, "CONOUT$", "w", stdout);
 
+		/*
 		//STDIN
 		lStdHandle = (INT64)GetStdHandle(STD_INPUT_HANDLE);
 		hConHandle = _open_osfhandle((intptr_t)lStdHandle, _O_TEXT);
@@ -71,6 +72,8 @@ struct ConsoleInstance
 
 		*stdin = *fp;
 		setvbuf(stdin, NULL, _IONBF, 0);
+		*/
+		freopen_s(&fp, "CONIN$", "r", stdin);
 
 		//STDERR
 		lStdHandle = (INT64)GetStdHandle(STD_ERROR_HANDLE);

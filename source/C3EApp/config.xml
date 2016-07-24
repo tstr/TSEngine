@@ -2,13 +2,13 @@
 <Settings>
 	<Graphics>
 		<Multisampling>
-			<Count>8</Count>
+			<Count>2</Count>
 			<Quality>0</Quality>
 		</Multisampling>
-		<AnisotropicFiltering>16</AnisotropicFiltering>
-		<ResW>1280</ResW>
-		<ResH>720</ResH>
-		<ShadowRes>1024</ShadowRes>
+		<AnisotropicFiltering>2</AnisotropicFiltering>
+		<ResW>1600</ResW>
+		<ResH>900</ResH>
+		<ShadowRes>512</ShadowRes>
 	</Graphics>
 	<System>
 		<Font>C:\Windows\Fonts\verdana.ttf</Font>

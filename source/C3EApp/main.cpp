@@ -93,14 +93,14 @@ atomic<uint32> g_inputMask;
 atomic<bool> g_mouseHeld = false;
 atomic<int> g_mousePosX = 0;
 atomic<int> g_mousePosY = 0;
-atomic<int> g_mouseDeltaX;
-atomic<int> g_mouseDeltaY;
+atomic<int> g_mouseDeltaX = 0;
+atomic<int> g_mouseDeltaY = 0;
 
 atomic<bool> g_wireframe = false; //Toggle wireframe mode
 atomic<bool> g_simulation = true; //Toggle light movement
 atomic<bool> g_text = true;	      //Toggle text
 
-atomic<bool> ui_clicked;
+atomic<bool> ui_clicked = false;
 
 atomic<int> g_materialTextureMask;
 
@@ -109,6 +109,7 @@ atomic<int> g_materialTextureMask;
 
 int sim_lock()
 {
+	//return 0;
 	if (!g_sim_active) return 0;
 
 	if (g_sim_count == 0)
@@ -118,6 +119,7 @@ int sim_lock()
 
 int sim_unlock()
 {
+	//return 0;
 	if (!g_sim_active) return 0;
 
 	int x = --g_sim_count;
@@ -157,6 +159,10 @@ public:
 	{
 		ConsolePrintline("window closing...");
 
+		Window::Close();
+		return;
+		
+		//disable message box warning
 		if (MessageBoxA((HWND)id(), "Are you sure you want to exit?", "", MB_YESNO | MB_ICONQUESTION) == IDYES)
 		{
 			Window::OnClose(e);
@@ -170,14 +176,14 @@ public:
 	void OnSetfocus(WindowEventArgs e) override
 	{
 		ConsolePrintline("window focused: true");
-		sim_unlock();
+		//sim_unlock();
 		Window::OnSetfocus(e);
 	}
 
 	void OnKillfocus(WindowEventArgs e) override
 	{
 		ConsolePrintline("window focused: false");
-		sim_lock();
+		//sim_lock();
 		Window::OnKillfocus(e);
 	}
 
@@ -187,11 +193,18 @@ public:
 		vp.width = LOWORD(e.a);
 		vp.height = HIWORD(e.a);
 
-		sim_lock();
+		//sim_lock();
+
+		if (g_resX == vp.width && g_resY == vp.height)
+		{
+			//sim_unlock();
+			return;
+		}
+
 		g_resX = vp.width;
 		g_resY = vp.height;
 		g_renderer->SetViewport(vp);
-		sim_unlock();
+		//sim_unlock();
 
 		//ConsolePrintline((string)"window resized: " + to_string(g_resX) + ", " + to_string(g_resY));
 	}
@@ -788,8 +801,8 @@ int WINAPI WinMain(HMODULE Module, HMODULE prevModule, LPSTR cmdline, int showcm
 	//Vector light_colour = { 1, 1, 1, 1 };
 	//Vector ambient_colour = { 0.1f, 0.1f, 0.1f, 1 };
 
-	Vector light_colour = { 1, 0.89f, 0.83f, 1 };
-	Vector ambient_colour = { 0.26f, 0.24f, 0.23f, 1 };
+	Vector light_colour = { 1.0f, 0.89f, 0.85f, 1 };
+	Vector ambient_colour = { 0.16f, 0.14f, 0.13f, 1 };
 
 	MainWindow win;
 
@@ -932,23 +945,27 @@ int WINAPI WinMain(HMODULE Module, HMODULE prevModule, LPSTR cmdline, int showcm
 	//win.Create(winpos);
 	win.AsyncCreate(winpos);
 
-	char app_path[MAX_PATH];
-	GetModuleFileNameA(0, app_path, MAX_PATH);
-	win.SetTitle(app_path);
+	win.Invoke([&]() {
 
-	Graphics::Configuration cfg;
-	cfg.windowId = win.id();
-	cfg.AAcount = aacount;
-	cfg.AAquality = aaquality;
-	cfg.anisotropicFiltering = AF;
-	cfg.viewport.width = g_resX;
-	cfg.viewport.height = g_resY;
+		char app_path[MAX_PATH];
+		GetModuleFileNameA(0, app_path, MAX_PATH);
+		win.SetTitle(app_path);
+
+		Graphics::Configuration cfg;
+		cfg.windowId = win.id();
+		cfg.AAcount = aacount;
+		cfg.AAquality = aaquality;
+		cfg.anisotropicFiltering = AF;
+		cfg.viewport.width = g_resX;
+		cfg.viewport.height = g_resY;
+		cfg.viewport.fullscreen = false;
 
 #ifdef _DEBUG
-	cfg.debug = true; //enable debug layer
+		cfg.debug = true; //enable debug layer
 #endif
 
-	g_renderer.reset(new Graphics(Graphics::API_D3D11, cfg));
+		g_renderer.reset(new Graphics(Graphics::API_D3D11, cfg));
+	});
 
 	/*
 
@@ -988,10 +1005,10 @@ int WINAPI WinMain(HMODULE Module, HMODULE prevModule, LPSTR cmdline, int showcm
 
 	*/
 
+	TextureCube skybox(g_renderer.get(), (directory_assets + file_skybox).c_str());
+
 	auto s = directory_assets + file_model;
-
 	//system(((string)"E:\\programming\\c++\\C3E\\bin\\x64\\Debug\\ModelParser.exe " + s).c_str());
-
 	ModelImporter meshloader(s.c_str());
 
 	//Global scene parameters
@@ -1135,8 +1152,6 @@ int WINAPI WinMain(HMODULE Module, HMODULE prevModule, LPSTR cmdline, int showcm
 	uint32 shadowScale = 1;
 
 	GraphicsRenderTarget shadowRenderTargetCube(g_renderer.get(), shadowRes * shadowScale, shadowRes * shadowScale, ETextureFormat::FormatRG32_FLOAT, Multisampling(), true);
-
-	TextureCube skybox(g_renderer.get(), (directory_assets + file_skybox).c_str());
 
 	//Texture testtex(g_renderer.get(), ((string)directory_assets + "testimage.png").c_str());
 
@@ -1721,8 +1736,8 @@ int WINAPI WinMain(HMODULE Module, HMODULE prevModule, LPSTR cmdline, int showcm
 				float mouseX = originX + (float)g_mousePosX;
 				float mouseY = originY + (float)g_mousePosY;
 
-				cout << mouseX << " " << mouseY << endl;
-				cout << border << endl;
+				//cout << mouseX << " " << mouseY << endl;
+				//cout << border << endl;
 				
 				{
 					float x = diagOriginX + (diagSizeX / 2) - (diagButtonSizeX / 2) + diagButton0offsetX;

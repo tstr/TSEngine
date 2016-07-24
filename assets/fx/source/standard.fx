@@ -4,6 +4,9 @@
 
 #include "effect_base.fxh"
 
+//#define USE_POM
+//#define USE_GAMMA_CORRECTION
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 cbuffer SceneParams : register(b0)
@@ -134,6 +137,8 @@ float4 PS(PSinput input) : SV_TARGET
 	
 	float2 texcoord = input.texcoord;
 	
+	#ifdef USE_POM
+	
 	if (material.flags & MATERIAL_TEX_DISPLACE)
 	{
 		const float height_scale = 0.04f;
@@ -225,6 +230,8 @@ float4 PS(PSinput input) : SV_TARGET
 		texcoord = input.texcoord + offsetCurrent;
 	}
 	
+	#endif
+	
 	float3 normal = normalize(input.normal);
 
 	float4 colour = (material.flags & MATERIAL_TEX_DIFFUSE) ? texColour.Sample(texSampler, texcoord) : material.diffuseColour;
@@ -278,6 +285,10 @@ float4 PS(PSinput input) : SV_TARGET
 	
 	//Alpha test - if alpha value of pixel colour is less than 0.9 then discard pixel
 	clip((colour.a < 0.9f) ? -1 : 1);
+	
+	#ifdef USE_GAMMA_CORRECTION
+	colour = pow(colour, 1 / 2.2);
+	#endif
 	
 	return colour;
 }
