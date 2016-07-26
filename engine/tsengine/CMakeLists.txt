@@ -1,6 +1,7 @@
 
 SET(src_list
-
+	../tsengine.h
+	engine.cpp
 )
 
 ADD_LIBRARY(

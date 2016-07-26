@@ -16,7 +16,7 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/")
 ################################################################################################
 
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/engine)
 
 SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/)
 SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/)
@@ -36,12 +36,12 @@ SET (CMAKE_LIBRARY_PATH
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 #application
-ADD_SUBDIRECTORY(src/app)
+ADD_SUBDIRECTORY(app)
 
 #engine components
-ADD_SUBDIRECTORY(src/engine)
+ADD_SUBDIRECTORY(engine)
 
 #engine tools
-ADD_SUBDIRECTORY(src/tools/modelbuilder)
+ADD_SUBDIRECTORY(tools/modelbuilder)
 
 ################################################################################################

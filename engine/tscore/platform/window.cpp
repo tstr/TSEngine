@@ -7,11 +7,11 @@
 #include <map>
 #include <thread>
 
-#include <CTxt\win32.h>
 #include <Windows.h>
 #include <windowsx.h> //todo: use the macros
 
 #include "window.h"
+#include <tscore/assert.h>
 
 //#define USE_VISUAL_STYLES
 
@@ -48,6 +48,8 @@ static bool EnableVisualStyles()
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+using namespace ts::core;
 
 #define WMO_CREATE (WM_USER + 0x0001)
 #define WMO_INVOKE (WM_USER + 0x0002)
@@ -164,24 +166,24 @@ struct Window::Impl
 
 	Impl(Window* window, const char* t) :
 		window(window),
-		windowClassname("CTAppWindow"),
+		windowClassname("tsAppWindow"),
 		windowTitle(t)
 	{
-		DECLARE_EVENTHANDLER(0, WindowEvent::EventCreate, &Window::OnCreate);
-		DECLARE_EVENTHANDLER(1, WindowEvent::EventActivate, &Window::OnActivate);
-		DECLARE_EVENTHANDLER(2, WindowEvent::EventClose, &Window::OnClose);
-		DECLARE_EVENTHANDLER(3, WindowEvent::EventDestroy, &Window::OnDestroy);
-		DECLARE_EVENTHANDLER(4, WindowEvent::EventInput, &Window::OnInput);
-		DECLARE_EVENTHANDLER(5, WindowEvent::EventMouseMove, &Window::OnMouseMove);
-		DECLARE_EVENTHANDLER(6, WindowEvent::EventResize, &Window::OnResize);
-		DECLARE_EVENTHANDLER(7, WindowEvent::EventDraw, &Window::OnDraw);
-		DECLARE_EVENTHANDLER(8, WindowEvent::EventSetfocus, &Window::OnSetfocus);
-		DECLARE_EVENTHANDLER(9, WindowEvent::EventKillfocus, &Window::OnKillfocus);
-		DECLARE_EVENTHANDLER(10, WindowEvent::EventKeydown, &Window::OnKeydown);
-		DECLARE_EVENTHANDLER(11, WindowEvent::EventKeyup, &Window::OnKeyup);
-		DECLARE_EVENTHANDLER(12, WindowEvent::EventScroll, &Window::OnScroll);
-		DECLARE_EVENTHANDLER(13, WindowEvent::EventMouseDown, &Window::OnMouseDown);
-		DECLARE_EVENTHANDLER(14, WindowEvent::EventMouseUp, &Window::OnMouseUp);
+		DECLARE_EVENTHANDLER(0, WindowEvent::eEventCreate, &Window::onCreate);
+		DECLARE_EVENTHANDLER(1, WindowEvent::eEventActivate, &Window::onActivate);
+		DECLARE_EVENTHANDLER(2, WindowEvent::eEventClose, &Window::onClose);
+		DECLARE_EVENTHANDLER(3, WindowEvent::eEventDestroy, &Window::onDestroy);
+		DECLARE_EVENTHANDLER(4, WindowEvent::eEventInput, &Window::onInput);
+		DECLARE_EVENTHANDLER(5, WindowEvent::eEventMouseMove, &Window::onMouseMove);
+		DECLARE_EVENTHANDLER(6, WindowEvent::eEventResize, &Window::onResize);
+		DECLARE_EVENTHANDLER(7, WindowEvent::eEventDraw, &Window::onDraw);
+		DECLARE_EVENTHANDLER(8, WindowEvent::eEventSetfocus, &Window::onSetfocus);
+		DECLARE_EVENTHANDLER(9, WindowEvent::eEventKillfocus, &Window::onKillfocus);
+		DECLARE_EVENTHANDLER(10, WindowEvent::eEventKeydown, &Window::onKeydown);
+		DECLARE_EVENTHANDLER(11, WindowEvent::eEventKeyup, &Window::onKeyup);
+		DECLARE_EVENTHANDLER(12, WindowEvent::eEventScroll, &Window::onScroll);
+		DECLARE_EVENTHANDLER(13, WindowEvent::eEventMouseDown, &Window::onMouseDown);
+		DECLARE_EVENTHANDLER(14, WindowEvent::eEventMouseUp, &Window::onMouseUp);
 
 		//Win32 window class
 
@@ -219,7 +221,7 @@ struct Window::Impl
 
 		Destroy();
 
-		CT_ASSERT(UnregisterClass(windowClassname.c_str(), windowModule));
+		tsassert(UnregisterClass(windowClassname.c_str(), windowModule));
 		flags &= ~win_registered;
 	}
 
@@ -266,7 +268,9 @@ struct Window::Impl
 		size.h = rect.h;
 		size.w = rect.w;
 
-		CT_ASSERT(EnableVisualStyles());
+#ifdef USE_VISUAL_STYLES
+		tsassert(EnableVisualStyles());
+#endif
 
 		windowHandle = CreateWindowEx(
 			WS_EX_ACCEPTFILES,
@@ -300,8 +304,8 @@ struct Window::Impl
 
 		while (BOOL ret = GetMessage(&msg, NULL, 0, 0))
 		{
-			CT_ASSERT(ret >= 0);
-
+			tsassert(ret >= 0);
+			
 			if (ret)
 			{
 				TranslateMessage(&msg);
@@ -353,7 +357,7 @@ Window::~Window()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool Window::SetEventHandler(WindowEvent ecode, IWindowEventhandler* handler)
+bool Window::setEventHandler(WindowEvent ecode, IWindowEventhandler* handler)
 {	
 	if (uint32 code = EventCodes.GetWin32MessageEnum(ecode))
 	{
@@ -367,14 +371,14 @@ bool Window::SetEventHandler(WindowEvent ecode, IWindowEventhandler* handler)
 	return false;
 }
 
-int Window::DefaultEventhandler(uint32 msg, uint64 a, uint64 b)
+int Window::defaultEventhandler(uint32 msg, uint64 a, uint64 b)
 {
 	return (int)DefWindowProc(pImpl->windowHandle, msg, a, b);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Window::SetFullscreen(bool on)
+void Window::setFullscreen(bool on)
 {
 	if (on)
 	{
@@ -423,12 +427,12 @@ void Window::SetFullscreen(bool on)
 	}
 }
 
-bool Window::IsFullscreen() const
+bool Window::isFullscreen() const
 {
 	return ((pImpl->flags & win_borderless) != 0);
 }
 
-bool Window::IsOpen() const
+bool Window::isOpen() const
 {
 	return ((pImpl->flags & win_open) != 0);
 }
@@ -436,19 +440,19 @@ bool Window::IsOpen() const
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void Window::Create(WindowRect r)
+void Window::create(WindowRect r)
 {
 	pImpl->Create(r);
 }
 
-void Window::AsyncCreate(WindowRect r)
+void Window::asyncCreate(WindowRect r)
 {
 	pImpl->AsyncCreate(r);
 }
 
-void Window::Close()
+void Window::close()
 {
-	RaiseEvent(WindowEvent::EventDestroy, 0, 0);
+	raiseEvent(WindowEvent::eEventDestroy, 0, 0);
 }
 
 
@@ -459,22 +463,22 @@ uint64 Window::id() const
 	return (uint64)pImpl->windowHandle;
 }
 
-void Window::MsgBox(const char* text, const char* caption)
+void Window::msgBox(const char* text, const char* caption)
 {
 	MessageBoxA(pImpl->windowHandle, text, caption, 0);
 }
 
-void Window::RaiseEvent(WindowEvent e, uint64 a, uint64 b)
+void Window::raiseEvent(WindowEvent e, uint64 a, uint64 b)
 {
 	SendMessage(pImpl->windowHandle, EventCodes.GetWin32MessageEnum(e), a, b);
 }
 
-void Window::SetTitle(const char* title)
+void Window::setTitle(const char* title)
 {
 	SetWindowTextA(pImpl->windowHandle, title);
 }
 
-void Window::Invoke_internal(Window::IInvoker* i)
+void Window::invoke_internal(Window::IInvoker* i)
 {
 	SendMessageA(pImpl->windowHandle, WMO_INVOKE, (WPARAM)i, 0);
 }
@@ -483,77 +487,77 @@ void Window::Invoke_internal(Window::IInvoker* i)
 //Default event handlers
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Window::OnCreate(WindowEventArgs e)
+void Window::onCreate(WindowEventArgs e)
 {
-	DefaultEventhandler(WM_CREATE, e.a, e.b);
+	defaultEventhandler(WM_CREATE, e.a, e.b);
 }
 
-void Window::OnDestroy(WindowEventArgs e)
+void Window::onDestroy(WindowEventArgs e)
 {
 	PostQuitMessage(0);
 }
 
-void Window::OnClose(WindowEventArgs e)
+void Window::onClose(WindowEventArgs e)
 {
-	this->RaiseEvent(WindowEvent::EventDestroy, 0, 0);
+	this->raiseEvent(WindowEvent::eEventDestroy, 0, 0);
 }
 
-void Window::OnResize(WindowEventArgs e)
-{
-
-}
-
-void Window::OnMouseMove(WindowEventArgs e)
+void Window::onResize(WindowEventArgs e)
 {
 
 }
 
-void Window::OnInput(WindowEventArgs e)
+void Window::onMouseMove(WindowEventArgs e)
 {
 
 }
 
-void Window::OnActivate(WindowEventArgs e)
+void Window::onInput(WindowEventArgs e)
 {
 
 }
 
-void Window::OnDraw(WindowEventArgs e)
-{
-	DefaultEventhandler(WM_PAINT, e.a, e.b);
-}
-
-void Window::OnSetfocus(WindowEventArgs e)
-{
-	DefaultEventhandler(WM_SETFOCUS, e.a, e.b);
-}
-
-void Window::OnKillfocus(WindowEventArgs e)
-{
-	DefaultEventhandler(WM_KILLFOCUS, e.a, e.b);
-}
-
-void Window::OnKeydown(WindowEventArgs e)
+void Window::onActivate(WindowEventArgs e)
 {
 
 }
 
-void Window::OnKeyup(WindowEventArgs e)
+void Window::onDraw(WindowEventArgs e)
+{
+	defaultEventhandler(WM_PAINT, e.a, e.b);
+}
+
+void Window::onSetfocus(WindowEventArgs e)
+{
+	defaultEventhandler(WM_SETFOCUS, e.a, e.b);
+}
+
+void Window::onKillfocus(WindowEventArgs e)
+{
+	defaultEventhandler(WM_KILLFOCUS, e.a, e.b);
+}
+
+void Window::onKeydown(WindowEventArgs e)
 {
 
 }
 
-void Window::OnScroll(WindowEventArgs e)
+void Window::onKeyup(WindowEventArgs e)
 {
 
 }
 
-void Window::OnMouseDown(WindowEventArgs e)
+void Window::onScroll(WindowEventArgs e)
 {
 
 }
 
-void Window::OnMouseUp(WindowEventArgs e)
+void Window::onMouseDown(WindowEventArgs e)
+{
+
+}
+
+void Window::onMouseUp(WindowEventArgs e)
 {
 
 }

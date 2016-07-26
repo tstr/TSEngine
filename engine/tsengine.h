@@ -3,6 +3,8 @@
 
 namespace tse
 {
+	class Window;
+
 	class Application
 	{
 	private:
@@ -12,7 +14,7 @@ namespace tse
 		
 	public:
 		
-		Application(const char* cmdline);
-		~Application();
+		Application(const char* cmdline) {}
+		~Application() {}
 	};
 };

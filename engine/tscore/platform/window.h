@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <tscore/types.h>
+
 namespace ts
 {
 	namespace core
@@ -55,28 +57,21 @@ namespace ts
 			virtual void execute(WindowEventArgs args) = 0;
 		};
 
-		class IWindow
-		{
-		public:
-
-			virtual uint64 id() const = 0;
-		};
-
-		class Window : public IWindow
+		class Window
 		{
 		private:
 
 			struct Impl;
 			Impl* pImpl = nullptr;
 
-			int DefaultEventhandler(uint32 msg, uint64 a, uint64 b);
+			int defaultEventhandler(uint32 msg, uint64 a, uint64 b);
 
 			struct IInvoker
 			{
 				virtual void execute() = 0;
 			};
 
-			void Invoke_internal(IInvoker* i);
+			void invoke_internal(IInvoker* i);
 
 		public:
 
@@ -86,14 +81,14 @@ namespace ts
 			Window(const Window&) = delete;
 			Window(Window&& mov) { pImpl = mov.pImpl; mov.pImpl = nullptr; }
 
-			bool SetEventHandler(WindowEvent e, IWindowEventhandler* handler);
+			bool setEventHandler(WindowEvent e, IWindowEventhandler* handler);
 
-			void Create(WindowRect);
-			void AsyncCreate(WindowRect);
-			void Close();
+			void create(WindowRect);
+			void asyncCreate(WindowRect);
+			void close();
 
 			template<typename t>
-			void Invoke(t _f)
+			void invoke(t _f)
 			{
 				using namespace std;
 
@@ -110,36 +105,36 @@ namespace ts
 					
 				} i(ref(_f));
 
-				Invoke_internal(&i);
+				invoke_internal(&i);
 			}
 
 			//void Invoke(const std::function<void()>& f);
-			bool IsOpen() const;
-			bool IsFullscreen() const;
-			void SetFullscreen(bool on);
+			bool isOpen() const;
+			bool isFullscreen() const;
+			void setFullscreen(bool on);
 
-			uint64 id() const override;
-			void RaiseEvent(WindowEvent e, uint64 a, uint64 b);
-			void MsgBox(const char* text, const char* caption = "");
+			uint64 id() const;
+			void raiseEvent(WindowEvent e, uint64 a, uint64 b);
+			void msgBox(const char* text, const char* caption = "");
 
-			void SetTitle(const char* title);
+			void setTitle(const char* title);
 
 			//Default event handlers
-			virtual void OnCreate(WindowEventArgs e);
-			virtual void OnDestroy(WindowEventArgs e);
-			virtual void OnClose(WindowEventArgs e);
-			virtual void OnResize(WindowEventArgs e);
-			virtual void OnInput(WindowEventArgs e);
-			virtual void OnActivate(WindowEventArgs e);
-			virtual void OnDraw(WindowEventArgs e);
-			virtual void OnSetfocus(WindowEventArgs e);
-			virtual void OnKillfocus(WindowEventArgs e);
-			virtual void OnKeydown(WindowEventArgs e);
-			virtual void OnKeyup(WindowEventArgs e);
-			virtual void OnScroll(WindowEventArgs e);
-			virtual void OnMouseDown(WindowEventArgs e);
-			virtual void OnMouseUp(WindowEventArgs e);
-			virtual void OnMouseMove(WindowEventArgs e);
+			virtual void onCreate(WindowEventArgs e);
+			virtual void onDestroy(WindowEventArgs e);
+			virtual void onClose(WindowEventArgs e);
+			virtual void onResize(WindowEventArgs e);
+			virtual void onInput(WindowEventArgs e);
+			virtual void onActivate(WindowEventArgs e);
+			virtual void onDraw(WindowEventArgs e);
+			virtual void onSetfocus(WindowEventArgs e);
+			virtual void onKillfocus(WindowEventArgs e);
+			virtual void onKeydown(WindowEventArgs e);
+			virtual void onKeyup(WindowEventArgs e);
+			virtual void onScroll(WindowEventArgs e);
+			virtual void onMouseDown(WindowEventArgs e);
+			virtual void onMouseUp(WindowEventArgs e);
+			virtual void onMouseMove(WindowEventArgs e);
 		};
 		
 	}
