@@ -17,7 +17,7 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/")
 
 #sets project filters to match directory structure automatically
 function(copy_source_groups)
-	foreach(FILE ${ARGV}) 
+	foreach(FILE ${ARGV})
 		# Get the directory of the source file
 		get_filename_component(PARENT_DIR "${FILE}" DIRECTORY)
 

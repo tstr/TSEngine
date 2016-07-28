@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include "application.h"
-#include <tscore\debug\assert.h>
+#include <tscore/debug/assert.h>
 
 using namespace ts;
 

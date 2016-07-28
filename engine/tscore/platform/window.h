@@ -8,134 +8,130 @@
 
 namespace ts
 {
-	namespace core
+	class Window;
+
+	enum WindowEvent : uint32
 	{
-		class Window;
+		eEventNull,
+		eEventCreate,
+		eEventDestroy,
+		eEventClose,
+		eEventResize,
+		eEventInput,
+		eEventActivate,
+		eEventDraw,
+		eEventSetfocus,
+		eEventKillfocus,
+		eEventKeydown,
+		eEventKeyup,
+		eEventScroll,
+		eEventMouseDown,
+		eEventMouseUp,
+		eEventMouseMove,
+		EnumMax
+	};
 
-		enum WindowEvent : uint32
+	struct WindowEventArgs
+	{
+		Window* window = nullptr;
+		WindowEvent eventcode = WindowEvent(0);
+		uint64 a = 0; //lparam
+		uint64 b = 0; //wparam
+	};
+
+	struct WindowRect
+	{
+		uint32 x = 0;
+		uint32 y = 0;
+		uint32 w = 0;
+		uint32 h = 0;
+	};
+
+	struct IWindowEventhandler
+	{
+		WindowEvent eventcode = WindowEvent(0);
+		bool handled = true;
+
+		virtual void execute(WindowEventArgs args) = 0;
+	};
+
+	class Window
+	{
+	private:
+
+		struct Impl;
+		Impl* pImpl = nullptr;
+
+		int defaultEventhandler(uint32 msg, uint64 a, uint64 b);
+
+		struct IInvoker
 		{
-			eEventNull,
-			eEventCreate,
-			eEventDestroy,
-			eEventClose,
-			eEventResize,
-			eEventInput,
-			eEventActivate,
-			eEventDraw,
-			eEventSetfocus,
-			eEventKillfocus,
-			eEventKeydown,
-			eEventKeyup,
-			eEventScroll,
-			eEventMouseDown,
-			eEventMouseUp,
-			eEventMouseMove,
-			EnumMax
+			virtual void execute() = 0;
 		};
 
-		struct WindowEventArgs
+		void invoke_internal(IInvoker* i);
+
+	public:
+
+		Window(const char* title);
+		~Window();
+			
+		Window(const Window&) = delete;
+		Window(Window&& mov) { pImpl = mov.pImpl; mov.pImpl = nullptr; }
+
+		bool setEventHandler(WindowEvent e, IWindowEventhandler* handler);
+
+		void create(WindowRect);
+		void asyncCreate(WindowRect);
+		void close();
+
+		template<typename t>
+		void invoke(t _f)
 		{
-			Window* window = nullptr;
-			WindowEvent eventcode = WindowEvent(0);
-			uint64 a = 0; //lparam
-			uint64 b = 0; //wparam
-		};
+			using namespace std;
 
-		struct WindowRect
-		{
-			uint32 x = 0;
-			uint32 y = 0;
-			uint32 w = 0;
-			uint32 h = 0;
-		};
-
-		struct IWindowEventhandler
-		{
-			WindowEvent eventcode = WindowEvent(0);
-			bool handled = true;
-
-			virtual void execute(WindowEventArgs args) = 0;
-		};
-
-		class Window
-		{
-		private:
-
-			struct Impl;
-			Impl* pImpl = nullptr;
-
-			int defaultEventhandler(uint32 msg, uint64 a, uint64 b);
-
-			struct IInvoker
+			struct CInvoker : public IInvoker
 			{
-				virtual void execute() = 0;
-			};
+				reference_wrapper<t> m_f;
 
-			void invoke_internal(IInvoker* i);
+				CInvoker(reference_wrapper<t> _f) : m_f(_f) {}
 
-		public:
-
-			Window(const char* title);
-			~Window();
-				
-			Window(const Window&) = delete;
-			Window(Window&& mov) { pImpl = mov.pImpl; mov.pImpl = nullptr; }
-
-			bool setEventHandler(WindowEvent e, IWindowEventhandler* handler);
-
-			void create(WindowRect);
-			void asyncCreate(WindowRect);
-			void close();
-
-			template<typename t>
-			void invoke(t _f)
-			{
-				using namespace std;
-
-				struct CInvoker : public IInvoker
+				void execute() override
 				{
-					reference_wrapper<t> m_f;
+					m_f();
+				}
+				
+			} i(ref(_f));
 
-					CInvoker(reference_wrapper<t> _f) : m_f(_f) {}
+			invoke_internal(&i);
+		}
 
-					void execute() override
-					{
-						m_f();
-					}
-					
-				} i(ref(_f));
+		//void Invoke(const std::function<void()>& f);
+		bool isOpen() const;
+		bool isFullscreen() const;
+		void setFullscreen(bool on);
 
-				invoke_internal(&i);
-			}
+		uint64 id() const;
+		void raiseEvent(WindowEvent e, uint64 a, uint64 b);
+		void msgBox(const char* text, const char* caption = "");
 
-			//void Invoke(const std::function<void()>& f);
-			bool isOpen() const;
-			bool isFullscreen() const;
-			void setFullscreen(bool on);
+		void setTitle(const char* title);
 
-			uint64 id() const;
-			void raiseEvent(WindowEvent e, uint64 a, uint64 b);
-			void msgBox(const char* text, const char* caption = "");
-
-			void setTitle(const char* title);
-
-			//Default event handlers
-			virtual void onCreate(WindowEventArgs e);
-			virtual void onDestroy(WindowEventArgs e);
-			virtual void onClose(WindowEventArgs e);
-			virtual void onResize(WindowEventArgs e);
-			virtual void onInput(WindowEventArgs e);
-			virtual void onActivate(WindowEventArgs e);
-			virtual void onDraw(WindowEventArgs e);
-			virtual void onSetfocus(WindowEventArgs e);
-			virtual void onKillfocus(WindowEventArgs e);
-			virtual void onKeydown(WindowEventArgs e);
-			virtual void onKeyup(WindowEventArgs e);
-			virtual void onScroll(WindowEventArgs e);
-			virtual void onMouseDown(WindowEventArgs e);
-			virtual void onMouseUp(WindowEventArgs e);
-			virtual void onMouseMove(WindowEventArgs e);
-		};
-		
-	}
+		//Default event handlers
+		virtual void onCreate(WindowEventArgs e);
+		virtual void onDestroy(WindowEventArgs e);
+		virtual void onClose(WindowEventArgs e);
+		virtual void onResize(WindowEventArgs e);
+		virtual void onInput(WindowEventArgs e);
+		virtual void onActivate(WindowEventArgs e);
+		virtual void onDraw(WindowEventArgs e);
+		virtual void onSetfocus(WindowEventArgs e);
+		virtual void onKillfocus(WindowEventArgs e);
+		virtual void onKeydown(WindowEventArgs e);
+		virtual void onKeyup(WindowEventArgs e);
+		virtual void onScroll(WindowEventArgs e);
+		virtual void onMouseDown(WindowEventArgs e);
+		virtual void onMouseUp(WindowEventArgs e);
+		virtual void onMouseMove(WindowEventArgs e);
+	};
 }
