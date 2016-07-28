@@ -1,0 +1,11 @@
+/*
+	Configuration file
+*/
+
+//Operating system
+#cmakedefine TS_PLATFORM_WIN32
+#cmakedefine TS_PLATFORM_UNIX
+#cmakedefine TS_PLATFORM_APPLE
+
+//Compiler
+#cmakedefine MSVC

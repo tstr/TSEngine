@@ -1,14 +1,30 @@
+################################################################################################
+#TS-Engine
+################################################################################################
 
 CMAKE_MINIMUM_REQUIRED (VERSION 3.0)
 
 PROJECT (tse)
 
 ################################################################################################
-
 #configuration file
+################################################################################################
+
+if (WIN32)
+	SET(TS_PLATFORM_WIN32)
+endif()
+
+if (UNIX)
+	SET(TS_PLATFORM_UNIX)
+endif()
+
+if (APPLE)
+	SET(TS_PLATFORM_APPLE)
+endif()
+
 CONFIGURE_FILE (
-	"${PROJECT_SOURCE_DIR}/config.h.in"
-	"${PROJECT_BINARY_DIR}/config.h"
+	"${PROJECT_SOURCE_DIR}/tsconfig.h.in"
+	"${PROJECT_BINARY_DIR}/tsconfig.h"
 )
 
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/")
@@ -62,6 +78,6 @@ ADD_SUBDIRECTORY(app)
 ADD_SUBDIRECTORY(engine)
 
 #engine tools
-ADD_SUBDIRECTORY(tools/modelbuilder)
+ADD_SUBDIRECTORY(tools)
 
 ################################################################################################

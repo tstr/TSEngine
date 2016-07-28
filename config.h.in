@@ -1,8 +1,0 @@
-/*
-	Configuration file
-*/
-
-//Operating system
-#cmakedefine WIN32
-#cmakedefine APPLE
-#cmakedefine UNIX
