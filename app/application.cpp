@@ -1,13 +1,14 @@
-
+/*
+	Application definition
+*/
 
 #include <iostream>
 #include "application.h"
+#include <tscore\debug\assert.h>
 
 using namespace ts;
 
-
-void Application::init()
+void Application::onInit()
 {
-	std::cout << m_args;
-	std::cin.get();
+	//std::cin.get();
 }

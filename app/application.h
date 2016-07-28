@@ -4,7 +4,7 @@
 
 namespace ts
 {
-	class Application
+	class Application : public ApplicationCore
 	{
 	private:
 
@@ -12,12 +12,16 @@ namespace ts
 
 	public:
 
-		Application(const char* cmdargs) 
+		Application(const char* cmdargs) : ApplicationCore(cmdargs)
 		{
-			m_args = cmdargs;
-			init();
+
 		}
 
-		void init();
+		void onInit() override;
+
+		void onShutdown() override {}
+		void onUpdate() override {}
+		void onRender() override {}
+
 	};
 }

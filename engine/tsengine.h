@@ -1,20 +1,27 @@
-	
+/*
+	Engine declaration
+*/
+
 #pragma once
 
-namespace tse
+namespace ts
 {
 	class Window;
 
-	class Application
+	class ApplicationCore
 	{
 	private:
 		
 		Window* m_window = nullptr;
 		
-		
 	public:
 		
-		Application(const char* cmdline) {}
-		~Application() {}
+		ApplicationCore(const char* cmdline);
+		~ApplicationCore();
+		
+		virtual void onInit() {}
+		virtual void onShutdown() {}
+		virtual void onUpdate() {}
+		virtual void onRender() {}
 	};
 };

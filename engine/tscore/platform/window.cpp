@@ -11,7 +11,7 @@
 #include <windowsx.h> //todo: use the macros
 
 #include "window.h"
-#include <tscore/assert.h>
+#include <tscore/debug/assert.h>
 
 //#define USE_VISUAL_STYLES
 

@@ -33,9 +33,9 @@ namespace ts
 
 				if (HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE))
 				{
-					SetConsoleTextAttribute(hConsole, 79);
+					SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_INTENSITY);
 					printf(s.str().c_str());
-					SetConsoleTextAttribute(hConsole, 7);
+					SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN);
 				}
 
 				MessageBoxA(0, s.str().c_str(), "Assert", MB_ICONERROR);

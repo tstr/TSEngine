@@ -1,7 +1,8 @@
+#TSENGINE
 
 SET(src_list
 	../tsengine.h
-	engine.cpp
+	tsengine.cpp
 )
 
 ADD_LIBRARY(
@@ -11,3 +12,5 @@ ADD_LIBRARY(
 
 
 TARGET_LINK_LIBRARIES(tsengine tscore)
+
+copy_source_groups(${src_list})
