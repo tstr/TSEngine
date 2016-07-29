@@ -10,7 +10,7 @@ namespace ts
 {
 	class Window;
 
-	enum WindowEvent : uint32
+	enum EWindowEvent : uint32
 	{
 		eEventNull,
 		eEventCreate,
@@ -34,7 +34,7 @@ namespace ts
 	struct WindowEventArgs
 	{
 		Window* window = nullptr;
-		WindowEvent eventcode = WindowEvent(0);
+		EWindowEvent eventcode = EWindowEvent::eEventNull;
 		uint64 a = 0; //lparam
 		uint64 b = 0; //wparam
 	};
@@ -49,7 +49,7 @@ namespace ts
 
 	struct IWindowEventhandler
 	{
-		WindowEvent eventcode = WindowEvent(0);
+		EWindowEvent eventcode = EWindowEvent::eEventNull;
 		bool handled = true;
 
 		virtual void execute(WindowEventArgs args) = 0;
@@ -79,10 +79,10 @@ namespace ts
 		Window(const Window&) = delete;
 		Window(Window&& mov) { pImpl = mov.pImpl; mov.pImpl = nullptr; }
 
-		bool setEventHandler(WindowEvent e, IWindowEventhandler* handler);
+		bool setEventHandler(EWindowEvent e, IWindowEventhandler* handler);
 
 		void create(WindowRect);
-		void asyncCreate(WindowRect);
+		void createAsync(WindowRect);
 		void close();
 
 		template<typename t>
@@ -112,7 +112,7 @@ namespace ts
 		void setFullscreen(bool on);
 
 		uint64 id() const;
-		void raiseEvent(WindowEvent e, uint64 a, uint64 b);
+		void raiseEvent(EWindowEvent e, uint64 a, uint64 b);
 		void msgBox(const char* text, const char* caption = "");
 
 		void setTitle(const char* title);

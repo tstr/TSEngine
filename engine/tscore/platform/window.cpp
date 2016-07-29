@@ -12,6 +12,7 @@
 
 #include "window.h"
 #include <tscore/debug/assert.h>
+#include <tscore/debug/log.h>
 
 //#define USE_VISUAL_STYLES
 
@@ -86,38 +87,48 @@ static const class Win32EventEnums
 {
 private:
 
-	array<uint32, WindowEvent::EnumMax> m_windowEvents;
+	array<uint32, EWindowEvent::EnumMax> m_windowEvents;
 
 public:
 
 	Win32EventEnums()
 	{
 		//Set up event table for matching enums
-		m_windowEvents[WindowEvent::eEventNull] = WM_NULL;
-		m_windowEvents[WindowEvent::eEventInput] = WM_INPUT;
-		m_windowEvents[WindowEvent::eEventActivate] = WM_ACTIVATE;
-		m_windowEvents[WindowEvent::eEventResize] = WM_SIZE;
-		m_windowEvents[WindowEvent::eEventCreate] = WMO_CREATE;
-		m_windowEvents[WindowEvent::eEventDestroy] = WMO_DESTROY;
-		m_windowEvents[WindowEvent::eEventClose] = WM_CLOSE;
-		m_windowEvents[WindowEvent::eEventDraw] = WM_PAINT;
-		m_windowEvents[WindowEvent::eEventSetfocus] = WM_SETFOCUS;
-		m_windowEvents[WindowEvent::eEventKillfocus] = WM_KILLFOCUS;
-		m_windowEvents[WindowEvent::eEventKeydown] = WM_KEYDOWN;
-		m_windowEvents[WindowEvent::eEventKeyup] = WM_KEYUP;
-		m_windowEvents[WindowEvent::eEventScroll] = WM_MOUSEWHEEL;
-		m_windowEvents[WindowEvent::eEventMouseDown] = WM_LBUTTONDOWN;
-		m_windowEvents[WindowEvent::eEventMouseUp] = WM_LBUTTONUP;
-		m_windowEvents[WindowEvent::eEventMouseMove] = WM_MOUSEMOVE;
+		m_windowEvents[EWindowEvent::eEventNull] = WM_NULL;
+		m_windowEvents[EWindowEvent::eEventInput] = WM_INPUT;
+		m_windowEvents[EWindowEvent::eEventActivate] = WM_ACTIVATE;
+		m_windowEvents[EWindowEvent::eEventResize] = WM_SIZE;
+		m_windowEvents[EWindowEvent::eEventCreate] = WMO_CREATE;
+		m_windowEvents[EWindowEvent::eEventDestroy] = WMO_DESTROY;
+		m_windowEvents[EWindowEvent::eEventClose] = WM_CLOSE;
+		m_windowEvents[EWindowEvent::eEventDraw] = WM_PAINT;
+		m_windowEvents[EWindowEvent::eEventSetfocus] = WM_SETFOCUS;
+		m_windowEvents[EWindowEvent::eEventKillfocus] = WM_KILLFOCUS;
+		m_windowEvents[EWindowEvent::eEventKeydown] = WM_KEYDOWN;
+		m_windowEvents[EWindowEvent::eEventKeyup] = WM_KEYUP;
+		m_windowEvents[EWindowEvent::eEventScroll] = WM_MOUSEWHEEL;
+		m_windowEvents[EWindowEvent::eEventMouseDown] = WM_LBUTTONDOWN;
+		m_windowEvents[EWindowEvent::eEventMouseUp] = WM_LBUTTONUP;
+		m_windowEvents[EWindowEvent::eEventMouseMove] = WM_MOUSEMOVE;
 	}
 
-	WindowEvent GetWindowEventEnum(uint32 eventcode) const
+	EWindowEvent GetWindowEventEnum(uint32 w32code) const
 	{
 		//return m_windowEvents.at(eventcodes);
-		return WindowEvent::eEventNull;
+		EWindowEvent eventcode = eEventNull;
+		
+		for (uint32 i = 0; i < m_windowEvents.size(); i++)
+		{
+			if (m_windowEvents[i] == w32code)
+			{
+				eventcode = (EWindowEvent)i;
+			}
+		}
+
+		return eventcode;
 	}
 
-	uint32 GetWin32MessageEnum(WindowEvent eventcode) const
+	uint32 GetWin32MessageEnum(EWindowEvent eventcode) const
 	{
 		return m_windowEvents.at(eventcode);
 	}
@@ -145,7 +156,7 @@ struct Window::Impl
 
 	struct Event
 	{
-		WindowEvent eventcode = WindowEvent(0);
+		EWindowEvent eventcode = EWindowEvent(0);
 		IWindowEventhandler* eventhandler = nullptr;
 	};
 
@@ -169,21 +180,21 @@ struct Window::Impl
 		windowClassname("tsAppWindow"),
 		windowTitle(t)
 	{
-		DECLARE_EVENTHANDLER(0, WindowEvent::eEventCreate, &Window::onCreate);
-		DECLARE_EVENTHANDLER(1, WindowEvent::eEventActivate, &Window::onActivate);
-		DECLARE_EVENTHANDLER(2, WindowEvent::eEventClose, &Window::onClose);
-		DECLARE_EVENTHANDLER(3, WindowEvent::eEventDestroy, &Window::onDestroy);
-		DECLARE_EVENTHANDLER(4, WindowEvent::eEventInput, &Window::onInput);
-		DECLARE_EVENTHANDLER(5, WindowEvent::eEventMouseMove, &Window::onMouseMove);
-		DECLARE_EVENTHANDLER(6, WindowEvent::eEventResize, &Window::onResize);
-		DECLARE_EVENTHANDLER(7, WindowEvent::eEventDraw, &Window::onDraw);
-		DECLARE_EVENTHANDLER(8, WindowEvent::eEventSetfocus, &Window::onSetfocus);
-		DECLARE_EVENTHANDLER(9, WindowEvent::eEventKillfocus, &Window::onKillfocus);
-		DECLARE_EVENTHANDLER(10, WindowEvent::eEventKeydown, &Window::onKeydown);
-		DECLARE_EVENTHANDLER(11, WindowEvent::eEventKeyup, &Window::onKeyup);
-		DECLARE_EVENTHANDLER(12, WindowEvent::eEventScroll, &Window::onScroll);
-		DECLARE_EVENTHANDLER(13, WindowEvent::eEventMouseDown, &Window::onMouseDown);
-		DECLARE_EVENTHANDLER(14, WindowEvent::eEventMouseUp, &Window::onMouseUp);
+		DECLARE_EVENTHANDLER(0, EWindowEvent::eEventCreate, &Window::onCreate);
+		DECLARE_EVENTHANDLER(1, EWindowEvent::eEventActivate, &Window::onActivate);
+		DECLARE_EVENTHANDLER(2, EWindowEvent::eEventClose, &Window::onClose);
+		DECLARE_EVENTHANDLER(3, EWindowEvent::eEventDestroy, &Window::onDestroy);
+		DECLARE_EVENTHANDLER(4, EWindowEvent::eEventInput, &Window::onInput);
+		DECLARE_EVENTHANDLER(5, EWindowEvent::eEventMouseMove, &Window::onMouseMove);
+		DECLARE_EVENTHANDLER(6, EWindowEvent::eEventResize, &Window::onResize);
+		DECLARE_EVENTHANDLER(7, EWindowEvent::eEventDraw, &Window::onDraw);
+		DECLARE_EVENTHANDLER(8, EWindowEvent::eEventSetfocus, &Window::onSetfocus);
+		DECLARE_EVENTHANDLER(9, EWindowEvent::eEventKillfocus, &Window::onKillfocus);
+		DECLARE_EVENTHANDLER(10, EWindowEvent::eEventKeydown, &Window::onKeydown);
+		DECLARE_EVENTHANDLER(11, EWindowEvent::eEventKeyup, &Window::onKeyup);
+		DECLARE_EVENTHANDLER(12, EWindowEvent::eEventScroll, &Window::onScroll);
+		DECLARE_EVENTHANDLER(13, EWindowEvent::eEventMouseDown, &Window::onMouseDown);
+		DECLARE_EVENTHANDLER(14, EWindowEvent::eEventMouseUp, &Window::onMouseUp);
 
 		//Win32 window class
 
@@ -217,11 +228,21 @@ struct Window::Impl
 
 	~Impl()
 	{
-		if (!(flags & win_registered)) return;
+		if (~flags & win_registered) return;
 
-		Destroy();
+		//Destroy window if it is still open
+		if (flags & win_open)
+		{
+			SendMessageA(windowHandle, WM_DESTROY, 0, 0);
+
+			if (windowThread.joinable())
+				windowThread.join();
+
+			flags &= ~win_open;
+		}
 
 		tsassert(UnregisterClass(windowClassname.c_str(), windowModule));
+
 		flags &= ~win_registered;
 	}
 
@@ -248,12 +269,12 @@ struct Window::Impl
 				{
 					WindowEventArgs args;
 					args.window = wnd->window;
-					args.eventcode = e.eventcode;
+					args.eventcode = EventCodes.GetWindowEventEnum(msg);
 					args.a = lparam;
 					args.b = wparam;
 					e.eventhandler->execute(args);
 
-					return 0;
+					//return 0;
 				}
 			}
 		}
@@ -261,7 +282,7 @@ struct Window::Impl
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
 
-	void Create(const WindowRect& rect)
+	void create(const WindowRect& rect)
 	{
 		size.x = rect.x;
 		size.y = rect.y;
@@ -273,7 +294,7 @@ struct Window::Impl
 #endif
 
 		windowHandle = CreateWindowEx(
-			WS_EX_ACCEPTFILES,
+			WS_EX_APPWINDOW,
 			windowClassname.c_str(),
 			windowTitle.c_str(),
 			WS_VISIBLE | WS_OVERLAPPEDWINDOW,
@@ -306,36 +327,18 @@ struct Window::Impl
 		{
 			tsassert(ret >= 0);
 			
-			if (ret)
-			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-			else
-			{
-				return;
-			}
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
 		}
 
+		flags &= ~win_open;
 	}
 
-	void AsyncCreate(const WindowRect& rect)
+	void createAsync(const WindowRect& rect)
 	{
-		windowThread = thread(&Window::Impl::Create, this, rect);
+		windowThread = thread(&Window::Impl::create, this, rect);
 
 		while (!IsWindow(windowHandle));
-	}
-
-	void Destroy()
-	{
-		if (!(flags & win_open)) return;
-
-		SendMessageA(windowHandle, WM_DESTROY, 0, 0);
-
-		if (windowThread.joinable())
-			windowThread.join();
-
-		flags &= ~win_open;
 	}
 };
 
@@ -357,7 +360,7 @@ Window::~Window()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool Window::setEventHandler(WindowEvent ecode, IWindowEventhandler* handler)
+bool Window::setEventHandler(EWindowEvent ecode, IWindowEventhandler* handler)
 {	
 	if (uint32 code = EventCodes.GetWin32MessageEnum(ecode))
 	{
@@ -442,19 +445,18 @@ bool Window::isOpen() const
 
 void Window::create(WindowRect r)
 {
-	pImpl->Create(r);
+	pImpl->create(r);
 }
 
-void Window::asyncCreate(WindowRect r)
+void Window::createAsync(WindowRect r)
 {
-	pImpl->AsyncCreate(r);
+	pImpl->createAsync(r);
 }
 
 void Window::close()
 {
-	raiseEvent(WindowEvent::eEventDestroy, 0, 0);
+	raiseEvent(EWindowEvent::eEventDestroy, 0, 0);
 }
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -468,7 +470,7 @@ void Window::msgBox(const char* text, const char* caption)
 	MessageBoxA(pImpl->windowHandle, text, caption, 0);
 }
 
-void Window::raiseEvent(WindowEvent e, uint64 a, uint64 b)
+void Window::raiseEvent(EWindowEvent e, uint64 a, uint64 b)
 {
 	SendMessage(pImpl->windowHandle, EventCodes.GetWin32MessageEnum(e), a, b);
 }
@@ -489,7 +491,7 @@ void Window::invoke_internal(Window::IInvoker* i)
 
 void Window::onCreate(WindowEventArgs e)
 {
-	defaultEventhandler(WM_CREATE, e.a, e.b);
+	//defaultEventhandler(WM_CREATE, e.a, e.b);
 }
 
 void Window::onDestroy(WindowEventArgs e)
@@ -499,7 +501,7 @@ void Window::onDestroy(WindowEventArgs e)
 
 void Window::onClose(WindowEventArgs e)
 {
-	this->raiseEvent(WindowEvent::eEventDestroy, 0, 0);
+	this->raiseEvent(EWindowEvent::eEventDestroy, 0, 0);
 }
 
 void Window::onResize(WindowEventArgs e)
@@ -524,17 +526,21 @@ void Window::onActivate(WindowEventArgs e)
 
 void Window::onDraw(WindowEventArgs e)
 {
-	defaultEventhandler(WM_PAINT, e.a, e.b);
+	//PAINTSTRUCT ps;
+	//BeginPaint(pImpl->windowHandle, &ps);
+	//EndPaint(pImpl->windowHandle, &ps);
+	
+	//defaultEventhandler(WM_PAINT, e.a, e.b);
 }
 
 void Window::onSetfocus(WindowEventArgs e)
 {
-	defaultEventhandler(WM_SETFOCUS, e.a, e.b);
+	//defaultEventhandler(WM_SETFOCUS, e.a, e.b);
 }
 
 void Window::onKillfocus(WindowEventArgs e)
 {
-	defaultEventhandler(WM_KILLFOCUS, e.a, e.b);
+	//defaultEventhandler(WM_KILLFOCUS, e.a, e.b);
 }
 
 void Window::onKeydown(WindowEventArgs e)
