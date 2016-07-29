@@ -10,19 +10,23 @@ SET(src_list
 	debug/assert.h
 	debug/assert.cpp
 	debug/log.h
-	debug/log.cpp
 	
 	system/memory.h
+	system/thread.h
+	system/time.h
+	system/info.h
+	system/info.cpp
 	
-	maths/colour.h
+	maths/common.h
 	maths/functions.h
 	maths/maths.cpp
-	maths/mathsutils.h
 	maths/matrix.h
 	maths/quaternion.h
 	maths/vector.h
+	maths.h
 	
 	types.h
+	strings.h
 )
 
 ADD_LIBRARY(
