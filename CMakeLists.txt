@@ -11,23 +11,23 @@ PROJECT (tse)
 ################################################################################################
 
 if (WIN32)
-	SET(TS_PLATFORM_WIN32)
+	SET(TS_PLATFORM_WIN32 1)
 endif()
 
 if (UNIX)
-	SET(TS_PLATFORM_UNIX)
+	SET(TS_PLATFORM_UNIX 1)
 endif()
 
 if (APPLE)
-	SET(TS_PLATFORM_APPLE)
+	SET(TS_PLATFORM_APPLE 1)
 endif()
 
 CONFIGURE_FILE (
 	"${PROJECT_SOURCE_DIR}/tsconfig.h.in"
-	"${PROJECT_BINARY_DIR}/tsconfig.h"
+	"${PROJECT_BINARY_DIR}/cfg/tsconfig.h"
 )
 
-INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/")
+INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/cfg")
 
 ################################################################################################
 

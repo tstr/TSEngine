@@ -8,16 +8,16 @@ namespace ts
 {
 	class Window;
 
-	class ApplicationCore
+	class CApplicationCore
 	{
 	private:
 		
 		Window* m_window = nullptr;
-		
+
 	public:
 		
-		ApplicationCore(const char* cmdline);
-		~ApplicationCore();
+		CApplicationCore(const char* cmdline);
+		~CApplicationCore();
 		
 		virtual void onInit() {}
 		virtual void onShutdown() {}

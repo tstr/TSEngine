@@ -1,7 +1,7 @@
 #TSGRAPHICS
 
 SET(src_list
-
+	colour.h
 )
 
 ADD_LIBRARY(

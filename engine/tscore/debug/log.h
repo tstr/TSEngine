@@ -1,0 +1,86 @@
+/*
+	Logging api
+*/
+
+#include <ostream>
+#include <sstream>
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace ts
+{
+	enum ELogLevel
+	{
+		eLevelDebug = 0,
+		eLevelWarn = 1,
+		eLevelError = 2
+	};
+
+	class ILogStream
+	{
+	public:
+
+		virtual void write(const char* message, ELogLevel level) = 0;
+	};
+
+	class CNullLogStream : public ILogStream
+	{
+		void write(const char* message, ELogLevel level) override {}
+	};
+
+	class CLog
+	{
+	public:
+
+		CLog(ILogStream* s = nullptr) :
+			m_stream(s)
+		{}
+
+		void operator()(const char* message,
+			ELogLevel level,
+			char const* function,
+			char const* file,
+			int line)
+		{
+			m_stream->write(message, level);
+		}
+
+		void setStream(ILogStream* s)
+		{
+			m_stream = s;
+		}
+
+	private:
+
+		ELogLevel m_level = ELogLevel::eLevelDebug;
+		ILogStream* m_stream;
+	};
+
+	namespace global
+	{
+		inline CLog& getLogger()
+		{
+			static CNullLogStream g_nullStream;
+			static CLog g_log(&g_nullStream);
+			return g_log;
+		}
+	}
+
+#define tslogwrite(logger, message, level)		\
+	logger(                                     \
+	static_cast<std::ostringstream&>(           \
+		std::ostringstream().flush() << message \
+	).str().c_str(),                            \
+	level,										\
+	__FUNCTION__,                               \
+	__FILE__,                                   \
+	__LINE__                                    \
+  );
+
+#define tslog(message, level) tslogwrite(global::getLogger(), message, level)
+
+#define tslogsetstream(stream) global::getLogger().setStream(stream)
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

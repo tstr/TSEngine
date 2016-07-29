@@ -1,6 +1,6 @@
 
 SET(src_list
-	winmain.cpp
+	main.cpp
 	application.cpp
 	application.h
 )

@@ -4,7 +4,7 @@
 
 namespace ts
 {
-	class Application : public ApplicationCore
+	class Application : public CApplicationCore
 	{
 	private:
 
@@ -12,7 +12,7 @@ namespace ts
 
 	public:
 
-		Application(const char* cmdargs) : ApplicationCore(cmdargs)
+		Application(const char* cmdargs) : CApplicationCore(cmdargs)
 		{
 
 		}

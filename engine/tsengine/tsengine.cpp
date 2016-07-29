@@ -2,8 +2,10 @@
 	Engine definition
 */
 
-#include <tscore/platform/window.h>
 #include <tsengine.h>
+#include <tscore/platform/Window.h>
+#include <tscore/debug/assert.h>
+#include <tscore/system/info.h>
 
 using namespace ts;
 
@@ -15,15 +17,21 @@ private:
 
 public:
 
-	MainWindow() :
-		Window("application")
-	{}
+	MainWindow() : Window("application") {}
+
+	void onCreate(WindowEventArgs args) override
+	{
+		SSystemInfo inf;
+		getSystemInformation(inf);
+
+		Window::onCreate(args);
+	}
 
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ApplicationCore::ApplicationCore(const char* cmdline)
+CApplicationCore::CApplicationCore(const char* cmdline)
 {
 	m_window = (Window*)new MainWindow;
 
@@ -36,7 +44,7 @@ ApplicationCore::ApplicationCore(const char* cmdline)
 	m_window->create(rect);
 }
 
-ApplicationCore::~ApplicationCore()
+CApplicationCore::~CApplicationCore()
 {
 	onShutdown();
 
