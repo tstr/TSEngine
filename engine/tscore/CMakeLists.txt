@@ -10,8 +10,9 @@ SET(src_list
 	debug/assert.h
 	debug/assert.cpp
 	debug/log.h
+	debug/log.cpp
 	debug/profiling.h
-	
+
 	system/memory.h
 	system/thread.h
 	system/time.h

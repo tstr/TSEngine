@@ -7,6 +7,7 @@ SET(src_list
 
 ADD_EXECUTABLE(
 	application
+	WIN32		#build exe as a win32 application
 	${src_list}
 )
 

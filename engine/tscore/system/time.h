@@ -96,7 +96,7 @@ namespace ts
 		//Retrieves delta time between ticks in milliseconds
 		inline double deltaTime()
 		{
-			return ((1000.0 * (double)(vt.QuadPart - ut.QuadPart)) / (double)frequency.QuadPart);
+			return (((double)(vt.QuadPart - ut.QuadPart)) / (double)frequency.QuadPart);
 		}
 	};
 

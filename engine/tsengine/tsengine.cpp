@@ -5,8 +5,11 @@
 #include <tsengine.h>
 #include <tscore/platform/Window.h>
 #include <tscore/debug/assert.h>
+#include <tscore/debug/log.h>
 #include <tscore/system/info.h>
 #include <tscore/cmdargs.h>
+
+#include <iostream>
 
 using namespace ts;
 
@@ -24,6 +27,8 @@ public:
 	{
 		SSystemInfo inf;
 		getSystemInformation(inf);
+		
+		tslog((std::string)"Hello " + inf.userName, eLevelDebug);
 
 		Window::onCreate(args);
 	}

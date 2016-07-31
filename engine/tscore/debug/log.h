@@ -13,7 +13,8 @@ namespace ts
 	{
 		eLevelDebug = 0,
 		eLevelWarn = 1,
-		eLevelError = 2
+		eLevelError = 2,
+		eLevelProfile = 3
 	};
 
 	class ILogStream
@@ -23,11 +24,11 @@ namespace ts
 		virtual void write(const char* message, ELogLevel level) = 0;
 	};
 
-	class CNullLogStream : public ILogStream
+	class CDefaultLogStream : public ILogStream
 	{
-		void write(const char* message, ELogLevel level) override {}
+		void write(const char* message, ELogLevel level) override;
 	};
-
+	
 	class CLog
 	{
 	public:
@@ -36,14 +37,13 @@ namespace ts
 			m_stream(s)
 		{}
 
-		void operator()(const char* message,
+		void operator()(
+			const char* message,
 			ELogLevel level,
 			char const* function,
 			char const* file,
-			int line)
-		{
-			m_stream->write(message, level);
-		}
+			int line
+		);
 
 		void setStream(ILogStream* s)
 		{
@@ -60,21 +60,21 @@ namespace ts
 	{
 		inline CLog& getLogger()
 		{
-			static CNullLogStream g_nullStream;
-			static CLog g_log(&g_nullStream);
-			return g_log;
+			static CDefaultLogStream s_defaultStream;
+			static CLog s_log(&s_defaultStream);
+			return s_log;
 		}
 	}
 
-#define tslogwrite(logger, message, level)		\
-	logger(                                     \
-	static_cast<std::ostringstream&>(           \
-		std::ostringstream().flush() << message \
-	).str().c_str(),                            \
-	level,										\
-	__FUNCTION__,                               \
-	__FILE__,                                   \
-	__LINE__                                    \
+#define tslogwrite(logger, message, level)	 	 \
+	logger(                                      \
+	static_cast<std::ostringstream&>(            \
+		std::ostringstream().flush() << (message)\
+	).str().c_str(),                             \
+	level,										 \
+	__FUNCTION__,                                \
+	__FILE__,                                    \
+	__LINE__                                     \
   );
 
 #define tslog(message, level) tslogwrite(global::getLogger(), message, level)

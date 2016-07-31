@@ -1,21 +1,29 @@
-
+/*
+	Program entry point
+*/
 
 #include "application.h"
-#include <string>
+#include <tsconfig.h>
+#include <tscore/platform/console.h>
 
+#ifdef TS_PLATFORM_WIN32
 
-int main(int argc, char** argv)
+#include <Windows.h>
+
+int WINAPI WinMain(HINSTANCE module, HINSTANCE prevmodule, LPSTR cmdargs, int cmdShow)
 {
-	std::string cmdargs;
-	
-	if (argc > 1)
+	struct Console
 	{
-		for (int i = 1; i < argc; i++)
-		{
-			cmdargs += argv[i];
-			cmdargs += " ";
-		}
-	}
-	
-	ts::Application app(cmdargs.c_str());
+		Console() { ts::consoleOpen(); }
+		~Console() { ts::consoleClose(); }
+	} cnsl;
+
+	ts::Application app(cmdargs);
+	return 0;
 };
+
+#else
+
+#error no entry point specified for this platform
+
+#endif
