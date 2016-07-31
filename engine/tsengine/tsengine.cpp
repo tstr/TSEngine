@@ -6,6 +6,7 @@
 #include <tscore/platform/Window.h>
 #include <tscore/debug/assert.h>
 #include <tscore/system/info.h>
+#include <tscore/cmdargs.h>
 
 using namespace ts;
 
@@ -38,6 +39,8 @@ CApplicationCore::CApplicationCore(const char* cmdline)
 	WindowRect rect;
 	rect.w = 1280;
 	rect.h = 720;
+
+	CommandLineArgs args(cmdline);
 
 	onInit();
 

@@ -10,12 +10,15 @@ SET(src_list
 	debug/assert.h
 	debug/assert.cpp
 	debug/log.h
+	debug/profiling.h
 	
 	system/memory.h
 	system/thread.h
 	system/time.h
 	system/info.h
 	system/info.cpp
+	
+	io/stream.h
 	
 	maths/common.h
 	maths/functions.h
@@ -27,6 +30,8 @@ SET(src_list
 	
 	types.h
 	strings.h
+	cmdargs.h
+	cmdargs.cpp
 )
 
 ADD_LIBRARY(

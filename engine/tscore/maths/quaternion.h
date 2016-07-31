@@ -93,8 +93,11 @@ namespace ts
 
 		VECTOR_INLINE static Vector VECTOR_CALL transform(Vector v, Quaternion q) { return internal::XMVector3Rotate(v, q); }
 		
-		// Constants
-		static const Quaternion Identity;
+		//Identity quaternion
+		static Quaternion identity()
+		{
+			return Quaternion(internal::XMQuaternionIdentity());
+		}
 	};
 	
 	VECTOR_INLINE Quaternion VECTOR_CALL operator+ (Quaternion Q1, Quaternion Q2) { return Q1 += Q2; }
