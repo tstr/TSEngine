@@ -7,11 +7,20 @@
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 #include <tscore/system/info.h>
-#include <tscore/cmdargs.h>
+
+#include <tscore/platform/console.h>
+
+#include "cmdargs.h"
 
 #include <iostream>
 
 using namespace ts;
+
+namespace ts
+{
+	static byte _systemblock[sizeof(CEngineSystem)];
+	CEngineSystem* const gSystem = new(_systemblock) CEngineSystem;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -28,38 +37,80 @@ public:
 		SSystemInfo inf;
 		getSystemInformation(inf);
 		
-		tslog((std::string)"Hello " + inf.userName, eLevelDebug);
+		tsprint((std::string)"Hello " + inf.userName);
 
 		Window::onCreate(args);
+	}
+
+	void onClose(WindowEventArgs args) override
+	{
+		gSystem->shutdown();
 	}
 
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CApplicationCore::CApplicationCore(const char* cmdline)
+void CEngineSystem::init(const SEngineStartupParams& params)
 {
-	m_window = (Window*)new MainWindow;
+	m_pWindow = new MainWindow();
+	m_pApp = params.app;
+
+	tsassert(m_pApp);
 
 	WindowRect rect;
 	rect.w = 1280;
 	rect.h = 720;
 
-	CommandLineArgs args(cmdline);
+	CommandLineArgs args(params.commandArgs);
+
+	if (!args.isArgumentTag("noconsole"))
+	{
+		consoleOpen();
+	}
 
 	onInit();
 
-	m_window->create(rect);
+	//run main loop
+	m_pWindow->create(rect);
+
+	onShutdown();
 }
 
-CApplicationCore::~CApplicationCore()
+void CEngineSystem::shutdown()
 {
-	onShutdown();
+	
+}
 
-	if (m_window->isOpen())
-		m_window->close();
+//Event handlers
+void CEngineSystem::onShutdown()
+{
+	m_pApp->onShutdown();
 
-	delete m_window;
+	if (m_pWindow->isOpen())
+		m_pWindow->close();
+
+	consoleClose();
+
+	delete m_pApp;
+	delete m_pWindow;
+}
+
+void CEngineSystem::onInit()
+{
+	m_pApp->onInit();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CEngineSystem::CEngineSystem()
+{
+
+}
+
+CEngineSystem::~CEngineSystem()
+{
+	shutdown();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

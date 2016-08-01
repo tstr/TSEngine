@@ -31,8 +31,6 @@ SET(src_list
 	
 	types.h
 	strings.h
-	cmdargs.h
-	cmdargs.cpp
 )
 
 ADD_LIBRARY(

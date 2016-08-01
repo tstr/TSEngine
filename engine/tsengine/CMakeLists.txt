@@ -3,6 +3,8 @@
 SET(src_list
 	../tsengine.h
 	tsengine.cpp
+	cmdargs.cpp
+	cmdargs.h
 )
 
 ADD_LIBRARY(

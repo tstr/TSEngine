@@ -66,7 +66,7 @@ namespace ts
 		}
 	}
 
-#define tslogwrite(logger, message, level)	 	 \
+#define _tslogwrite(logger, message, level)	 	 \
 	logger(                                      \
 	static_cast<std::ostringstream&>(            \
 		std::ostringstream().flush() << (message)\
@@ -75,11 +75,11 @@ namespace ts
 	__FUNCTION__,                                \
 	__FILE__,                                    \
 	__LINE__                                     \
-  );
+  )
 
-#define tslog(message, level) tslogwrite(global::getLogger(), message, level)
-
-#define tslogsetstream(stream) global::getLogger().setStream(stream)
+#define tsprint(message) _tslogwrite(global::getLogger(), message, eLevelDebug)
+#define tswarn(message)	 _tslogwrite(global::getLogger(), message, eLevelWarn)
+#define tserror(message) _tslogwrite(global::getLogger(), message, eLevelError)
 
 }
 

@@ -5,9 +5,8 @@
 #pragma once
 
 #include <unordered_map>
-
-#include "types.h"
-#include "strings.h"
+#include <tscore/types.h>
+#include <tscore/strings.h>
 
 namespace ts
 {

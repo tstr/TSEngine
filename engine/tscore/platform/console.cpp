@@ -44,5 +44,7 @@ namespace ts
 		fclose(stdout);
 		fclose(stdin);
 		fclose(stderr);
+
+		g_active = false;
 	}
 }

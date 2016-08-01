@@ -11,5 +11,5 @@ using namespace ts;
 //todo: fix on init call
 void Application::onInit()
 {
-	std::cin.get();
+	
 }

@@ -3,6 +3,7 @@
 */
 
 #include "assert.h"
+#include "log.h"
 
 #include <Windows.h>
 #include <sstream>
@@ -31,12 +32,7 @@ namespace ts
 					<< "expression = '" << expr << "'\n"
 					<< "line = " << line << endl;
 
-				if (HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE))
-				{
-					SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_INTENSITY);
-					printf(s.str().c_str());
-					SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN);
-				}
+				tserror(s.str());
 
 				MessageBoxA(0, s.str().c_str(), "Assert", MB_ICONERROR);
 
