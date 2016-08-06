@@ -20,6 +20,10 @@ SET(src_list
 	system/info.cpp
 	
 	io/stream.h
+
+	containers/circularbuffer.h
+	containers/threadqueue.h
+	containers/stack.h
 	
 	maths/common.h
 	maths/functions.h
