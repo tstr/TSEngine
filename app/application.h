@@ -15,7 +15,7 @@ namespace ts
 		Application() {}
 
 		void onInit() override;
-		void onShutdown() override {}
+		void onDeinit() override {}
 		void onUpdate() override {}
 		void onRender() override {}
 

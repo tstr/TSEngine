@@ -12,7 +12,6 @@
 
 namespace ts
 {
-
 	template<typename type>
 	class ThreadQueue
 	{
@@ -26,19 +25,19 @@ namespace ts
 
 		type pop()
 		{
-			unique_lock<mutex> lk(m_mutex);
+			std::unique_lock<std::mutex> lk(m_mutex);
 
 			while (m_queue.empty())
 				m_notifier.wait(lk);
 
-			type val(move(m_queue.front()));
+			type val(std::move(m_queue.front()));
 			m_queue.pop();
-			return move(val);
+			return std::move(val);
 		}
 
 		void push(const type& val)
 		{
-			unique_lock<mutex> lk(m_mutex);
+			std::unique_lock<std::mutex> lk(m_mutex);
 			m_queue.push(val);
 			lk.unlock();
 			m_notifier.notify_all();
@@ -46,7 +45,7 @@ namespace ts
 
 		void push(type&& val)
 		{
-			unique_lock<mutex> lk(m_mutex);
+			std::unique_lock<std::mutex> lk(m_mutex);
 			m_queue.push(val);
 			lk.unlock();
 			m_notifier.notify_all();

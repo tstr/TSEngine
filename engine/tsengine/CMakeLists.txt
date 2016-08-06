@@ -2,6 +2,9 @@
 
 SET(src_list
 	../tsengine.h
+	event/event.h
+	event/event.cpp
+	event/messenger.h
 	tsengine.cpp
 	cmdargs.cpp
 	cmdargs.h

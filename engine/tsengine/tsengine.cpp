@@ -9,6 +9,7 @@
 #include <tscore/system/info.h>
 
 #include <tscore/platform/console.h>
+#include "event/messenger.h"
 
 #include "cmdargs.h"
 
@@ -21,6 +22,14 @@ namespace ts
 	static byte _systemblock[sizeof(CEngineSystem)];
 	CEngineSystem* const gSystem = new(_systemblock) CEngineSystem;
 }
+
+/*
+//todo: find a way to set program to exit correctly when console is closed
+static void consoleClosingHandlerFunc()
+{
+	gSystem->deinit();
+}
+*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -44,7 +53,7 @@ public:
 
 	void onClose(WindowEventArgs args) override
 	{
-		gSystem->shutdown();
+		gSystem->deinit();
 	}
 
 };
@@ -56,36 +65,43 @@ void CEngineSystem::init(const SEngineStartupParams& params)
 	m_pWindow = new MainWindow();
 	m_pApp = params.app;
 
+	CommandLineArgs args(params.commandArgs);
+
+	if (!args.isArgumentTag("noconsole"))
+	{
+		consoleOpen();
+		//setConsoleClosingHandler(consoleClosingHandlerFunc);
+	}
+
 	tsassert(m_pApp);
 
 	WindowRect rect;
 	rect.w = 1280;
 	rect.h = 720;
 
-	CommandLineArgs args(params.commandArgs);
-
-	if (!args.isArgumentTag("noconsole"))
-	{
-		consoleOpen();
-	}
-
 	onInit();
 
-	//run main loop
-	m_pWindow->create(rect);
+	m_pWindow->createAsync(rect);
 
-	onShutdown();
+	SEngineMessage msg;
+	do
+	{
+		m_reciever.get(msg);
+	}
+	while (msg.code != EEngineMessageCode::eEngineMessageDeinit);
+
+	onDeinit();
 }
 
-void CEngineSystem::shutdown()
+void CEngineSystem::deinit()
 {
-	
+	m_reciever.post(SEngineMessage(eEngineMessageDeinit));
 }
 
 //Event handlers
-void CEngineSystem::onShutdown()
+void CEngineSystem::onDeinit()
 {
-	m_pApp->onShutdown();
+	m_pApp->onDeinit();
 
 	if (m_pWindow->isOpen())
 		m_pWindow->close();
@@ -110,7 +126,7 @@ CEngineSystem::CEngineSystem()
 
 CEngineSystem::~CEngineSystem()
 {
-	shutdown();
+	//deinit();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

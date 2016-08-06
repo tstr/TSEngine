@@ -7,6 +7,8 @@
 #include <sstream>
 #include <Windows.h>
 
+#include <tscore/system/thread.h>
+
 #include <ctime>
 #include <iomanip>
 
@@ -23,19 +25,20 @@ void CLog::operator()(
 	int line)
 {
 	stringstream ss;
-	ss << "(" << function << ":" << line << ") >>> " << message;
+	ss << "[" << function << ":" << line << "] " << message;
 
 	m_stream->write(ss.str().c_str(), level);
 }
 
 void CDefaultLogStream::write(const char* message, ELogLevel level)
 {
+	static mutex s_mutex;
 
-	HANDLE hCon = GetStdHandle(STD_OUTPUT_HANDLE);
-
-	if (hCon)
+	if (HANDLE hCon = GetStdHandle(STD_OUTPUT_HANDLE))
 	{
-		const WORD defattrib = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+		lock_guard<mutex>lk(s_mutex);
+
+		const WORD defattrib = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY;
 
 		WORD attrib = defattrib;
 
@@ -47,10 +50,10 @@ void CDefaultLogStream::write(const char* message, ELogLevel level)
 			attrib = FOREGROUND_RED | FOREGROUND_INTENSITY;
 			break;
 		case eLevelWarn:
-			attrib = FOREGROUND_RED | BACKGROUND_GREEN | FOREGROUND_INTENSITY;
+			attrib = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
 			break;
 		case eLevelProfile:
-			attrib = FOREGROUND_GREEN;
+			attrib = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
 			break;
 		}
 

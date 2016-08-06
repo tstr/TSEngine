@@ -7,15 +7,16 @@
 #include <tsconfig.h>
 #include <tscore/strings.h>
 #include <tscore/system/memory.h>
+#include <tsengine/event/messenger.h>
 
 namespace ts
 {
 	class Window;
-	
+
 	struct IApplication
 	{
 		virtual void onInit() {}
-		virtual void onShutdown() {}
+		virtual void onDeinit() {}
 		virtual void onUpdate() {}
 		virtual void onRender() {}
 	};
@@ -33,10 +34,29 @@ namespace ts
 	{
 	private:
 
+		enum EEngineMessageCode
+		{
+			eEngineMessageNull = 0,
+			eEngineMessageInit = 1,
+			eEngineMessageDeinit = 2
+		};
+
+		struct SEngineMessage
+		{
+			EEngineMessageCode code = eEngineMessageNull;
+			uint64 a = 0;
+			uint64 b = 0;
+
+			SEngineMessage() {}
+			SEngineMessage(EEngineMessageCode c) : code(c) {}
+		};
+
 		Window* m_pWindow = nullptr;
 		IApplication* m_pApp = nullptr;
 
-		void onShutdown();
+		CMessageReciever<SEngineMessage> m_reciever;
+
+		void onDeinit();
 		void onInit();
 
 	public:
@@ -45,7 +65,7 @@ namespace ts
 		Window* getWindow() const { return m_pWindow; }
 
 		void init(const SEngineStartupParams& params);
-		void shutdown();
+		void deinit();
 
 		CEngineSystem();
 		~CEngineSystem();

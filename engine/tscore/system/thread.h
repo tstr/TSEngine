@@ -10,6 +10,8 @@
 #include <atomic>
 #include <queue>
 
+#include <tscore/containers/threadqueue.h>
+
 namespace ts
 {
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -78,47 +80,6 @@ namespace ts
 	*/
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//Thread safe queue container
-	template<typename type>
-	class ThreadQueue
-	{
-	private:
-
-		std::queue<type> m_queue;
-		mutex m_mutex;
-		condition_variable m_notifier;
-
-	public:
-
-		type pop()
-		{
-			unique_lock<mutex> lk(m_mutex);
-
-			while (m_queue.empty())
-				m_notifier.wait(lk);
-
-			type val(move(m_queue.front()));
-			m_queue.pop();
-			return move(val);
-		}
-
-		void push(const type& val)
-		{
-			unique_lock<mutex> lk(m_mutex);
-			m_queue.push(val);
-			lk.unlock();
-			m_notifier.notify_all();
-		}
-
-		void push(type&& val)
-		{
-			unique_lock<mutex> lk(m_mutex);
-			m_queue.push(val);
-			lk.unlock();
-			m_notifier.notify_all();
-		}
-	};
 
 	class ThreadPool
 	{

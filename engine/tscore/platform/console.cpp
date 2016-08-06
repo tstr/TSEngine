@@ -47,4 +47,21 @@ namespace ts
 
 		g_active = false;
 	}
+
+	static consoleClosingHandler_t s_handler;
+
+	static BOOL WINAPI internalConsoleClosingHandler(DWORD ctrltype)
+	{
+		if (ctrltype == CTRL_CLOSE_EVENT)
+			if (s_handler)
+				s_handler();
+
+		return true;
+	}
+
+	void setConsoleClosingHandler(consoleClosingHandler_t f)
+	{
+		s_handler = f;
+		tsassert(SetConsoleCtrlHandler(internalConsoleClosingHandler, true));
+	}
 }

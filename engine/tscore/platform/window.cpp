@@ -337,6 +337,7 @@ struct Window::Impl
 	void createAsync(const WindowRect& rect)
 	{
 		windowThread = thread(&Window::Impl::create, this, rect);
+		windowThread.detach();
 
 		while (!IsWindow(windowHandle));
 	}
