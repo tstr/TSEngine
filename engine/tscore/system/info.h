@@ -19,19 +19,19 @@ namespace ts
 	enum ECPUArchitecture : uint8
 	{
 		eCPUarchX86 = 1,
-		eCPUarchX64 = 2,
+		eCPUarchAMD64 = 2,
 		eCPUarchARM = 3
 	};
 
 	struct SSystemInfo
 	{
 		std::string userName;
-		//std::string osName;
+		std::string osName;
 		//uint32 osVersion;
 		
 		std::string cpuName;
 		//std::string cpuVendorName;
-		//ECpuVendorID cpuVendorID;
+		ECpuVendorID cpuVendorID;
 		ECPUArchitecture cpuArchitecture;
 		uint32 cpuProcessorCount;
 		//uint32 cpuFrequency; //Measured in MHz

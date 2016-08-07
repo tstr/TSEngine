@@ -77,9 +77,9 @@ namespace ts
 	__LINE__                                     \
   )
 
-#define tsprint(message) _tslogwrite(global::getLogger(), message, eLevelDebug)
-#define tswarn(message)	 _tslogwrite(global::getLogger(), message, eLevelWarn)
-#define tserror(message) _tslogwrite(global::getLogger(), message, eLevelError)
+#define tsprint(message) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelDebug)
+#define tswarn(message)	 _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelWarn)
+#define tserror(message) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelError)
 
 }
 

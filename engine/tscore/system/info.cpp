@@ -7,7 +7,14 @@
 #include <Windows.h>
 #include <Psapi.h>
 
-static std::string getCPUname();
+#include <tscore/debug/log.h>
+
+using namespace std;
+using namespace ts;
+
+static void getCPUname(string& name, const string& default = "");
+static void getOSname(string& name, const string& default = "");
+static ECpuVendorID getCPUvendorID();
 
 namespace ts
 {
@@ -24,6 +31,7 @@ namespace ts
 		info.userName = username;
 
 		//OS info
+		getOSname(info.osName, "Unknown");
 
 		//CPU info
 		SYSTEM_INFO sysinf;
@@ -35,14 +43,15 @@ namespace ts
 		switch (sysinf.wProcessorArchitecture)
 		{
 		case (PROCESSOR_ARCHITECTURE_AMD64) :
-			info.cpuArchitecture = eCPUarchX64; break;
+			info.cpuArchitecture = eCPUarchAMD64; break;
 		case (PROCESSOR_ARCHITECTURE_ARM) :
 			info.cpuArchitecture = eCPUarchARM; break;
 		case (PROCESSOR_ARCHITECTURE_INTEL) :
 			info.cpuArchitecture = eCPUarchX86; break;
 		}
 		
-		info.cpuName = getCPUname();
+		getCPUname(info.cpuName, "Unknown");
+		info.cpuVendorID = getCPUvendorID();
 
 		info.numDisplays = GetSystemMetrics(SM_CMONITORS);
 
@@ -74,13 +83,60 @@ namespace ts
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
-std::string getCPUname()
+void getOSname(string& name, const string& default)
+{
+	HKEY hKey = 0;
+	LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKey);
+	
+	name = default;
+
+	if (result == ERROR_SUCCESS)
+	{
+		BYTE buffer[128];
+		DWORD buffersize = sizeof(buffer);
+		result = RegQueryValueEx(hKey, "ProductName", 0, 0, buffer, &buffersize);
+
+		if (result == ERROR_SUCCESS)
+		{
+			name = (const char*)buffer;
+		}
+	}
+	else if (result == ERROR_FILE_NOT_FOUND)
+	{
+		tserror("ERROR_FILE_NOT_FOUND");
+	}
+}
+
+ECpuVendorID getCPUvendorID()
+{
+	int regs[4] = { 0 };
+	char vendor[13];
+	__cpuid(regs, 0);              // mov eax,0; cpuid
+	memcpy(vendor, &regs[1], 4);   // copy EBX
+	memcpy(vendor + 4, &regs[3], 4); // copy EDX
+	memcpy(vendor + 8, &regs[2], 4); // copy ECX
+	vendor[12] = '\0';
+
+	if (compare_string_weak(vendor, "GenuineIntel"))
+	{
+		return eCpuIntel;
+	}
+	if (compare_string_weak(vendor, "AuthenticAMD"))
+	{
+		return eCpuAMD;
+	}
+
+	return eCpuUnknown;
+}
+
+void getCPUname(string& buffer, const string& default)
 {
 	int CPUInfo[4] = { -1 };
 
 	unsigned nExIds, i = 0;
 
 	char CPUname[0x40];
+	ZeroMemory(CPUname, sizeof(CPUname));
 
 	__cpuid(CPUInfo, 0x80000000);
 
@@ -100,11 +156,12 @@ std::string getCPUname()
 
 	}
 
-	std::string buffer(CPUname);
+	string CPUnameBuffer(CPUname);
 
-	while (buffer.front() == ' ') buffer.erase(0, 1);
+	while (CPUnameBuffer.front() == ' ')
+		CPUnameBuffer.erase(0, 1);
 
-	return buffer.c_str();
+	buffer = move(CPUnameBuffer);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
