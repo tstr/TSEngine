@@ -3,7 +3,7 @@
 */
 
 #include <ostream>
-#include <sstream>
+#include <tscore/strings.h>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -66,20 +66,18 @@ namespace ts
 		}
 	}
 
-#define _tslogwrite(logger, message, level)	 	 \
+#define _tslogwrite(logger, message, level, ...) \
 	logger(                                      \
-	static_cast<std::ostringstream&>(            \
-		std::ostringstream().flush() << (message)\
-	).str().c_str(),                             \
+	ts::format(message, ##__VA_ARGS__).c_str(),  \
 	level,										 \
 	__FUNCTION__,                                \
 	__FILE__,                                    \
 	__LINE__                                     \
   )
 
-#define tsprint(message) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelDebug)
-#define tswarn(message)	 _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelWarn)
-#define tserror(message) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelError)
+#define tsprint(message, ...) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelDebug, ##__VA_ARGS__)
+#define tswarn(message, ...)  _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelWarn, ##__VA_ARGS__)
+#define tserror(message, ...) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelError, ##__VA_ARGS__)
 
 }
 
