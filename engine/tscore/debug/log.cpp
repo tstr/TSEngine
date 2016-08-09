@@ -5,7 +5,7 @@
 #include "log.h"
 #include <iostream>
 #include <sstream>
-#include <Windows.h>
+#include <windows.h>
 
 #include <tscore/system/thread.h>
 
@@ -44,7 +44,7 @@ void CDefaultLogStream::write(const char* message, ELogLevel level)
 
 		switch (level)
 		{
-		case eLevelDebug:
+		case eLevelInfo:
 			break;
 		case eLevelError:
 			attrib = FOREGROUND_RED | FOREGROUND_INTENSITY;

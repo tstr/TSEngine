@@ -128,8 +128,9 @@ namespace ts
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 	//Compares two strings in a non case sensitive way
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	static bool compare_string_weak(const std::string& str0, const std::string& str1)
 	{
 		if (str0.size() != str1.size()) return false;
@@ -142,6 +143,82 @@ namespace ts
 
 		return true;
 	}
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//Fixed size string class - exists on the stack
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<size_t n>
+	class StaticString
+	{
+	private:
+
+		static_assert(n > 0, "number of chars must be greater than zero");
+		char m_chars[n];
+
+	public:
+
+		StaticString()
+		{
+			memset(m_chars, 0, n);
+		}
+
+		StaticString(const char* str) :
+			this->StaticString()
+		{
+			set(str);
+		}
+
+		StaticString(const std::string& str) :
+			this->StaticString(str.c_str())
+		{}
+
+		inline StaticString& operator=(const StaticString<n>& str)
+		{
+			set(str.m_chars);
+		}
+
+		inline void set(const std::string& str)
+		{
+			set(str.c_str());
+		}
+
+		inline void set(const char* str)
+		{
+			size_t len = strlen(str);
+			strncpy_s(m_chars, str, (len > n) ? n : len);
+		}
+
+		inline const char* get() const
+		{
+			return m_chars;
+		}
+
+		inline void get(std::string& str) const
+		{
+			str = std::string(m_chars);
+		}
+
+		inline char at(size_t i) const
+		{
+			return m_chars[i];
+		}
+
+		inline char operator[](size_t i) const
+		{
+			return at(i);
+		}
+
+		inline char& at(size_t i)
+		{
+			return m_chars[i];
+		}
+
+		inline char& operator[](size_t i)
+		{
+			return at(i);
+		}
+	};
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

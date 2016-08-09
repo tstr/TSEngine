@@ -22,5 +22,8 @@ namespace ts
 	typedef wchar_t wchar;
 	typedef unsigned char byte;
 
+	typedef int64 intptr;
+	typedef int64 ptrdiff;
+
 	typedef uint32 uint;
 }

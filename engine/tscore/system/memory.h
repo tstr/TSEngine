@@ -32,8 +32,8 @@ namespace ts
 		//Memory block type
 		typedef void* block;
 
-		virtual block Allocate(size_t sz) = 0;
-		virtual void Free(block mem) = 0;
+		virtual block allocate(size_t sz) = 0;
+		virtual void free(block mem) = 0;
 	};
 
 	/////////////////////////////////////////////////////////////////////////////
@@ -42,9 +42,17 @@ namespace ts
 	{
 	public:
 
-		block Allocate(size_t sz) { return malloc(sz); }
-		void Free(block mem) { free(mem); }
+		block allocate(size_t sz) override { return malloc(sz); }
+		void free(block mem) override { free(mem); }
 	};
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template<typename t>
+	using UniquePtr = std::unique_ptr<t>;
+
+	template<typename t>
+	using SharedPtr = std::shared_ptr<t>;
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
 

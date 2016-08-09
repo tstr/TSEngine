@@ -8,7 +8,7 @@
 
 namespace ts
 {
-	class Window;
+	class CWindow;
 
 	enum EWindowEvent : uint32
 	{
@@ -31,15 +31,15 @@ namespace ts
 		EnumMax
 	};
 
-	struct WindowEventArgs
+	struct SWindowEventArgs
 	{
-		Window* window = nullptr;
+		CWindow* pWindow = nullptr;
 		EWindowEvent eventcode = EWindowEvent::eEventNull;
-		uint64 a = 0; //lparam
-		uint64 b = 0; //wparam
+		uint64 a = 0; //lparam (Win32)
+		uint64 b = 0; //wparam (Win32)
 	};
 
-	struct WindowRect
+	struct SWindowRect
 	{
 		uint32 x = 0;
 		uint32 y = 0;
@@ -47,22 +47,20 @@ namespace ts
 		uint32 h = 0;
 	};
 
-	struct IWindowEventhandler
+	struct SWindowDesc
 	{
-		EWindowEvent eventcode = EWindowEvent::eEventNull;
-		bool handled = true;
-
-		virtual void execute(WindowEventArgs args) = 0;
+		std::string title;
+		SWindowRect rect;
+		void* appInstance = nullptr;
 	};
 
-	class Window
+	//Window class - represents an application window
+	class CWindow
 	{
 	private:
 
 		struct Impl;
 		Impl* pImpl = nullptr;
-
-		int defaultEventhandler(uint32 msg, uint64 a, uint64 b);
 
 		struct IInvoker
 		{
@@ -73,17 +71,23 @@ namespace ts
 
 	public:
 
-		Window(const char* title);
-		~Window();
+		CWindow(const SWindowDesc& desc);
+		~CWindow();
 			
-		Window(const Window&) = delete;
-		Window(Window&& mov) { pImpl = mov.pImpl; mov.pImpl = nullptr; }
+		CWindow(const CWindow&) = delete;
+		CWindow(CWindow&& mov) { pImpl = mov.pImpl; mov.pImpl = nullptr; }
 
-		bool setEventHandler(EWindowEvent e, IWindowEventhandler* handler);
+		struct IEventListener
+		{
+			virtual int onEvent(const SWindowEventArgs& args) = 0;
+		};
 
-		void create(WindowRect);
-		void createAsync(WindowRect);
+		void setEventListener(IEventListener* listener);
+
+		void open(int show = 0);
 		void close();
+
+		bool isOpen() const;
 
 		template<typename t>
 		void invoke(t _f)
@@ -106,32 +110,12 @@ namespace ts
 			invoke_internal(&i);
 		}
 
-		//void Invoke(const std::function<void()>& f);
-		bool isOpen() const;
+		//todo: move these methods to CGraphicsModule when it is ready
 		bool isFullscreen() const;
 		void setFullscreen(bool on);
 
-		uint64 id() const;
+		intptr id() const;
 		void raiseEvent(EWindowEvent e, uint64 a, uint64 b);
-		void msgBox(const char* text, const char* caption = "");
-
-		void setTitle(const char* title);
-
-		//Default event handlers
-		virtual void onCreate(WindowEventArgs e);
-		virtual void onDestroy(WindowEventArgs e);
-		virtual void onClose(WindowEventArgs e);
-		virtual void onResize(WindowEventArgs e);
-		virtual void onInput(WindowEventArgs e);
-		virtual void onActivate(WindowEventArgs e);
-		virtual void onDraw(WindowEventArgs e);
-		virtual void onSetfocus(WindowEventArgs e);
-		virtual void onKillfocus(WindowEventArgs e);
-		virtual void onKeydown(WindowEventArgs e);
-		virtual void onKeyup(WindowEventArgs e);
-		virtual void onScroll(WindowEventArgs e);
-		virtual void onMouseDown(WindowEventArgs e);
-		virtual void onMouseUp(WindowEventArgs e);
-		virtual void onMouseMove(WindowEventArgs e);
+		void messageBox(const char* text, const char* caption = "");
 	};
 }

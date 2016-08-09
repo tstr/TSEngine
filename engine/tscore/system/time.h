@@ -8,7 +8,7 @@
 
 #ifdef TS_PLATFORM_WIN32
 
-#include <Windows.h>
+#include <windows.h>
 #include <ctime>
 
 namespace ts

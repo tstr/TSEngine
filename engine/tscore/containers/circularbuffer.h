@@ -1,5 +1,5 @@
 /*
-	Thread safe queue container	
+	Static and dynamic circular buffer containers
 */
 
 #pragma once

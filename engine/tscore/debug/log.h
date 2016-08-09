@@ -2,7 +2,6 @@
 	Logging api
 */
 
-#include <ostream>
 #include <tscore/strings.h>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -11,7 +10,7 @@ namespace ts
 {
 	enum ELogLevel
 	{
-		eLevelDebug = 0,
+		eLevelInfo = 0,
 		eLevelWarn = 1,
 		eLevelError = 2,
 		eLevelProfile = 3
@@ -52,7 +51,7 @@ namespace ts
 
 	private:
 
-		ELogLevel m_level = ELogLevel::eLevelDebug;
+		ELogLevel m_level = ELogLevel::eLevelInfo;
 		ILogStream* m_stream;
 	};
 
@@ -68,16 +67,16 @@ namespace ts
 
 #define _tslogwrite(logger, message, level, ...) \
 	logger(                                      \
-	ts::format(message, ##__VA_ARGS__).c_str(),  \
+	ts::format(message, __VA_ARGS__).c_str(),	 \
 	level,										 \
 	__FUNCTION__,                                \
 	__FILE__,                                    \
 	__LINE__                                     \
   )
 
-#define tsprint(message, ...) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelDebug, ##__VA_ARGS__)
-#define tswarn(message, ...)  _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelWarn, ##__VA_ARGS__)
-#define tserror(message, ...) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelError, ##__VA_ARGS__)
+#define tsinfo(message, ...) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelInfo, __VA_ARGS__)
+#define tswarn(message, ...)  _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelWarn, __VA_ARGS__)
+#define tserror(message, ...) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelError, __VA_ARGS__)
 
 }
 

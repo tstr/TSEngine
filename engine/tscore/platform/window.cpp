@@ -1,26 +1,27 @@
 /*
-	Windowing system
+	Window system
 */
+
+#include <tsconfig.h>
 
 #include <array>
 #include <atomic>
 #include <map>
-#include <thread>
 
 #include <Windows.h>
-#include <windowsx.h> //todo: use the macros
+#include <Windowsx.h> //todo: use the macros
 
-#include "window.h"
+#include "Window.h"
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 
-//#define USE_VISUAL_STYLES
+#define USE_VISUAL_STYLES
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef USE_VISUAL_STYLES
+#if defined USE_VISUAL_STYLES && defined TS_PLATFORM_WIN32
 
-#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#pragma comment(linker,"/manifestdependency:\"type='Win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #include <CommCtrl.h>
 
@@ -52,30 +53,17 @@ static bool EnableVisualStyles()
 
 using namespace ts;
 
-#define WMO_CREATE (WM_USER + 0x0001)
-#define WMO_INVOKE (WM_USER + 0x0002)
-#define WMO_DESTROY WM_DESTROY
+//Custom window event codes
+#define TSM_CREATE (WM_USER + 0x0001)
+#define TSM_INVOKE (WM_USER + 0x0002)
+#define TSM_DESTROY WM_DESTROY
 
-#define WINDOW_MAX_EVENTHANDLERS 32
-
-//Declare default event handler
-#define DECLARE_EVENTHANDLER(index, eventcode, handler_func)\
-	windowDefaultEventhandlers[index].fptr = handler_func ;\
-	windowEventhandlerTable[EventCodes.GetWin32MessageEnum(eventcode)].eventhandler = &windowDefaultEventhandlers[index]
 
 enum Win32flags
 {
 	win_registered = 1,
-	win_open = 2,
+	win_open	   = 2,
 	win_borderless = 4
-};
-
-struct Win32Rect
-{
-	UINT x;
-	UINT y;
-	UINT w;
-	UINT h;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,6 +71,7 @@ struct Win32Rect
 using namespace std;
 using namespace ts;
 
+//Maps a EWindowEvent enum to it's corresponding windows specific WM_* event code
 static const class Win32EventEnums
 {
 private:
@@ -98,8 +87,8 @@ public:
 		m_windowEvents[EWindowEvent::eEventInput] = WM_INPUT;
 		m_windowEvents[EWindowEvent::eEventActivate] = WM_ACTIVATE;
 		m_windowEvents[EWindowEvent::eEventResize] = WM_SIZE;
-		m_windowEvents[EWindowEvent::eEventCreate] = WMO_CREATE;
-		m_windowEvents[EWindowEvent::eEventDestroy] = WMO_DESTROY;
+		m_windowEvents[EWindowEvent::eEventCreate] = TSM_CREATE;
+		m_windowEvents[EWindowEvent::eEventDestroy] = TSM_DESTROY;
 		m_windowEvents[EWindowEvent::eEventClose] = WM_CLOSE;
 		m_windowEvents[EWindowEvent::eEventDraw] = WM_PAINT;
 		m_windowEvents[EWindowEvent::eEventSetfocus] = WM_SETFOCUS;
@@ -114,7 +103,7 @@ public:
 
 	EWindowEvent GetWindowEventEnum(uint32 w32code) const
 	{
-		//return m_windowEvents.at(eventcodes);
+		//return m_CWindowEvents.at(eventcodes);
 		EWindowEvent eventcode = eEventNull;
 		
 		for (uint32 i = 0; i < m_windowEvents.size(); i++)
@@ -122,6 +111,7 @@ public:
 			if (m_windowEvents[i] == w32code)
 			{
 				eventcode = (EWindowEvent)i;
+				break;
 			}
 		}
 
@@ -137,9 +127,9 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Window::Impl
+struct CWindow::Impl
 {
-	Window* window = nullptr;
+	CWindow* window = nullptr;
 	HWND windowHandle;
 	WNDCLASSEX windowClass;
 	HMODULE windowModule;
@@ -147,59 +137,23 @@ struct Window::Impl
 	string windowClassname;
 	string windowTitle;
 
-	thread windowThread;
+	SWindowRect size;
+	SWindowRect sizeCache;
 
-	Win32Rect size;
-	Win32Rect sizeCache;
+	CWindow::IEventListener* windowEventListener = nullptr;
 
 	atomic<int> flags = 0;
 
-	struct Event
-	{
-		EWindowEvent eventcode = EWindowEvent(0);
-		IWindowEventhandler* eventhandler = nullptr;
-	};
 
-	typedef void(Window::*WindowDefaultEventhandlerPtr)(WindowEventArgs);
-
-	struct DefaultEventhandler : public IWindowEventhandler
-	{
-		WindowDefaultEventhandlerPtr fptr = nullptr;
-
-		void execute(WindowEventArgs e) override
-		{
-			(e.window->*fptr)(e);
-		}
-	};
-
-	DefaultEventhandler windowDefaultEventhandlers[WINDOW_MAX_EVENTHANDLERS];
-	map<uint32, Event> windowEventhandlerTable;
-
-	Impl(Window* window, const char* t) :
+	Impl(CWindow* window, const SWindowDesc& desc) :
 		window(window),
 		windowClassname("tsAppWindow"),
-		windowTitle(t)
+		windowTitle(desc.title),
+		size(desc.rect)
 	{
-		DECLARE_EVENTHANDLER(0, EWindowEvent::eEventCreate, &Window::onCreate);
-		DECLARE_EVENTHANDLER(1, EWindowEvent::eEventActivate, &Window::onActivate);
-		DECLARE_EVENTHANDLER(2, EWindowEvent::eEventClose, &Window::onClose);
-		DECLARE_EVENTHANDLER(3, EWindowEvent::eEventDestroy, &Window::onDestroy);
-		DECLARE_EVENTHANDLER(4, EWindowEvent::eEventInput, &Window::onInput);
-		DECLARE_EVENTHANDLER(5, EWindowEvent::eEventMouseMove, &Window::onMouseMove);
-		DECLARE_EVENTHANDLER(6, EWindowEvent::eEventResize, &Window::onResize);
-		DECLARE_EVENTHANDLER(7, EWindowEvent::eEventDraw, &Window::onDraw);
-		DECLARE_EVENTHANDLER(8, EWindowEvent::eEventSetfocus, &Window::onSetfocus);
-		DECLARE_EVENTHANDLER(9, EWindowEvent::eEventKillfocus, &Window::onKillfocus);
-		DECLARE_EVENTHANDLER(10, EWindowEvent::eEventKeydown, &Window::onKeydown);
-		DECLARE_EVENTHANDLER(11, EWindowEvent::eEventKeyup, &Window::onKeyup);
-		DECLARE_EVENTHANDLER(12, EWindowEvent::eEventScroll, &Window::onScroll);
-		DECLARE_EVENTHANDLER(13, EWindowEvent::eEventMouseDown, &Window::onMouseDown);
-		DECLARE_EVENTHANDLER(14, EWindowEvent::eEventMouseUp, &Window::onMouseUp);
+		windowModule = (HMODULE)desc.appInstance;
 
-		//Win32 window class
-
-		windowModule = GetModuleHandle(0);
-
+		//Set win32 window class values
 		ZeroMemory(&windowClass, sizeof(WNDCLASSEX));
 
 		windowClass.cbSize = sizeof(WNDCLASSEX);
@@ -207,21 +161,20 @@ struct Window::Impl
 		windowClass.cbWndExtra = 0;
 
 		windowClass.hInstance = windowModule;
-		windowClass.lpfnWndProc = (WNDPROC)&Window::Impl::WndProc;
+		windowClass.lpfnWndProc = (WNDPROC)&CWindow::Impl::WndProc;
 		windowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 
 		windowClass.lpszClassName = windowClassname.c_str();
 		windowClass.lpszMenuName = 0;
 
-		//windowClass.hbrBackground = HBRUSH(GetStockObject(BLACK_BRUSH));
-		windowClass.hbrBackground = 0;
+		windowClass.hbrBackground = HBRUSH(GetStockObject(WHITE_BRUSH));
+		//windowClass.hbrBackground = 0;
 
 		windowClass.hCursor = LoadCursor(0, IDC_ARROW);
 		windowClass.hIcon = LoadIcon(0, IDI_APPLICATION);
 		windowClass.hIconSm = 0;
 
-		if (!RegisterClassEx(&windowClass))
-			throw exception("Unabled to register Win32 window");
+		tsassert(RegisterClassEx(&windowClass));
 
 		flags |= win_registered;
 	}
@@ -233,12 +186,7 @@ struct Window::Impl
 		//Destroy window if it is still open
 		if (flags & win_open)
 		{
-			SendMessageA(windowHandle, WM_DESTROY, 0, 0);
-
-			if (windowThread.joinable())
-				windowThread.join();
-
-			flags &= ~win_open;
+			window->close();
 		}
 
 		tsassert(UnregisterClass(windowClassname.c_str(), windowModule));
@@ -248,33 +196,33 @@ struct Window::Impl
 
 	static LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	{
-		auto wnd = reinterpret_cast<Window::Impl*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+		auto wnd = reinterpret_cast<CWindow::Impl*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
 		if (wnd)
 		{
-			if (msg == WMO_INVOKE)
+			if (msg == TSM_INVOKE)
 			{
-				auto f = (Window::IInvoker*)wparam;
+				auto f = (CWindow::IInvoker*)wparam;
 				if (f) f->execute();
 				return 0;
 			}
 
-			const map<uint32, Window::Impl::Event>::iterator& it = wnd->windowEventhandlerTable.find(msg);
-
-			if (it != wnd->windowEventhandlerTable.end())
+			EWindowEvent code = EventCodes.GetWindowEventEnum(msg);
+			
+			if (code != EWindowEvent::eEventNull)
 			{
-				const Window::Impl::Event& e = it->second;
-
-				if (e.eventhandler)
+				if (wnd->windowEventListener != nullptr)
 				{
-					WindowEventArgs args;
-					args.window = wnd->window;
+					SWindowEventArgs args;
+					args.pWindow = wnd->window;
 					args.eventcode = EventCodes.GetWindowEventEnum(msg);
 					args.a = lparam;
 					args.b = wparam;
-					e.eventhandler->execute(args);
 
-					//return 0;
+					if (wnd->windowEventListener->onEvent(args) == 0)
+					{
+						return DefWindowProc(hwnd, msg, wparam, lparam);
+					}
 				}
 			}
 		}
@@ -282,12 +230,8 @@ struct Window::Impl
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
 
-	void create(const WindowRect& rect)
+	void open(int showCmd)
 	{
-		size.x = rect.x;
-		size.y = rect.y;
-		size.h = rect.h;
-		size.w = rect.w;
 
 #ifdef USE_VISUAL_STYLES
 		tsassert(EnableVisualStyles());
@@ -308,15 +252,14 @@ struct Window::Impl
 			0
 		);
 
-		if (!IsWindow(windowHandle))
-		{
-			throw exception("Failed to create win32 window");
-		}
+		tsassert(IsWindow(windowHandle));
+
+		ShowWindow(windowHandle, showCmd);
 
 		flags |= win_open;
 
 		SetWindowLongPtr(windowHandle, GWLP_USERDATA, LONG_PTR(this));
-		SendMessage(windowHandle, WMO_CREATE, 0, 0);
+		SendMessage(windowHandle, TSM_CREATE, 0, 0);
 
 		MSG msg;
 		ZeroMemory(&msg, sizeof(MSG));
@@ -324,34 +267,24 @@ struct Window::Impl
 		UpdateWindow(windowHandle);
 
 		while (BOOL ret = GetMessage(&msg, NULL, 0, 0))
-		{
-			tsassert(ret >= 0);
-			
+		{			
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
 
 		flags &= ~win_open;
 	}
-
-	void createAsync(const WindowRect& rect)
-	{
-		windowThread = thread(&Window::Impl::create, this, rect);
-		windowThread.detach();
-
-		while (!IsWindow(windowHandle));
-	}
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Window::Window(const char* t) :
-	pImpl(new Impl(this, t))
+CWindow::CWindow(const SWindowDesc& desc) :
+	pImpl(new Impl(this, desc))
 {
 
 }
 
-Window::~Window()
+CWindow::~CWindow()
 {
 	if (pImpl)
 	{
@@ -361,28 +294,15 @@ Window::~Window()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool Window::setEventHandler(EWindowEvent ecode, IWindowEventhandler* handler)
-{	
-	if (uint32 code = EventCodes.GetWin32MessageEnum(ecode))
-	{
-		Impl::Event& e = pImpl->windowEventhandlerTable[code];
-		e.eventhandler = handler;
-		e.eventcode = ecode;
-
-		return true;
-	}
-
-	return false;
-}
-
-int Window::defaultEventhandler(uint32 msg, uint64 a, uint64 b)
+void CWindow::setEventListener(IEventListener* listener)
 {
-	return (int)DefWindowProc(pImpl->windowHandle, msg, a, b);
+	//todo: actually make thread safe
+	pImpl->windowEventListener = listener;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Window::setFullscreen(bool on)
+void CWindow::setFullscreen(bool on)
 {
 	if (on)
 	{
@@ -431,12 +351,12 @@ void Window::setFullscreen(bool on)
 	}
 }
 
-bool Window::isFullscreen() const
+bool CWindow::isFullscreen() const
 {
 	return ((pImpl->flags & win_borderless) != 0);
 }
 
-bool Window::isOpen() const
+bool CWindow::isOpen() const
 {
 	return ((pImpl->flags & win_open) != 0);
 }
@@ -444,127 +364,36 @@ bool Window::isOpen() const
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void Window::create(WindowRect r)
+void CWindow::open(int showCmd)
 {
-	pImpl->create(r);
+	pImpl->open(showCmd);
 }
 
-void Window::createAsync(WindowRect r)
+void CWindow::close()
 {
-	pImpl->createAsync(r);
-}
-
-void Window::close()
-{
-	raiseEvent(EWindowEvent::eEventDestroy, 0, 0);
+	raiseEvent(EWindowEvent::eEventClose, 0, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint64 Window::id() const
+intptr CWindow::id() const
 {
 	return (uint64)pImpl->windowHandle;
 }
 
-void Window::msgBox(const char* text, const char* caption)
+void CWindow::messageBox(const char* text, const char* caption)
 {
 	MessageBoxA(pImpl->windowHandle, text, caption, 0);
 }
 
-void Window::raiseEvent(EWindowEvent e, uint64 a, uint64 b)
+void CWindow::raiseEvent(EWindowEvent e, uint64 a, uint64 b)
 {
 	SendMessage(pImpl->windowHandle, EventCodes.GetWin32MessageEnum(e), a, b);
 }
 
-void Window::setTitle(const char* title)
+void CWindow::invoke_internal(CWindow::IInvoker* i)
 {
-	SetWindowTextA(pImpl->windowHandle, title);
-}
-
-void Window::invoke_internal(Window::IInvoker* i)
-{
-	SendMessageA(pImpl->windowHandle, WMO_INVOKE, (WPARAM)i, 0);
+	SendMessageA(pImpl->windowHandle, TSM_INVOKE, (WPARAM)i, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Default event handlers
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void Window::onCreate(WindowEventArgs e)
-{
-	//defaultEventhandler(WM_CREATE, e.a, e.b);
-}
-
-void Window::onDestroy(WindowEventArgs e)
-{
-	PostQuitMessage(0);
-}
-
-void Window::onClose(WindowEventArgs e)
-{
-	this->raiseEvent(EWindowEvent::eEventDestroy, 0, 0);
-}
-
-void Window::onResize(WindowEventArgs e)
-{
-
-}
-
-void Window::onMouseMove(WindowEventArgs e)
-{
-
-}
-
-void Window::onInput(WindowEventArgs e)
-{
-
-}
-
-void Window::onActivate(WindowEventArgs e)
-{
-
-}
-
-void Window::onDraw(WindowEventArgs e)
-{
-	//PAINTSTRUCT ps;
-	//BeginPaint(pImpl->windowHandle, &ps);
-	//EndPaint(pImpl->windowHandle, &ps);
-	
-	//defaultEventhandler(WM_PAINT, e.a, e.b);
-}
-
-void Window::onSetfocus(WindowEventArgs e)
-{
-	//defaultEventhandler(WM_SETFOCUS, e.a, e.b);
-}
-
-void Window::onKillfocus(WindowEventArgs e)
-{
-	//defaultEventhandler(WM_KILLFOCUS, e.a, e.b);
-}
-
-void Window::onKeydown(WindowEventArgs e)
-{
-
-}
-
-void Window::onKeyup(WindowEventArgs e)
-{
-
-}
-
-void Window::onScroll(WindowEventArgs e)
-{
-
-}
-
-void Window::onMouseDown(WindowEventArgs e)
-{
-
-}
-
-void Window::onMouseUp(WindowEventArgs e)
-{
-
-}

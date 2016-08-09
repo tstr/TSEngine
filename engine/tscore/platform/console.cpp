@@ -27,7 +27,7 @@ namespace ts
 			
 			tsassert(!(e = freopen_s(&fp, "CONOUT$", "w", stdout)));
 			tsassert(!(e = freopen_s(&fp, "CONIN$", "r", stdin)));
-			tsassert(!(e = freopen_s(&fp, "CONERR$", "w", stderr)));
+			//tsassert(!(e = freopen_s(&fp, "CONERR$", "w", stderr))); //todo: fix opening of stderr
 
 			//Synchronise with standard library console functions/objects
 			std::ios::sync_with_stdio();
@@ -41,9 +41,11 @@ namespace ts
 		if (!g_active)
 			return;
 
-		fclose(stdout);
-		fclose(stdin);
-		fclose(stderr);
+		//fclose(stdout);
+		//fclose(stderr);
+		//fclose(stdin);
+
+		//WriteConsoleA(GetStdHandle(STD_INPUT_HANDLE), L"\r", 1, NULL, NULL);
 
 		g_active = false;
 	}

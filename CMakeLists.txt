@@ -40,7 +40,7 @@ function(copy_source_groups)
 		# Remove common directory prefix to make the group
 		string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" GROUP "${PARENT_DIR}")
 
-		# Make sure we are using windows slashes
+		# Make sure we are using CWindows slashes
 		string(REPLACE "/" "\\" GROUP "${GROUP}")
 
 		set(GROUP "src\\${GROUP}")

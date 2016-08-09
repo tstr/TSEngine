@@ -4,7 +4,7 @@
 
 #include "info.h"
 
-#include <Windows.h>
+#include <windows.h>
 #include <Psapi.h>
 
 #include <tscore/debug/log.h>
@@ -71,7 +71,7 @@ namespace ts
 		status.dwLength = sizeof(status);
 		GlobalMemoryStatusEx(&status);
 
-		info.mCapacity = status.ullTotalPhys / 1024;
+		info.mCapacity = status.ullTotalPhys;
 		//info.memGlobalPercentageUsage = (uint8)status.dwMemoryLoad;
 
 		PROCESS_MEMORY_COUNTERS pmc;
@@ -86,7 +86,7 @@ namespace ts
 void getOSname(string& name, const string& default)
 {
 	HKEY hKey = 0;
-	LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKey);
+	LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\windows NT\\CurrentVersion", 0, KEY_READ, &hKey);
 	
 	name = default;
 

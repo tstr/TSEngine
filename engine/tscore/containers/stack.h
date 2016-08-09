@@ -1,5 +1,5 @@
 /*
-	Thread safe queue container	
+	Stack container
 */
 
 #pragma once
@@ -12,7 +12,7 @@ namespace ts
 	{
 	private:
 
-		BYTE* m_ptr = nullptr;
+		byte* m_ptr = nullptr;
 		size_t m_capacity = 0;
 		ptrdiff_t m_writeOffset = 0; //Write pointer
 		ptrdiff_t m_readOffset = 0;  //Read pointer
@@ -26,7 +26,7 @@ namespace ts
 
 		Stack(size_t reserve)
 		{
-			m_ptr = new BYTE[reserve];
+			m_ptr = new byte[reserve];
 		}
 
 		~Stack()

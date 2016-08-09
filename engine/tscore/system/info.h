@@ -42,7 +42,7 @@ namespace ts
 	
 	struct SSystemMemoryInfo
 	{
-		//Measured in MB
+		//Measured in bytes
 		uint64 mCapacity;
 		uint64 mUsed;
 	};

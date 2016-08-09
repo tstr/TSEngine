@@ -14,7 +14,10 @@ SET(src_list
 	debug/profiling.h
 
 	system/memory.h
+	system/memory.cpp
 	system/thread.h
+	system/error.h
+	system/error.cpp
 	system/time.h
 	system/info.h
 	system/info.cpp

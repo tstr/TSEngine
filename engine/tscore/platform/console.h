@@ -1,12 +1,11 @@
 /*
 	Platform console API header
-	
-	todo: actually implement console api
 */
 
 #pragma once
 
 #include <tscore/types.h>
+#include <iostream>
 
 namespace ts
 {

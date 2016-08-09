@@ -5,7 +5,7 @@
 #include "assert.h"
 #include "log.h"
 
-#include <Windows.h>
+#include <windows.h>
 #include <sstream>
 
 namespace ts
@@ -30,7 +30,8 @@ namespace ts
 					<< "function = '" << func << "'\n"
 					<< "file = '" << file << "'\n"
 					<< "expression = '" << expr << "'\n"
-					<< "line = " << line << endl;
+					<< "line = " << line << "\n"
+					<< "lasterr = 0x" << hex << GetLastError() << "\n";
 
 				tserror(s.str());
 
