@@ -6,18 +6,15 @@ namespace ts
 {
 	class Application : public IApplication
 	{
-	private:
-
-		std::string m_args;
-
 	public:
 
 		Application() {}
+		~Application();
 
 		void onInit() override;
-		void onDeinit() override {}
-		void onUpdate() override {}
-		void onRender() override {}
+		void onExit() override;
+		void onUpdate() override;
+		void onRender() override;
 
 	};
 }

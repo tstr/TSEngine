@@ -4,13 +4,16 @@
 
 #include "error.h"
 
-#include <iostream>
-#include <tscore/strings.h>
+#define _CRTDBG_MAP_ALLOC
+
 #include <Windows.h>
 #include <DbgHelp.h>
 #include <debugapi.h>
 #include <crtdbg.h>
+
+#include <iostream>
 #include <io.h>
+#include <tscore/strings.h>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -99,6 +102,7 @@ LONG WINAPI exception_filter(EXCEPTION_POINTERS *info)
 
 			if (f_writeMinidump)
 			{
+				//todo: avoid using dynamic memory allocation
 				//Obtain application name
 				char modpath[MAX_PATH];
 				GetModuleFileNameA(GetModuleHandleA(0), modpath, MAX_PATH); //get full path of current module

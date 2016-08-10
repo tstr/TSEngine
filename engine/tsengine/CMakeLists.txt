@@ -17,5 +17,6 @@ ADD_LIBRARY(
 
 
 TARGET_LINK_LIBRARIES(tsengine tscore)
+TARGET_LINK_LIBRARIES(tsengine tsgraphics)
 
 copy_source_groups(${src_list})

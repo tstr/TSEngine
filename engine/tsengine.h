@@ -7,18 +7,21 @@
 #include <tsconfig.h>
 #include <tscore/strings.h>
 #include <tscore/system/memory.h>
+#include <tscore/system/thread.h>
 #include <tsengine/event/messenger.h>
 
 namespace ts
 {
 	class CWindow;
+	class CRenderModule;
+	class CInputModule;
 
 	struct IApplication
 	{
-		virtual void onInit() {}
-		virtual void onDeinit() {}
-		virtual void onUpdate() {}
-		virtual void onRender() {}
+		virtual void onInit() = 0;
+		virtual void onExit() = 0;
+		virtual void onUpdate() = 0;
+		virtual void onRender() = 0;
 
 		virtual ~IApplication() {}
 	};
@@ -32,33 +35,19 @@ namespace ts
 		int showWindow = 0;
 	};
 
-	enum EEngineMessageCode
-	{
-		eEngineMessageNull = 0,
-		eEngineMessageShutdown = 2
-	};
-
-	struct SEngineMessage
-	{
-		EEngineMessageCode code = eEngineMessageNull;
-		uint64 a = 0;
-		uint64 b = 0;
-
-		SEngineMessage() {}
-		SEngineMessage(EEngineMessageCode c) : code(c) {}
-	};
-
 	//Base engine class - this class is the center of the application and is responsible for initializing and connecting all engine modules together
 	class CEngineSystem
 	{
 	private:
 
-		UniquePtr<CWindow> m_pWindow;
-		UniquePtr<IApplication> m_pApp;
+		std::atomic<bool> m_enabled;
 
-		CMessageReciever<SEngineMessage> m_reciever;
+		UniquePtr<IApplication> m_app;
+		UniquePtr<CWindow> m_window;
+		UniquePtr<CRenderModule> m_moduleRender;
+		//UniquePtr<CInputModule> m_moduleInput;		//todo: implement
 
-		void onDeinit();
+		void onExit();
 		void onInit();
 
 	public:
@@ -71,8 +60,8 @@ namespace ts
 		CEngineSystem(CEngineSystem&& sys) = delete;
 
 		//methods
-		IApplication* const getApp() const { return m_pApp.get(); }
-		CWindow* const getWindow() const { return m_pWindow.get(); }
+		IApplication* const getApp() const { return m_app.get(); }
+		CWindow* const getWindow() const { return m_window.get(); }
 
 		//Close the application and shutdown engine
 		void shutdown();

@@ -14,10 +14,34 @@ using namespace ts;
 
 static void printsysteminfo();
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Application::onInit()
 {
 	printsysteminfo();
 }
+
+void Application::onExit()
+{
+
+}
+
+void Application::onUpdate()
+{
+
+}
+
+void Application::onRender()
+{
+
+}
+
+Application::~Application()
+{
+	
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static void printsysteminfo()

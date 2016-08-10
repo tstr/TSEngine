@@ -4,18 +4,18 @@
 
 #include <tsengine.h>
 #include <tscore/platform/window.h>
+#include <tscore/platform/console.h>
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 #include <tscore/system/info.h>
 #include <tscore/system/thread.h>
-#include <tscore/platform/console.h>
-#include "event/messenger.h"
+#include <tsgraphics/rendermodule.h> //Graphics
 
+#include "event/messenger.h"
 #include "cmdargs.h"
 
-#include <iostream>
-
 using namespace ts;
+using namespace std;
 
 /*
 //todo: find a way to set program to exit correctly when console is closed
@@ -48,16 +48,19 @@ private:
 		{
 			switch (args.eventcode)
 			{
-			case (EWindowEvent::eEventClose) :
+			case (EWindowEvent::eEventDestroy) :
 				m_wnd->m_pSystem->shutdown();
+				break;
+			case (EWindowEvent::eEventKeydown) :
+				tsinfo("KeyDown Event (A:%) (B:%)", args.a, (char)args.b);
+				if (args.b == VK_ESCAPE)
+					m_wnd->close();
 				break;
 			}
 
 			return 0;
 		}
-	};
-
-	CEventListener m_eventListener;
+	} m_eventListener;
 
 public:
 
@@ -71,23 +74,12 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Engine initialization
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 {
-	//Set window parameter struct
-	SWindowDesc windesc;
-	windesc.title = params.appPath;
-	windesc.rect.x = 0;
-	windesc.rect.y = 0;
-	windesc.rect.w = 1280;
-	windesc.rect.h = 720;
-	windesc.appInstance = params.appInstance;
-
-	//Set application instance and application window members
-	m_pWindow.reset(new Window(this, windesc));
-	m_pApp.reset(params.app);
-	tsassert(m_pApp.get());
-
+	//Parse command line arguments
 	CommandLineArgs args(params.commandArgs);
 
 	//Console initialization
@@ -97,64 +89,88 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 		//setConsoleClosingHandler(consoleClosingHandlerFunc);
 	}
 
-	//Runs window message loop on separate thread
-	thread([this, &params]() { this->m_pWindow->open(params.showWindow); }).detach();
+	//Set application instance
+	m_app.reset(params.app);
+	tsassert(m_app.get());
 
-	//Test
-	thread([this]() {
+	//Set application window parameters
+	SDisplayInfo dispinf;
+	getPrimaryDisplayInformation(dispinf);
+	uint32 width = 1280;
+	uint32 height = 720;
+
+	SWindowDesc windesc;
+	windesc.title = params.appPath;
+	windesc.rect.x = (dispinf.width - width) / 2;
+	windesc.rect.y = (dispinf.height - height) / 2;
+	windesc.rect.w = width;
+	windesc.rect.h = height;
+	windesc.appInstance = params.appInstance;
+	
+	//Create application window object
+	m_window.reset(new Window(this, windesc));
+
+	//Runs window message loop on separate thread
+	const int showcmd = params.showWindow;
+	thread([this, &showcmd]() { this->m_window->open(showcmd); }).detach();
+	while (!m_window->isOpen())
+	{
+		this_thread::sleep_for(chrono::milliseconds(2));
+	}
+
+
+	SRenderModuleConfiguration rendercfg;
+	rendercfg.targethandle = m_window->handle();
+	m_moduleRender.reset(new CRenderModule(rendercfg));
+
+	thread([this] {
 		while (true)
 		{
-			std::string buf;
-			std::cin >> buf;
-			if (compare_string_weak(buf, "exit"))
-			{
+			std::string str;
+			std::cin >> str;
+			if (str == "exit")
 				this->shutdown();
-				break;
-			}
 		}
 	}).detach();
 
 
 	onInit();
 
-	while (true)
+	//Main engine loop
+	while (m_enabled)
 	{
-		SEngineMessage msg;
-		m_reciever.get(msg);
-
-		if (msg.code == eEngineMessageShutdown)
-			break;
+		this_thread::sleep_for(chrono::milliseconds(10));
+		this_thread::yield();
 	}
+
+	onExit();
 }
 
 CEngineSystem::~CEngineSystem()
 {
 	shutdown();
-
-	onDeinit();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void CEngineSystem::shutdown()
 {
-	m_reciever.post(SEngineMessage(eEngineMessageShutdown));
+	m_enabled = false;
 }
 
 //Event handlers
-void CEngineSystem::onDeinit()
+void CEngineSystem::onExit()
 {
-	m_pApp->onDeinit();
+	m_app->onExit();
 
-	if (m_pWindow->isOpen())
-		m_pWindow->close();
+	m_window->close();
 
 	consoleClose();
 }
 
 void CEngineSystem::onInit()
 {
-	m_pApp->onInit();
+	m_app->onInit();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

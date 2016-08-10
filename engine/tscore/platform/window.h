@@ -79,6 +79,12 @@ namespace ts
 
 		struct IEventListener
 		{
+			enum EReturnValue
+			{
+				eDefault = 0,
+				eHandled = 1	//Return this if IEventListener::onEvent handles the event
+			};
+
 			virtual int onEvent(const SWindowEventArgs& args) = 0;
 		};
 
@@ -110,11 +116,11 @@ namespace ts
 			invoke_internal(&i);
 		}
 
-		//todo: move these methods to CGraphicsModule when it is ready
+		//todo: move these methods to CRenderModule when it is ready
 		bool isFullscreen() const;
 		void setFullscreen(bool on);
 
-		intptr id() const;
+		intptr handle() const;
 		void raiseEvent(EWindowEvent e, uint64 a, uint64 b);
 		void messageBox(const char* text, const char* caption = "");
 	};

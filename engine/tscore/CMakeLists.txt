@@ -21,8 +21,6 @@ SET(src_list
 	system/time.h
 	system/info.h
 	system/info.cpp
-	
-	io/stream.h
 
 	containers/circularbuffer.h
 	containers/threadqueue.h

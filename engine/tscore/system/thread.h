@@ -2,6 +2,8 @@
 	Thread declaration
 */
 
+#pragma once
+
 #include "time.h"
 
 #include <condition_variable>

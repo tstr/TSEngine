@@ -2,6 +2,8 @@
 
 SET(src_list
 	colour.h
+	rendermodule.h
+	rendermodule.cpp
 )
 
 ADD_LIBRARY(

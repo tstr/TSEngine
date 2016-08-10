@@ -17,7 +17,9 @@ int WINAPI WinMain(HINSTANCE module, HINSTANCE prevmodule, LPSTR cmdargs, int cm
 {
 	//Initialize debug layer
 	ts::internal::initializeSystemExceptionHandlingFilter();	//This sets the global exception handling filter for the process, meaning uncaught exceptions can be detected and a minidump can be generated
+#ifdef _DEBUG
 	ts::internal::initializeSystemMemoryLeakDetector();			//This allows the crt to detect memory leaks
+#endif
 
 	//Set startup parameters
 	ts::SEngineStartupParams startup;

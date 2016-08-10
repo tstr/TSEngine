@@ -131,6 +131,21 @@ namespace ts
 	//Compares two strings in a non case sensitive way
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+	static bool compare_string_weak(const char* str0, const char* str1)
+	{
+		size_t sz0 = strlen(str0);
+		size_t sz1 = strlen(str1);
+		if (sz0 != sz1) return false;
+
+		for (size_t i = 0; i < sz0; ++i)
+		{
+			if (toupper(str0[i]) != toupper(str1[i]))
+				return false;
+		}
+
+		return true;
+	}
+
 	static bool compare_string_weak(const std::string& str0, const std::string& str1)
 	{
 		if (str0.size() != str1.size()) return false;

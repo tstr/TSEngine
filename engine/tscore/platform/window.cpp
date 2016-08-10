@@ -209,6 +209,7 @@ struct CWindow::Impl
 
 			EWindowEvent code = EventCodes.GetWindowEventEnum(msg);
 			
+			//Only call the event listener for WM_* messages which have a corresponding EWindowEvent enum
 			if (code != EWindowEvent::eEventNull)
 			{
 				if (wnd->windowEventListener != nullptr)
@@ -219,9 +220,10 @@ struct CWindow::Impl
 					args.a = lparam;
 					args.b = wparam;
 
-					if (wnd->windowEventListener->onEvent(args) == 0)
+					//If the return value is not equal to zero the event is marked as handled by the listener
+					if (wnd->windowEventListener->onEvent(args))
 					{
-						return DefWindowProc(hwnd, msg, wparam, lparam);
+						return 0;
 					}
 				}
 			}
@@ -311,8 +313,8 @@ void CWindow::setFullscreen(bool on)
 
 		pImpl->sizeCache = pImpl->size;
 
-		UINT width = GetSystemMetrics(SM_CXSCREEN), height = GetSystemMetrics(SM_CYSCREEN);
-
+		int width = GetSystemMetrics(SM_CXSCREEN), height = GetSystemMetrics(SM_CYSCREEN);
+		
 		pImpl->size.h = height;
 		pImpl->size.w = width;
 
@@ -328,7 +330,9 @@ void CWindow::setFullscreen(bool on)
 		dev.dmDisplayFrequency = refreshRate;
 		dev.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
 
-		//if (ChangeDisplaySettingsA(&dev, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) success = true;
+		//todo: fix
+		LONG result = ChangeDisplaySettingsA(&dev, CDS_FULLSCREEN);// == DISP_CHANGE_SUCCESSFUL);
+		tserror("ChangeDisplaySettings returned %", result);
 
 		SetWindowLongPtr(pImpl->windowHandle, GWL_STYLE, WS_POPUP | WS_VISIBLE);
 		SetWindowPos(pImpl->windowHandle, HWND_TOP, 0, 0, width, height, 0);
@@ -376,7 +380,7 @@ void CWindow::close()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-intptr CWindow::id() const
+intptr CWindow::handle() const
 {
 	return (uint64)pImpl->windowHandle;
 }
@@ -393,7 +397,7 @@ void CWindow::raiseEvent(EWindowEvent e, uint64 a, uint64 b)
 
 void CWindow::invoke_internal(CWindow::IInvoker* i)
 {
-	SendMessageA(pImpl->windowHandle, TSM_INVOKE, (WPARAM)i, 0);
+	SendMessage(pImpl->windowHandle, TSM_INVOKE, (WPARAM)i, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
