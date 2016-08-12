@@ -52,7 +52,7 @@ private:
 				m_wnd->m_pSystem->shutdown();
 				break;
 			case (EWindowEvent::eEventKeydown) :
-				tsinfo("KeyDown Event (A:%) (B:%)", args.a, (char)args.b);
+				tsinfo("KeyDown Event (A:%) (B:%)", args.a, args.b);
 				if (args.b == VK_ESCAPE)
 					m_wnd->close();
 				break;
@@ -113,16 +113,20 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	//Runs window message loop on separate thread
 	const int showcmd = params.showWindow;
 	thread([this, &showcmd]() { this->m_window->open(showcmd); }).detach();
+	//Delay this thread until the window has opened fully
 	while (!m_window->isOpen())
 	{
-		this_thread::sleep_for(chrono::milliseconds(2));
+		this_thread::sleep_for(chrono::milliseconds(1));
+		this_thread::yield();
 	}
 
-
 	SRenderModuleConfiguration rendercfg;
-	rendercfg.targethandle = m_window->handle();
+	rendercfg.windowHandle = m_window->handle();
+	rendercfg.width = width;
+	rendercfg.height = height;
 	m_moduleRender.reset(new CRenderModule(rendercfg));
 
+	//Close application from console
 	thread([this] {
 		while (true)
 		{
@@ -133,14 +137,32 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 		}
 	}).detach();
 
-
 	onInit();
+
+	Timer timer;
+	double pheta = 0.0f;
+	Vector framecolour;
+	framecolour.x() = 0.0f;
+	framecolour.y() = 1.0f;
 
 	//Main engine loop
 	while (m_enabled)
 	{
-		this_thread::sleep_for(chrono::milliseconds(10));
-		this_thread::yield();
+		timer.tick();
+		double dt = timer.deltaTime();
+		pheta += (2 * Pi) * dt / 5;
+		pheta = fmod(pheta, 2 * Pi);
+		framecolour.x() = 0.5f + (float)sin(pheta);
+		framecolour.y() = 0.5f - (float)sin(pheta);
+		framecolour.z() = 0.5f + (float)cos(pheta);
+
+		//Clear the frame to a specific colour
+		m_moduleRender->drawBegin(framecolour);
+
+		//rendering here
+
+		//Present the frame
+		m_moduleRender->drawEnd();
 	}
 
 	onExit();

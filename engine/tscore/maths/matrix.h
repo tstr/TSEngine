@@ -7,6 +7,7 @@
 //Basic engine headers
 #include "common.h"
 #include "vector.h"
+#include "quaternion.h"
 
 namespace ts
 {
@@ -228,5 +229,5 @@ namespace ts
 		return true;
 	}
 
-	VECTOR_INLINE Matrix VECTOR_CALL Matrix::fromQuaternion(const Quaternion& quat) { return Matrix(internal::XMMatrixRotationQuaternion(quat)); }
+	VECTOR_INLINE Matrix VECTOR_CALL Matrix::fromQuaternion(const Quaternion& quat) { return Matrix(internal::XMMatrixRotationQuaternion((const internal::SimdFloat&)quat)); }
 }
