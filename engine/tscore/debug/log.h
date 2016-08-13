@@ -2,6 +2,8 @@
 	Logging api
 */
 
+#pragma once
+
 #include <tscore/strings.h>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +79,7 @@ namespace ts
 #define tsinfo(message, ...) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelInfo, __VA_ARGS__)
 #define tswarn(message, ...)  _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelWarn, __VA_ARGS__)
 #define tserror(message, ...) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelError, __VA_ARGS__)
-
+#define tsprofile(message, ...) _tslogwrite(::ts::global::getLogger(), message, ::ts::eLevelProfile, __VA_ARGS__)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

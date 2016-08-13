@@ -18,7 +18,7 @@
 
 #else
 
-#define PROFILE_BLOCK_BEGIN ts::Stopwatch __TIMER; __TIMER.start();
-#define PROFILE_BLOCK_END __TIMER.stop(); tslog(__TIMER.deltaTime(), ts::ELogLevel::eLevelProfile);
+#define PROFILE_BLOCK_BEGIN ts::Stopwatch __TIMER__; tsprofile("BEGIN BLOCK PROFILE"); __TIMER__.start();
+#define PROFILE_BLOCK_END __TIMER__.stop(); tsprofile("END BLOCK PROFILE: %ms", __TIMER__.deltaTime());
 
 #endif

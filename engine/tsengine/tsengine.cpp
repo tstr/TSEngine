@@ -13,6 +13,7 @@
 
 #include "event/messenger.h"
 #include "cmdargs.h"
+#include "configfile.h"
 
 using namespace ts;
 using namespace std;
@@ -89,6 +90,11 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 		//setConsoleClosingHandler(consoleClosingHandlerFunc);
 	}
 
+	//Config loader
+	Path cfgpath(params.appPath.getParent());
+	cfgpath.addDirectories("config.ini");
+	ConfigFile config(cfgpath);
+
 	//Set application instance
 	m_app.reset(params.app);
 	tsassert(m_app.get());
@@ -96,11 +102,13 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	//Set application window parameters
 	SDisplayInfo dispinf;
 	getPrimaryDisplayInformation(dispinf);
-	uint32 width = 1280;
-	uint32 height = 720;
+	uint32 width = 800;
+	uint32 height = 600;
+	config.getProperty("video", "resolutionW", width);
+	config.getProperty("video", "resolutionH", height);
 
 	SWindowDesc windesc;
-	windesc.title = params.appPath;
+	windesc.title = params.appPath.str();
 	windesc.rect.x = (dispinf.width - width) / 2;
 	windesc.rect.y = (dispinf.height - height) / 2;
 	windesc.rect.w = width;

@@ -22,6 +22,9 @@ SET(src_list
 	system/info.h
 	system/info.cpp
 
+	filesystem/path.cpp
+	filesystem/path.h
+
 	containers/circularbuffer.h
 	containers/threadqueue.h
 	containers/stack.h

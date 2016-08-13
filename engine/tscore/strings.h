@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <algorithm>
+
 #include "types.h"
 #include <sstream>
 #include <vector>
@@ -104,7 +106,8 @@ namespace ts
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//String splitters
+	//String helpers
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	static std::vector<std::string>& split(const std::string &s, char delim, std::vector<std::string> &elems)
 	{
@@ -125,6 +128,58 @@ namespace ts
 		split(s, delim, elems);
 
 		return elems;
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	static std::string trim(const std::string& str)
+	{
+		if (str == "")
+			return "";
+
+		size_t first = str.find_first_not_of(' ');
+		size_t last = str.find_last_not_of(' ');
+
+		if (first == std::string::npos)
+			first = 0;
+
+		return str.substr(first, (last - first + 1));
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	static void toLower(std::string& str)
+	{
+		for (size_t i = 0; i < str.size(); i++)
+		{
+			str[i] = ::tolower(str[i]);
+		}
+	}
+
+	static void toUpper(std::string& str)
+	{
+		for (size_t i = 0; i < str.size(); i++)
+		{
+			str[i] = ::toupper(str[i]);
+		}
+	}
+
+	static void toLower(char* str)
+	{
+		size_t sz = strlen(str);
+		for (size_t i = 0; i < sz; i++)
+		{
+			str[i] = ::tolower(str[i]);
+		}
+	}
+
+	static void toUpper(char* str)
+	{
+		size_t sz = strlen(str);
+		for (size_t i = 0; i < sz; i++)
+		{
+			str[i] = ::toupper(str[i]);
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -152,7 +207,7 @@ namespace ts
 
 		for (std::string::size_type i = 0; i < str0.size(); ++i)
 		{
-			if (toupper(str0[i]) != toupper(str1[i]))
+			if (::toupper(str0[i]) != ::toupper(str1[i]))
 				return false;
 		}
 
@@ -178,8 +233,7 @@ namespace ts
 			memset(m_chars, 0, n);
 		}
 
-		StaticString(const char* str) :
-			this->StaticString()
+		StaticString(const char* str) : StaticString()
 		{
 			set(str);
 		}
@@ -191,17 +245,19 @@ namespace ts
 		inline StaticString& operator=(const StaticString<n>& str)
 		{
 			set(str.m_chars);
+			return *this;
 		}
 
-		inline void set(const std::string& str)
+		inline void set(const std::string& str, size_t offset = 0)
 		{
-			set(str.c_str());
+			set(str.c_str(), offset);
 		}
 
-		inline void set(const char* str)
+		inline void set(const char* str, size_t offset = 0)
 		{
+			using namespace std;
 			size_t len = strlen(str);
-			strncpy_s(m_chars, str, (len > n) ? n : len);
+			strncpy_s(m_chars + offset, n - offset, str, min(len, n - offset));
 		}
 
 		inline const char* get() const
@@ -232,6 +288,11 @@ namespace ts
 		inline char& operator[](size_t i)
 		{
 			return at(i);
+		}
+
+		inline size_t length() const
+		{
+			return strlen(m_chars);
 		}
 	};
 

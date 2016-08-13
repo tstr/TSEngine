@@ -8,6 +8,7 @@
 #include <tscore/strings.h>
 #include <tscore/system/memory.h>
 #include <tscore/system/thread.h>
+#include <tscore/filesystem/path.h>
 #include <tsengine/event/messenger.h>
 
 namespace ts
@@ -31,7 +32,7 @@ namespace ts
 		IApplication* app = nullptr;
 		void* appInstance = nullptr;
 		std::string commandArgs;
-		std::string appPath;
+		Path appPath;
 		int showWindow = 0;
 	};
 

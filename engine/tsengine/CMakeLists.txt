@@ -8,6 +8,8 @@ SET(src_list
 	tsengine.cpp
 	cmdargs.cpp
 	cmdargs.h
+	configfile.h
+	configfile.cpp
 )
 
 ADD_LIBRARY(
