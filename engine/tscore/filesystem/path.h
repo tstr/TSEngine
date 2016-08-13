@@ -57,17 +57,19 @@ namespace ts
 		Path getParent() const;
 
 		//Count number of subdirectories in this path
-		uint16 countDirectories() const;
+		uint16 getDirectoryCount() const;
 
 		//Add a directory or group of directories to this path
-		void addDirectories(const std::string& dir) { addDirectories(dir); }
+		void addDirectories(const std::string& dir) { addDirectories(dir.c_str()); }
 		void addDirectories(const char* dir);
 
 		//Get the name of a directory at a particular index of the path
-		Path getPathIndex(uint16 idx) const;
+		Path getDirectory(uint16 idx) const;
 
-		Path getPathIndexLast() const { return getPathIndex(countDirectories() - 1); }
-		Path getPathIndexFirst() const { return getPathIndex(0); }
+		//Get the top-most directory in the path
+		inline Path getDirectoryTop() const { return getDirectory(getDirectoryCount() - 1); }
+		//Get the bottom-most directory in the path
+		inline Path getDirectoryRoot() const { return getDirectory(0); }
 
 		//Get a path relative to this path
 		Path getRelativePath(const Path& subpath) const;

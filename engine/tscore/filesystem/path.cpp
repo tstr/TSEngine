@@ -1,7 +1,10 @@
 /*
 	Path class source
 
-	todo: filter special characters
+	todo:
+
+	- filter special characters
+	- iterators
 */
 
 #include "path.h"
@@ -58,7 +61,7 @@ void Path::composePath(const char* pathstr)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint16 Path::countDirectories() const
+uint16 Path::getDirectoryCount() const
 {
 	uint16 count = 0;
 
@@ -79,7 +82,7 @@ uint16 Path::countDirectories() const
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Path Path::getPathIndex(uint16 idx) const
+Path Path::getDirectory(uint16 idx) const
 {
 	uint16 idxcounter = 0;	//Current directory index
 	uint16 prevchar = 0;	//Previous char offset
@@ -107,13 +110,13 @@ Path Path::getPathIndex(uint16 idx) const
 void Path::addDirectories(const char* dirstr)
 {
 	Path dir(dirstr);
-	uint16 count = dir.countDirectories();
+	uint16 count = dir.getDirectoryCount();
 
 	auto len = (uint16)strlen(m_path.get());
 
 	for (uint16 i = 0; i < count; i++)
 	{
-		Path subdir(dir.getPathIndex(i));
+		Path subdir(dir.getDirectory(i));
 
 		m_path.at(len) = '/';
 
@@ -125,8 +128,27 @@ void Path::addDirectories(const char* dirstr)
 
 Path Path::getRelativePath(const Path& subpath) const
 {
-	Path destpath;
-	//todo: implement
+	Path destpath(*this);
+	
+	//iterate over each directory in subpath
+	uint16 numdirs = subpath.getDirectoryCount();
+	for (uint16 i = 0; i < numdirs; i++)
+	{
+		string dirstr(subpath.getDirectory(i).str());
+		
+		//If the directory is ".." then remove the topmost directory from the path
+		if (dirstr == "..")
+		{
+			destpath = destpath.getParent();
+		}
+		else
+		{
+			//Append a single directory
+			destpath.addDirectories(dirstr);
+		}
+	}
+
+	
 	return destpath;
 }
 
@@ -138,12 +160,17 @@ Path Path::getParent() const
 
 	size_t len = parentbuf.length();
 
-	//Iterate over path backwards until the last path divider has been reached
-	for (size_t i = len; i > 0; i--)
+	//Iterate over path backwards while erasing each character until the last path divider has been reached
+	for (size_t i = len; i >= 0; i--)
 	{
 		if (parentbuf[i] == '/')
 		{
 			break;
+		}
+
+		if (i == 0)
+		{
+			return Path();
 		}
 
 		parentbuf[i] = 0;
