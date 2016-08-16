@@ -7,6 +7,16 @@ CMAKE_MINIMUM_REQUIRED (VERSION 3.0)
 PROJECT (tse)
 
 ################################################################################################
+
+SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/)
+SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/)
+SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin/)
+
+SET (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmakemodules)
+#Find an install runtime library dependencies
+include(InstallSystemLibs)
+
+################################################################################################
 #configuration file
 ################################################################################################
 
@@ -40,7 +50,7 @@ function(copy_source_groups)
 		# Remove common directory prefix to make the group
 		string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" GROUP "${PARENT_DIR}")
 
-		# Make sure we are using CWindows slashes
+		# Make sure we are using windows slashes
 		string(REPLACE "/" "\\" GROUP "${GROUP}")
 
 		set(GROUP "src\\${GROUP}")
@@ -51,23 +61,13 @@ endfunction()
 
 ################################################################################################
 
-
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/engine)
-
-SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/)
-SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/)
-SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin/)
 
 SET (CMAKE_LIBRARY_PATH
 	${CMAKE_LIBRARY_PATH}
 	${PROJECT_SOURCE_DIR}/dependencies
 	${PROJECT_BINARY_DIR}/lib
 )
-
-# LINK_DIRECTORIES(
-	# ${PROJECT_SOURCE_DIR}/dependencies
-	# ${PROJECT_BINARY_DIR}/lib
-# )
 
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -77,7 +77,15 @@ ADD_SUBDIRECTORY(app)
 #engine components
 ADD_SUBDIRECTORY(engine)
 
-#engine tools
-ADD_SUBDIRECTORY(tools)
+################################################################################################
+
+OPTION(TS_BUILD_TOOLS "build tools" ON)
+
+IF(TS_BUILD_TOOLS)
+
+	#engine tools
+	ADD_SUBDIRECTORY(tools)
+	
+ENDIF()
 
 ################################################################################################
