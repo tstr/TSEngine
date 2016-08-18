@@ -116,10 +116,6 @@ namespace ts
 			invoke_internal(&i);
 		}
 
-		//todo: move these methods to CRenderModule when it is ready
-		bool isFullscreen() const;
-		void setFullscreen(bool on);
-
 		intptr handle() const;
 		void raiseEvent(EWindowEvent e, uint64 a, uint64 b);
 		void messageBox(const char* text, const char* caption = "");

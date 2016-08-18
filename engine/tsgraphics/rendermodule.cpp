@@ -2,26 +2,18 @@
 	Graphics module source
 */
 
-#include <Windows.h>
 #include "rendermodule.h"
-
-//D3D11 interface
-#include "API/DX11/DX11Render.h"
+#include <tscore/debug/log.h>
 
 using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////s
 
-CRenderModule::CRenderModule(const SRenderModuleConfiguration& cfg)
+CRenderModule::CRenderModule(const SRenderModuleConfiguration& cfg) :
+	m_config(cfg)
 {
-	SRenderApiConfiguration apicfg;
-	apicfg.adapterIndex = 0; //hard code the adapter for now
-	apicfg.resolutionHeight = cfg.height;
-	apicfg.resolutionWidth = cfg.width;
-	apicfg.windowFullscreen = false;
-	apicfg.windowHandle = cfg.windowHandle;
-
-	m_api.reset(new dx11::DX11RenderApi(apicfg));
+	if (!loadApi(cfg.apiEnum))
+		tserror("Unable to load graphics api (ERenderApiID::eRenderApiD3D11)");
 }
 
 CRenderModule::~CRenderModule()
@@ -31,9 +23,9 @@ CRenderModule::~CRenderModule()
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CRenderModule::setScreenState(ERenderScreenState state)
+void CRenderModule::setWindowMode(EWindowMode mode)
 {
-	
+	m_api->setWindowMode(mode);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

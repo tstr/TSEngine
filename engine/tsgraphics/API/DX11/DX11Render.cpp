@@ -6,6 +6,8 @@
 
 #include "DX11Render.h"
 
+#include <tscore/debug/log.h>
+
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 
@@ -24,8 +26,8 @@ extern "C"
 
 DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 {
-	HWND hwnd = reinterpret_cast<HWND>(cfg.windowHandle);
-	tsassert(IsWindow(hwnd));
+	m_hwnd = reinterpret_cast<HWND>(cfg.windowHandle);
+	tsassert(IsWindow(m_hwnd));
 
 	HRESULT hr = S_OK;
 
@@ -38,25 +40,6 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	hr = CreateDXGIFactory(IID_OF(IDXGIFactory), (void**)dxgiFactory.GetAddressOf());
 	tsassert(SUCCEEDED(hr));
-
-	hr = S_OK;
-	UINT i = 0;
-	while (true)
-	{
-		ComPtr<IDXGIAdapter> adapter;
-		hr = dxgiFactory->EnumAdapters(i, adapter.GetAddressOf());
-
-		if (hr == DXGI_ERROR_NOT_FOUND)
-		{
-			break;
-		}
-		DXGI_ADAPTER_DESC adapterDesc;
-		adapter->GetDesc(&adapterDesc);
-		_bstr_t str = adapterDesc.Description;
-		tsinfo("DXGI adapter: %", (const char*)str);
-
-		i++;
-	}
 
 	hr = dxgiFactory->EnumAdapters(cfg.adapterIndex, dxgiAdapter.GetAddressOf());
 	
@@ -78,11 +61,11 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	scd.BufferCount = 1; // one back buffer
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	scd.OutputWindow = hwnd;
+	scd.OutputWindow = m_hwnd;
 
 	scd.SampleDesc.Count = msaaCount;
 	scd.SampleDesc.Quality = msaaQuality;
-	scd.Windowed = !cfg.windowFullscreen;
+	scd.Windowed = cfg.windowMode != EWindowMode::eWindowFullscreen;
 	scd.BufferDesc.Width = cfg.resolutionWidth;
 	scd.BufferDesc.Height = cfg.resolutionHeight;
 
@@ -94,7 +77,7 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	//VSync
 	{
-		scd.BufferDesc.RefreshRate.Numerator = GetDeviceCaps(GetDC(hwnd), VREFRESH);
+		scd.BufferDesc.RefreshRate.Numerator = GetDeviceCaps(GetDC(m_hwnd), VREFRESH);
 		scd.BufferDesc.RefreshRate.Denominator = 1;
 	}
 
@@ -113,7 +96,7 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	D3D_FEATURE_LEVEL featureLevel;
 
-	//if (settings.debug)
+	if (cfg.flags & ERenderApiFlags::eFlagDebug)
 	{
 		flags |= D3D11_CREATE_DEVICE_DEBUG;
 	}
@@ -144,14 +127,13 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	catch (_com_error& e)
 	{
 		std::stringstream stream;
-		stream << std::hex << "D3D11CreateDeviceAndSwapChain failure. HRESULT (0x" << hr << "): " << (const char*)e.ErrorMessage();
+		stream << std::hex << "D3D11CreateDeviceAndSwapChain failure. HRESULT (0x" << hr << "): " << e.ErrorMessage();
 		tserror(stream.str());
 
 		return;
 	}
 
-
-	//For the moment just clear the backbuffer and present
+	setWindowMode(cfg.windowMode);
 
 	ComPtr<ID3D11Texture2D> backbuffer;
 	hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());
@@ -159,12 +141,94 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	hr = m_device->CreateRenderTargetView(backbuffer.Get(), nullptr, m_swapChainRenderTarget.GetAddressOf());
 	tsassert(SUCCEEDED(hr));
 
-
+	//Save a copy of the configuration
+	m_config = cfg;
 }
 
 DX11RenderApi::~DX11RenderApi()
 {
 
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+void DX11RenderApi::setWindowMode(EWindowMode mode)
+{
+	if (mode == m_config.windowMode)
+		return;
+
+	switch (mode)
+	{
+	case (EWindowMode::eWindowDefault):
+
+		if (m_config.windowMode == eWindowFullscreen)
+		{
+			//Exit windowed mode
+			HRESULT hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr);
+			if (FAILED(hr))
+				tswarn("failed to exit fullscreen mode");
+		}
+		else
+		{
+			//Exit borderless mode
+			SetWindowLongPtr(m_hwnd, GWL_EXSTYLE, WS_EX_LEFT);
+			SetWindowLongPtr(m_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+
+			SetWindowPos(m_hwnd, HWND_NOTOPMOST, 0, 0, m_config.resolutionWidth, m_config.resolutionHeight, SWP_SHOWWINDOW);
+			ShowWindow(m_hwnd, SW_RESTORE);
+		}
+
+		break;
+
+	case (EWindowMode::eWindowBorderless):
+
+		if (m_config.windowMode == eWindowFullscreen)
+		{
+			HRESULT hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr);
+			if (FAILED(hr))
+				tswarn("failed to exit fullscreen mode");
+		}
+		{
+			//Set borderless mode
+			DEVMODE dev;
+			ZeroMemory(&dev, sizeof(DEVMODE));
+
+			int width = GetSystemMetrics(SM_CXSCREEN),
+				height = GetSystemMetrics(SM_CYSCREEN);
+
+			EnumDisplaySettings(NULL, 0, &dev);
+
+			HDC context = GetWindowDC(m_hwnd);
+			int colourBits = GetDeviceCaps(context, BITSPIXEL);
+			int refreshRate = GetDeviceCaps(context, VREFRESH);
+
+			dev.dmPelsWidth = width;
+			dev.dmPelsHeight = height;
+			dev.dmBitsPerPel = colourBits;
+			dev.dmDisplayFrequency = refreshRate;
+			dev.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
+
+			//todo: fix
+			LONG result = ChangeDisplaySettingsA(&dev, CDS_FULLSCREEN);// == DISP_CHANGE_SUCCESSFUL);
+			//tserror("ChangeDisplaySettings returned %", result);
+
+			SetWindowLongPtr(m_hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+			SetWindowPos(m_hwnd, HWND_TOP, 0, 0, width, height, 0);
+			BringWindowToTop(m_hwnd);
+		}
+
+		break;
+
+	case (EWindowMode::eWindowFullscreen):
+
+		HRESULT hr = m_dxgiSwapchain->SetFullscreenState(true, nullptr);
+		if (FAILED(hr))
+			tswarn("failed to enter fullscreen mode");
+
+		break;
+	}
+
+	m_config.windowMode = mode;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

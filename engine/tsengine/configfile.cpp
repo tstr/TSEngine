@@ -56,14 +56,21 @@ bool ConfigFile::parseProperty(const std::string& line, ConfigFile::SProperty& p
 		return false;
 	}
 
-	property.key = move(v[0]);
-	property.value = move(v[1]);
+	SProperty prop;
 
-	property.key = trim(property.key);
-	property.value = trim(property.value);
+	prop.key = move(v[0]);
+	prop.value = move(v[1]);
 
-	toLower(property.key);
-	toLower(property.value);
+	if (prop.key.find('.') != string::npos)
+		return false;
+
+	prop.key = trim(prop.key);
+	prop.value = trim(prop.value);
+
+	toLower(prop.key);
+	toLower(prop.value);
+
+	property = move(prop);
 
 	return true;
 }
@@ -200,13 +207,18 @@ void ConfigFile::getSectionProperties(const Section& section, SPropertyArray& pr
 	}
 }
 
-bool ConfigFile::getProperty(const Section& section, SProperty& property)
+bool ConfigFile::getProperty(const PropertyKey& keystr, PropertyValue& valuestr)
 {
-	//Section key
-	string key(section);
-	toLower(key);
+	size_t splitpos = keystr.find_last_of('.');
+
+	//Get section key and property key from keystr
+	string sectionkey(keystr.substr(0, splitpos));
+	string propertykey(keystr.substr(splitpos + 1));
+	toLower(sectionkey);
+	toLower(propertykey);
+
 	//Get iterator pair for this section
-	auto range = m_properties.equal_range(key);
+	auto range = m_properties.equal_range(sectionkey);
 	
 	if (range.first == range.second)
 	{
@@ -217,9 +229,10 @@ bool ConfigFile::getProperty(const Section& section, SProperty& property)
 	for (auto it = range.first; it != range.second; it++)
 	{
 		//Compare property keys
-		if (compare_string_weak(it->second.key, property.key))
+		if (compare_string_weak(it->second.key, propertykey))
 		{
-			property.value = it->second.value;
+			valuestr = it->second.value;
+			break;
 		}
 	}
 

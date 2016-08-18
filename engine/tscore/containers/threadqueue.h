@@ -23,6 +23,20 @@ namespace ts
 
 	public:
 
+		type peek()
+		{
+			unique_lock<mutex> lk(m_mutex);
+
+			//while (m_queue.empty())
+			//	m_notifier.wait(lk);
+			if (m_queue.empty())
+				return type();
+
+			type val(move(m_queue.front()));
+			m_queue.pop();
+			return move(val);
+		}
+
 		type pop()
 		{
 			std::unique_lock<std::mutex> lk(m_mutex);

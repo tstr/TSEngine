@@ -9,7 +9,7 @@
 #include <tscore/debug/log.h>
 #include <tscore/system/info.h>
 #include <tscore/system/thread.h>
-#include <tsgraphics/rendermodule.h> //Graphics
+#include <tsgraphics/rendermodule.h>
 
 #include "event/messenger.h"
 #include "cmdargs.h"
@@ -104,8 +104,8 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	getPrimaryDisplayInformation(dispinf);
 	uint32 width = 800;
 	uint32 height = 600;
-	config.getProperty("video", "resolutionW", width);
-	config.getProperty("video", "resolutionH", height);
+	config.getProperty("video.resolutionW", width);
+	config.getProperty("video.resolutionH", height);
 
 	SWindowDesc windesc;
 	windesc.title = params.appPath.str();
@@ -128,10 +128,16 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 		this_thread::yield();
 	}
 
+	uint32 fullscreenmode = 0;
+	config.getProperty("video.fullscreen", fullscreenmode);
+	tsassert(fullscreenmode <= 2);
+
 	SRenderModuleConfiguration rendercfg;
 	rendercfg.windowHandle = m_window->handle();
 	rendercfg.width = width;
 	rendercfg.height = height;
+	rendercfg.apiEnum = ERenderApiID::eRenderApiD3D11;
+	rendercfg.windowMode = (EWindowMode)fullscreenmode;
 	m_moduleRender.reset(new CRenderModule(rendercfg));
 
 	//Close application from console
@@ -153,9 +159,13 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	framecolour.x() = 0.0f;
 	framecolour.y() = 1.0f;
 
+	ESystemMessage msg = ESystemMessage::eMessageNull;
+
 	//Main engine loop
-	while (m_enabled)
+	while (msg != ESystemMessage::eMessageExit)
 	{
+		m_messageReciever.peek(msg);
+
 		timer.tick();
 		double dt = timer.deltaTime();
 		pheta += (2 * Pi) * dt / 5;
@@ -183,9 +193,19 @@ CEngineSystem::~CEngineSystem()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+int CEngineSystem::run()
+{
+
+
+
+	return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void CEngineSystem::shutdown()
 {
-	m_enabled = false;
+	m_messageReciever.post(ESystemMessage::eMessageExit);
 }
 
 //Event handlers

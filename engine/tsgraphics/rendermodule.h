@@ -11,17 +11,12 @@
 #include <tscore/system/memory.h>
 #include <tscore/maths.h>
 
+#include "renderapi.h"
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace ts
 {
-	enum ERenderScreenState
-	{
-		eScreenDefault	  = 0,
-		eScreenBorderless = 1,
-		eScreenFullscreen = 2
-	};
-	
 	enum ERenderApiID
 	{
 		eRenderApiNull	= 0,
@@ -35,8 +30,7 @@ namespace ts
 		//Screen dimensions
 		uint32 width = 0;
 		uint32 height = 0;
-		//Screen state
-		ERenderScreenState screenState = eScreenDefault;
+		EWindowMode windowMode = eWindowDefault;
 		ERenderApiID apiEnum = ERenderApiID::eRenderApiNull;
 	};
 
@@ -46,14 +40,17 @@ namespace ts
 	{
 	private:
 
+		SRenderModuleConfiguration m_config;
 		UniquePtr<IRenderApi> m_api;
+
+		bool loadApi(ERenderApiID id);
 
 	public:
 
 		CRenderModule(const SRenderModuleConfiguration&);
 		~CRenderModule();
-	
-		void setScreenState(ERenderScreenState state);
+		
+		void setWindowMode(EWindowMode mode);
 
 		void drawBegin(const Vector& vec);
 		void drawEnd();

@@ -4,10 +4,12 @@ SET(src_list
 	colour.h
 	rendermodule.h
 	rendermodule.cpp
+	rendermoduleloader.cpp
 	renderapi.h
 	api/DX11/DX11base.h
-	api/DX11/DX11Render.h
-	api/DX11/DX11Render.cpp
+	api/DX11/DX11render.h
+	api/DX11/DX11render.cpp
+	api/DX11/DX11adapter.cpp
 )
 
 ADD_LIBRARY(

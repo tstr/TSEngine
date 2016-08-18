@@ -36,6 +36,7 @@ if(DEFINED MSVC_VERSION AND NOT MSVC_VERSION LESS 1900)
 	file(GLOB CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_RELEASE
 		"${MSVS_DIR}/VC/redist/${_winsdk_arch8}/Microsoft.VC140.CRT/*.dll"
 		#"${WINDOWS_KIT_DIR}/Redist/ucrt/DLLs/${_winsdk_arch8}/*.dll"
+		"${WINDOWS_KIT_DIR}/bin/${_winsdk_arch8}/ucrt/*.dll"
 	)
 	
 	set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_RELEASE})

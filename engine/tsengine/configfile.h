@@ -32,13 +32,16 @@ namespace ts
 	{
 	public:
 
+		typedef std::string Section;
+		typedef std::string PropertyKey;
+		typedef std::string PropertyValue;
+
 		struct SProperty
 		{
-			std::string key;
-			std::string value;
+			PropertyKey key;
+			PropertyValue value;
 		};
 
-		typedef std::string Section;
 		typedef std::vector<SProperty> SPropertyArray;
 
 		bool load(const ts::Path& configpath);
@@ -54,25 +57,25 @@ namespace ts
 		size_t getSectionPropertyCount(const Section& section) const;
 		size_t getSectionCount() const;
 		
-		bool getProperty(const Section& section, SProperty& property);
+		bool getProperty(const PropertyKey& key, PropertyValue& val);
 		
 		template<
 			typename t,
 			class = std::enable_if<std::is_integral<t>::value>::type
 		>
 		inline bool getProperty(
-			const Section& section,
-			const std::string& key,
+			const PropertyKey& key,
 			t& value
 		)
 		{
 			using namespace ts;
-			SProperty prop;
-			prop.key = key;
-			if (getProperty(section, prop))
+
+			PropertyValue valstr;
+
+			if (getProperty(key, valstr))
 			{
 				std::stringstream stream;
-				stream << prop.value;
+				stream << valstr;
 				stream >> value;
 
 				return true;

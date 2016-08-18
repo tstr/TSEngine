@@ -63,7 +63,6 @@ enum Win32flags
 {
 	win_registered = 1,
 	win_open	   = 2,
-	win_borderless = 4
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -303,62 +302,6 @@ void CWindow::setEventListener(IEventListener* listener)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void CWindow::setFullscreen(bool on)
-{
-	if (on)
-	{
-		DEVMODE dev;
-		ZeroMemory(&dev, sizeof(DEVMODE));
-
-		pImpl->sizeCache = pImpl->size;
-
-		int width = GetSystemMetrics(SM_CXSCREEN), height = GetSystemMetrics(SM_CYSCREEN);
-		
-		pImpl->size.h = height;
-		pImpl->size.w = width;
-
-		EnumDisplaySettings(NULL, 0, &dev);
-
-		HDC context = GetWindowDC(pImpl->windowHandle);
-		int colourBits = GetDeviceCaps(context, BITSPIXEL);
-		int refreshRate = GetDeviceCaps(context, VREFRESH);
-
-		dev.dmPelsWidth = width;
-		dev.dmPelsHeight = height;
-		dev.dmBitsPerPel = colourBits;
-		dev.dmDisplayFrequency = refreshRate;
-		dev.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
-
-		//todo: fix
-		LONG result = ChangeDisplaySettingsA(&dev, CDS_FULLSCREEN);// == DISP_CHANGE_SUCCESSFUL);
-		tserror("ChangeDisplaySettings returned %", result);
-
-		SetWindowLongPtr(pImpl->windowHandle, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-		SetWindowPos(pImpl->windowHandle, HWND_TOP, 0, 0, width, height, 0);
-		BringWindowToTop(pImpl->windowHandle);
-
-		pImpl->flags |= win_borderless;
-	}
-	else
-	{
-		SetWindowLongPtr(pImpl->windowHandle, GWL_EXSTYLE, WS_EX_LEFT);
-		SetWindowLongPtr(pImpl->windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
-
-		SetWindowPos(pImpl->windowHandle, HWND_NOTOPMOST, pImpl->sizeCache.x, pImpl->sizeCache.y, pImpl->sizeCache.w, pImpl->sizeCache.h, SWP_SHOWWINDOW);
-		ShowWindow(pImpl->windowHandle, SW_RESTORE);
-
-		pImpl->size = pImpl->sizeCache;
-
-		//flagFullscreen = false;
-		pImpl->flags &= ~win_borderless;
-	}
-}
-
-bool CWindow::isFullscreen() const
-{
-	return ((pImpl->flags & win_borderless) != 0);
-}
 
 bool CWindow::isOpen() const
 {

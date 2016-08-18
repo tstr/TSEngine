@@ -36,20 +36,28 @@ namespace ts
 		int showWindow = 0;
 	};
 
+	enum class ESystemMessage
+	{
+		eMessageNull = 0,
+		eMessageExit = 1
+	};
+
 	//Base engine class - this class is the center of the application and is responsible for initializing and connecting all engine modules together
 	class CEngineSystem
 	{
 	private:
-
-		std::atomic<bool> m_enabled;
 
 		UniquePtr<IApplication> m_app;
 		UniquePtr<CWindow> m_window;
 		UniquePtr<CRenderModule> m_moduleRender;
 		//UniquePtr<CInputModule> m_moduleInput;		//todo: implement
 
+		CMessageReciever<ESystemMessage> m_messageReciever;
+
 		void onExit();
 		void onInit();
+
+		int run();
 
 	public:
 

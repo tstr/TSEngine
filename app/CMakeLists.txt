@@ -1,3 +1,4 @@
+#Application
 
 SET(src_list
 	main.cpp
