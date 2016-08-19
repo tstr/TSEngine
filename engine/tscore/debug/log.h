@@ -25,12 +25,12 @@ namespace ts
 		virtual void write(const char* message, ELogLevel level) = 0;
 	};
 
-	class CDefaultLogStream : public ILogStream
+	class TSCORE_API CDefaultLogStream : public ILogStream
 	{
 		void write(const char* message, ELogLevel level) override;
 	};
 	
-	class CLog
+	class TSCORE_API CLog
 	{
 	public:
 

@@ -54,7 +54,7 @@ namespace ts
 		uint8 colourDepth;
 	};
 	
-	void getSystemInformation(SSystemInfo& i);
-	void getPrimaryDisplayInformation(SDisplayInfo& i);
-	void getSystemMemoryInformation(SSystemMemoryInfo& i);
+	void TSCORE_API getSystemInformation(SSystemInfo& i);
+	void TSCORE_API getPrimaryDisplayInformation(SDisplayInfo& i);
+	void TSCORE_API getSystemMemoryInformation(SSystemMemoryInfo& i);
 }

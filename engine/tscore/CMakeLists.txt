@@ -2,6 +2,8 @@
 
 SET(src_list
 
+	internal/tscoreapi.h
+
 	platform/console.h
 	platform/console.cpp
 	platform/window.h
@@ -41,9 +43,9 @@ SET(src_list
 	strings.h
 )
 
-ADD_LIBRARY(
-	tscore STATIC
-	${src_list}
+ADD_LIBRARY_EX(
+	tscore
+	"${src_list}"
 )
 
 copy_source_groups(${src_list})

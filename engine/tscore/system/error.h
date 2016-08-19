@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include <tsconfig.h>
+#include <tscore/internal/tscoreapi.h>
 
 namespace ts
 {
 	namespace internal
 	{
-		void initializeSystemExceptionHandlingFilter();
+		void TSCORE_API initializeSystemExceptionHandlingFilter();
 
-		void initializeSystemMemoryLeakDetector();
+		void TSCORE_API initializeSystemMemoryLeakDetector();
 	}
 }

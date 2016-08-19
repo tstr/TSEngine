@@ -21,7 +21,38 @@ SET (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmakemodules)
 include(InstallSystemLibs)
 
 ################################################################################################
-#configuration file
+#	build shared libraries
+################################################################################################
+
+include(GenerateExportHeader)
+
+SET(TS_BUILD_SHARED_LIBRARIES CACHE BOOL OFF)
+
+macro(ADD_LIBRARY_EX libname libsrcs)
+	
+	UNSET(LIB_TYPE)
+	SET(LIB_TYPE STATIC)
+	
+	IF(TS_BUILD_SHARED_LIBRARIES)
+		SET(LIB_TYPE SHARED)
+	ENDIF()
+	
+	ADD_LIBRARY(
+		${libname} ${LIB_TYPE}
+		${libsrcs}
+	)
+	
+	SET_TARGET_PROPERTIES(${libname} PROPERTIES LINKER_LANGUAGE CXX)
+	
+	IF (TS_BUILD_SHARED_LIBRARIES)
+		GENERATE_EXPORT_HEADER( ${libname} )
+		message(FATAL_ERROR "shared libraries currently aren't implemented")
+	ENDIF()
+	
+endmacro()
+
+################################################################################################
+#	configuration file
 ################################################################################################
 
 if (WIN32)

@@ -4,13 +4,15 @@
 
 #pragma once
 
+#include <tscore/internal/tscoreapi.h>
+
 #include <exception>
 
 namespace ts
 {
 	namespace internal
 	{
-		void _internal_assert(
+		void TSCORE_API _internal_assert(
 			const char* file,
 			const char* func,
 			const char* expr,

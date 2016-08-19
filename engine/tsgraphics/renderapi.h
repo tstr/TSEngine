@@ -45,14 +45,7 @@ namespace ts
 		uint16 flags = 0;
 	};
 
-	class IRenderAdapterFactory
-	{
-	public:
 
-		virtual uint32 getAdapterCount() const = 0;
-		virtual bool enumAdapter(uint32 idx, SRenderAdapterDesc& desc) const = 0;
-	};
-	
 	class IRenderApi
 	{
 	public:
@@ -64,6 +57,24 @@ namespace ts
 
 		virtual ~IRenderApi() {}
 	};
+
+
+	class IRenderContext
+	{
+	public:
+
+
+	};
+
+
+	class IRenderAdapterFactory
+	{
+	public:
+
+		virtual uint32 getAdapterCount() const = 0;
+		virtual bool enumAdapter(uint32 idx, SRenderAdapterDesc& desc) const = 0;
+	};
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

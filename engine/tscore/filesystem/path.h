@@ -12,7 +12,7 @@
 
 namespace ts
 {
-	class Path
+	class TSCORE_API Path
 	{
 	public:
 		

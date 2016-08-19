@@ -9,13 +9,13 @@
 
 namespace ts
 {
-	void consoleOpen();
-	void consoleClose();
+	void TSCORE_API consoleOpen();
+	void TSCORE_API consoleClose();
 
 
-	typedef void(*consoleClosingHandler_t)();
+	typedef void(*ConsoleClosingHandler_t)();
 
-	void setConsoleClosingHandler(consoleClosingHandler_t f);
+	void TSCORE_API setConsoleClosingHandler(ConsoleClosingHandler_t f);
 
 	//void consoleWrite(const char* str, size_t count);
 	//void consoleRead(char* buffer, size_t count);

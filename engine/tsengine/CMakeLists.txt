@@ -12,9 +12,9 @@ SET(src_list
 	configfile.cpp
 )
 
-ADD_LIBRARY(
-	tsengine STATIC
-	${src_list}
+ADD_LIBRARY_EX(
+	tsengine
+	"${src_list}"
 )
 
 

@@ -50,7 +50,7 @@ namespace ts
 		g_active = false;
 	}
 
-	static consoleClosingHandler_t s_handler;
+	static ConsoleClosingHandler_t s_handler;
 
 	static BOOL WINAPI internalConsoleClosingHandler(DWORD ctrltype)
 	{
@@ -61,7 +61,7 @@ namespace ts
 		return true;
 	}
 
-	void setConsoleClosingHandler(consoleClosingHandler_t f)
+	void setConsoleClosingHandler(ConsoleClosingHandler_t f)
 	{
 		s_handler = f;
 		tsassert(SetConsoleCtrlHandler(internalConsoleClosingHandler, true));

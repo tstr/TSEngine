@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "internal/tscoreapi.h"
+
 namespace ts
 {
 	typedef char int8;

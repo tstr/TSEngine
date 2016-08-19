@@ -12,9 +12,9 @@ SET(src_list
 	api/DX11/DX11adapter.cpp
 )
 
-ADD_LIBRARY(
-	tsgraphics STATIC
-	${src_list}
+ADD_LIBRARY_EX(
+	tsgraphics
+	"${src_list}"
 )
 
 
