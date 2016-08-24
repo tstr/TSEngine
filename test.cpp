@@ -3,152 +3,126 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-namespace ct
+enum EResourceType
 {
-	namespace api
-	{
-		
-	}
-}
-
-enum class ResourceType
-{
-	ResourceUnknown,
-	ResourceBuffer,
-	ResourceTexture,
-	ResourceViewTexture,
-	ResourceViewRender,
-	ResourceViewDepth,
-	ResourceShader,
-	ResourceShaderProgram
+	eResourceUnknown,
+	eResourceBuffer,
+	eResourceTexture,
+	eResourceViewTexture,
+	eResourceViewRender,
+	eResourceViewDepth,
+	eResourceShader,
+	eResourceShaderProgram
 };
 
-class Resource
-{
-public:
-	
-	virtual ResourceType GetType() const = 0;
-	virtual IRenderApi* GetApi() const = 0;
-	
-	virtual void AddRef() const = 0;
-	virtual uint32 GetRef() const = 0;
-	virtual void Release() const = 0;
+struct IRenderResource
+{	
+	virtual EResourceType getType() const = 0;
+	virtual IRenderApi* getApi() const = 0;
+	virtual void release() const = 0;
 };
 
-class ResourcePtr
+class ResourceProxy
 {
 private:
 	
-	Resource* m_handle = nullptr;
+	IRenderResource* m_handle = nullptr;
 	
 public:
 
-	Resource* const get() const { return m_handle; }
+	IRenderResource* const get() const { return m_handle; }
+	IRenderResource** getPtr() { return &m_handle; }
 	bool isNull() const { return (m_handle != nullptr); }
 	
+	ResourceProxy() {}
+	ResourceProxy(IRenderResource* h) : m_handle(h) {}
 	
-	ResourcePtr() {}
-	ResourcePtr(Resource* h) : m_handle(h) {}
+	ResourceProxy(const ResourceProxy& h) = delete;
 	
-	ResourcePtr(const ResourcePtr& h) : m_handle(h.m_handle)
-	{
-		if (m_handle) m_handle->AddRef();
-	}
-	
-	ResourcePtr(ResourcePtr&& h) : m_handle(h.m_handle)
+	ResourceProxy(ResourceProxy&& h) : m_handle(h.m_handle)
 	{
 		if (m_handle)
 		{
-			m_handle->AddRef();
 			h.m_handle->Release();
 		}
 	}
 	
-	~ResourcePtr()
+	~ResourceProxy()
 	{
 		if (m_handle) m_handle->Release();
 	}
 	
-	ResourcePtr& operator=(const ResourcePtr& handle)
-	{
-		if (m_handle)
-			m_handle->Release();
-		
-		if (m_handle = h.m_handle) m_handle->AddRef();
-	}
+	ResourceProxy& operator=(const ResourceProxy& handle) = delete;
 	
-	ResourcePtr& operator=(ResourcePtr&& handle)
+	ResourceProxy& operator=(ResourceProxy&& handle)
 	{
 		if (m_handle)
 			m_handle->Release();
 		
 		if (m_handle = h.m_handle)
 		{
-			m_handle->AddRef();
 			h.m_handle->Release();
 		}
 	}
 	
-	ResourceType GetType() const { return m_type; }
+	ResourceType getType() const { return m_type; }
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-enum class BufferUsage
+enum EBufferUsage
 {
-	UsageUnknown,
-	UsageVertex,
-	UsageIndex,
-	UsageUniform
+	eUsageUnknown,
+	eUsageVertex,
+	eUsageIndex,
+	eUsageUniform
 };
 
-struct ResourceBufferData
+struct SResourceBufferData
 {
 	const void* memory = nullptr;
 	uint32 size = 0;
-	BufferUsage usage = BufferUsage::UsageUnknown;
+	EBufferUsage usage = BufferUsage::UsageUnknown;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-enum TextureFormat
+enum ETextureFormat
 {
-	FormatUnknown,
+	eFormatUnknown,
 	
-	FormatByte,
+	eFormatByte,
 	
 	//8 bits per channel - int
-	FormatColourRGB,
-	FormatColourRGBA,
-	FormatColourARGB,
+	eFormatColourRGB,
+	eFormatColourRGBA,
+	eFormatColourARGB,
 	
 	//32 bits per channel - float
-	FormatFloat1,
-	FormatFloat2,
-	FormatFloat3,
-	FormatFloat4,
+	eFormatFloat1,
+	eFormatFloat2,
+	eFormatFloat3,
+	eFormatFloat4,
 	
-	FormatDepth16,
-	FormatDepth32
+	eFormatDepth16,
+	eFormatDepth32
 }
 
-struct TextureResourceData
+struct STextureResourceData
 {
 	const void* memory = nullptr;
 	uint32 memoryByteWidth = 0;
 	uint32 memoryByteDepth = 0;
 };
 
-enum TextureResourceType
+enum ETextureResourceType
 {
-	TextureResource 			= 1,
-	TextureRenderTargetResource = 2,
-	TextureDepthTargetResource  = 4
+	eTextureShaderResource 		 = 1,
+	eTextureRenderTargetResource = 2,
+	eTextureDepthTargetResource  = 4
 };
 
-struct TextureResourceDescriptor
+struct STextureResourceDescriptor
 {
 	TextureFormat format = TextureFormat::FormatUnknown;
 	TextureResourceType typemask = 0;
@@ -163,71 +137,75 @@ struct TextureResourceDescriptor
 	Multisampling sampling;
 };
 
-struct TextureViewDescriptor
+struct STextureViewDescriptor
 {
 	uint32 arrayIndex = 0;
 	uint32 arrayCount = 0;
 };
 
-enum TextureFilter
+enum ETextureSampleFilter
 {
-	TextureFilterPoint,
-	TextureFilterLinear,
-	TextureFilterBilinear,
-	TextureFilterTrilinear,
-	TextureFilterAnisotropic2x,
-	TextureFilterAnisotropic4x,
-	TextureFilterAnisotropic8x,
-	TextureFilterAnisotropic16x
+	eTextureFilterPoint,
+	eTextureFilterLinear,
+	eTextureFilterBilinear,
+	eTextureFilterTrilinear,
+	eTextureFilterAnisotropic2x,
+	eTextureFilterAnisotropic4x,
+	eTextureFilterAnisotropic8x,
+	eTextureFilterAnisotropic16x
 };
 
-enum TextureAddress
+enum ETextureSampleAddress
 {
-	TextureAddressWrap,
-	TextureAddressMirror,
-	TextureAddressClamp,
+	eTextureAddressWrap,
+	eTextureAddressMirror,
+	eTextureAddressClamp,
 };
 
-struct TextureSampler
+struct STextureSampler
 {
-	TextureAddress addressMode;
-	TextureFilter filtering;
+	ETextureSampleAddress addressMode;
+	ETextureSampleFilter filtering;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-enum class ShaderStage
+enum EShaderStage
 {
-	StageUnknown,
-	StageVertex,
-	StagePixel,
-	StageGeometry,
-	StageCompute
+	eShaderStageUnknown,
+	eShaderStageVertex,
+	eShaderStagePixel,
+	eShaderStageGeometry,
+	eShaderStageHull,
+	eShaderStageDomain,
+	eShaderStageCompute
 };
 
-struct ShaderProgram
+struct SShaderProgram
 {
-	ResourcePtr vertexShaderStage;
-	ResourcePtr pixelShaderStage;
-	ResourcePtr geometryShaderStage;
+	ResourceProxy stageVertex;
+	ResourceProxy stagePixel;
+	ResourceProxy stageGeometry;
+	ResourceProxy stageHull;
+	ResourceProxy stageDomain;
 };
 
-enum class ShaderInputType
+enum EShaderInputType
 {
-	InputUnknown,
-	InputFloat,
-	InputFloat2,
-	InputFloat3,
-	InputFloat4,
-	InputMatrix,
-	InputInt32,
-	InputUint32,
+	eShaderInputUnknown,
+	eShaderInputFloat,
+	eShaderInputFloat2,
+	eShaderInputFloat3,
+	eShaderInputFloat4,
+	eShaderInputMatrix,
+	eShaderInputInt32,
+	eShaderInputUint32,
 };
 
-enum class ShaderInputChannel
+enum EShaderInputChannel
 {
-	PerVertex,
-	PerInstance
+	eInputPerVertex,
+	eInputPerInstance
 };
 
 struct ShaderInputDescriptor
@@ -235,8 +213,8 @@ struct ShaderInputDescriptor
 	uint32 bufferSlot = 0;
 	const char* semanticName = "";
 	uint32 byteOffset = 0;
-	ShaderInputType type = ShaderInputType::InputUnknown;
-	ShaderInputChannel channel = ShaderInputChannel::PerVertex;
+	EShaderInputType type = ShaderInputType::InputUnknown;
+	EShaderInputChannel channel = ShaderInputChannel::PerVertex;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -249,65 +227,65 @@ struct Viewport
 	uint32 y = 0; //y offset
 };
 
-enum class RenderStatus
+enum ERenderStatus
 {
-	Ok,
-	InvalidParameter,
-	InvalidResource,
-	InvalidTextureResource,
-	InvalidTextureView,
-	InvalidTextureFormat,
-	InvalidShaderByteCode
+	eOk,
+	eInvalidParameter,
+	eInvalidResource,
+	eInvalidTextureResource,
+	eInvalidTextureView,
+	eInvalidTextureFormat,
+	eInvalidShaderByteCode
 };
 
 class IRenderApi
 {
 public:
 	
-	virtual RenderStatus CreateResourceBuffer(ResourcePtr& rsc, const ResourceBufferData& data) = 0;
-	virtual RenderStatus CreateResourceTexture2D(ResourcePtr& rsc, const TextureResourceData* data, const TextureResourceDescriptor& desc) = 0;
-	virtual RenderStatus CreateResourceTexture3D(ResourcePtr& rsc, const TextureResourceData* data, const TextureResourceDescriptor& desc) = 0;
-	virtual RenderStatus CreateResourceTextureCube(ResourcePtr& rsc, const TextureResourceData* data, const TextureResourceDescriptor& desc) = 0;
+	virtual ERenderStatus createResourceBuffer(ResourceProxy& rsc, const ResourceBufferData& data) = 0;
+	virtual ERenderStatus createResourceTexture2D(ResourceProxy& rsc, const TextureResourceData* data, const TextureResourceDescriptor& desc) = 0;
+	virtual ERenderStatus createResourceTexture3D(ResourceProxy& rsc, const TextureResourceData* data, const TextureResourceDescriptor& desc) = 0;
+	virtual ERenderStatus createResourceTextureCube(ResourceProxy& rsc, const TextureResourceData* data, const TextureResourceDescriptor& desc) = 0;
 	
-	virtual RenderStatus CreateViewRenderTarget(ResourcePtr& view, const ResourcePtr& rsc, const TextureViewDescriptor& desc) = 0;
-	virtual RenderStatus CreateViewDepthTarget(ResourcePtr& view, const ResourcePtr& rsc, const TextureViewDescriptor& desc) = 0;
+	virtual ERenderStatus createViewRenderTarget(ResourceProxy& view, const ResourceProxy& rsc, const TextureViewDescriptor& desc) = 0;
+	virtual ERenderStatus createViewDepthTarget(ResourceProxy& view, const ResourceProxy& rsc, const TextureViewDescriptor& desc) = 0;
 	
-	virtual RenderStatus CreateViewTextureCube(ResourcePtr& view, const ResourcePtr& rsc, const TextureViewDescriptor& desc) = 0;
-	virtual RenderStatus CreateViewTexture2D(ResourcePtr& view, const ResourcePtr& rsc, const TextureViewDescriptor& desc) = 0;
-	virtual RenderStatus CreateViewTexture3D(ResourcePtr& view,const ResourcePtr& rsc ) = 0;
+	virtual ERenderStatus createViewTextureCube(ResourceProxy& view, const ResourceProxy& rsc, const TextureViewDescriptor& desc) = 0;
+	virtual ERenderStatus createViewTexture2D(ResourceProxy& view, const ResourceProxy& rsc, const TextureViewDescriptor& desc) = 0;
+	virtual ERenderStatus createViewTexture3D(ResourceProxy& view,const ResourceProxy& rsc ) = 0;
 	
-	virtual RenderStatus CreateShaderStage(ResourcePtr& shader, const void* bytecode, uint32 bytecodesize, ShaderType stage) = 0;
-	virtual RenderStatus CreateShaderProgram(ResourcePtr& shaderProg, const ShaderProgram& desc) = 0;
-	virtual RenderStatus CreateShaderInputDescriptor(ResourcePtr& rsc, const ShaderInputDescriptor& desc) = 0;
+	virtual ERenderStatus createShaderStage(ResourceProxy& shader, const void* bytecode, uint32 bytecodesize, ShaderType stage) = 0;
+	virtual ERenderStatus createShaderProgram(ResourceProxy& shaderProg, const ShaderProgram& desc) = 0;
+	virtual ERenderStatus createShaderInputDescriptor(ResourceProxy& rsc, const ShaderInputDescriptor& desc) = 0;
 	
-	virtual IRenderContext* CreateRenderContext() = 0;
-	virtual void DestroyRenderContext(IRenderContext* rc) = 0;
+	virtual IRenderContext* createRenderContext() = 0;
+	virtual void destroyRenderContext(IRenderContext* rc) = 0;
 };
 
-enum ResourceLimits
+enum EResourceLimits
 {
-	MaxTextureSlots = 16,
-	MaxTextureSamplerSlots = 4,
-	MaxVertexBuffers = 8,
-	MaxUniformBuffers = 8,
-	MaxRenderTargets = 4,
-	MaxUnorderedAccessViews = 4
+	eMaxTextureSlots = 16,
+	eMaxTextureSamplerSlots = 4,
+	eMaxVertexBuffers = 8,
+	eMaxUniformBuffers = 8,
+	eMaxRenderTargets = 4,
+	eMaxUnorderedAccessViews = 4
 };
 
-struct DrawCall
+struct SRenderCommand
 {
-	ResourcePtr depthTarget;
-	ResourcePtr renderTarget[ResourceLimits::MaxRenderTargets];
+	ResourceProxy depthTarget;
+	ResourceProxy renderTarget[ResourceLimits::MaxRenderTargets];
 	
 	Viewport viewport;
 
-	ResourcePtr shaderProgram;
-	ResourcePtr textures[ResourceLimits::MaxTextureSlots];
+	ResourceProxy shaderProgram;
+	ResourceProxy textures[ResourceLimits::MaxTextureSlots];
 	TextureSampler textureSamplers[ResourceLimits::MaxTextureSamplerSlots];
 	
-	ResourcePtr indexBuffer;
-	ResourcePtr vertexBuffers[ResourceLimits::MaxVertexBuffers];
-	ResourcePtr uniformBuffers[ResourceLimits::MaxUniformBuffers];
+	ResourceProxy indexBuffer;
+	ResourceProxy vertexBuffers[ResourceLimits::MaxVertexBuffers];
+	ResourceProxy uniformBuffers[ResourceLimits::MaxUniformBuffers];
 	
 	uint32 indexStart = 0;
 	uint32 indexCount = 0;
@@ -316,7 +294,7 @@ struct DrawCall
 	uint32 instanceCount = 1;
 	
 	VertexTopology vertexTopology = VertexTopology::TopologyUnknown;
-	ResourcePtr vertexInputDescriptor;
+	ResourceProxy vertexInputDescriptor;
 
 	bool enableDepth = true;
 	bool enableAlpha = true;
@@ -324,23 +302,22 @@ struct DrawCall
 
 struct ComputeCall
 {
-	ResourcePtr computeShader;
-	ResourcePtr textures[ResourceLimits::ResourceLimitMaxTextureSlots];
-	ResourcePtr unorderedAccessViews[ResourceLimits::ResourceLimitMaxUnorderedAccessViews];
+	ResourceProxy computeShader;
+	ResourceProxy textures[ResourceLimits::ResourceLimitMaxTextureSlots];
+	ResourceProxy unorderedAccessViews[ResourceLimits::ResourceLimitMaxUnorderedAccessViews];
 };
 
 class IRenderContext
 {
 public:
 	
-	virtual void ResourceBufferUpdate(const ResourcePtr& rsc, const void* memory) = 0;
-	virtual void ResourceBufferCopy(const ResourcePtr& src, ResourcePtr& dest) = 0;
-	virtual void ResourceTextureUpdate(uint32 index, ResourcePtr& rsc, const void* memory) = 0;
-	virtual void ResourceTextureCopy(const ResourcePtr& src, ResourcePtr& dest) = 0;
-	virtual void ResourceTextureResolve(const ResourcePtr& src, ResourcePtr& dest) = 0;
+	virtual void resourceBufferUpdate(const ResourceProxy& rsc, const void* memory) = 0;
+	virtual void resourceBufferCopy(const ResourceProxy& src, ResourceProxy& dest) = 0;
+	virtual void resourceTextureUpdate(uint32 index, ResourceProxy& rsc, const void* memory) = 0;
+	virtual void resourceTextureCopy(const ResourceProxy& src, ResourceProxy& dest) = 0;
+	virtual void resourceTextureResolve(const ResourceProxy& src, ResourceProxy& dest) = 0;
 	
-	virtual void SubmitCommand(const DrawCall& command) = 0;
-	virtual void SubmitCommand(const ComputeCall& command) = 0;
+	virtual void SubmitCommand(const SRenderCommand& command) = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////

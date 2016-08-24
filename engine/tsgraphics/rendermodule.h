@@ -7,10 +7,10 @@
 #pragma once
 
 #include <tsconfig.h>
-#include <tscore/types.h>
 #include <tscore/system/memory.h>
 #include <tscore/maths.h>
 
+#include "rendercommon.h"
 #include "renderapi.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
