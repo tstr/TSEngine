@@ -114,19 +114,19 @@ namespace ts
 	//Buffers
 	///////////////////////////////////////////////////////////////////////////////////////////
 
-	enum EBufferUsage
+	enum EBufferType
 	{
-		eUsageUnknown,
-		eUsageVertex,
-		eUsageIndex,
-		eUsageUniform
+		eBufferTypeUnknown,
+		eBufferTypeVertex,
+		eBufferTypeIndex,
+		eBufferTypeUniform
 	};
 
 	struct SBufferResourceData
 	{
 		const void* memory = nullptr;
 		uint32 size = 0;
-		EBufferUsage usage = EBufferUsage::eUsageUnknown;
+		EBufferType usage = eBufferTypeUnknown;
 	};
 
 	///////////////////////////////////////////////////////////////////////////////////////////

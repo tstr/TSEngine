@@ -1,10 +1,15 @@
 #TSENGINE
 
 SET(src_list
+	
 	../tsengine.h
 	event/event.h
 	event/event.cpp
 	event/messenger.h
+	
+	input/inputmodule.h
+	input/inputmodule.cpp
+
 	tsengine.cpp
 	cmdargs.cpp
 	cmdargs.h

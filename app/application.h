@@ -20,6 +20,7 @@ namespace ts
 		CTexture2D m_tex2D;
 		CShader m_vertexshader;
 		CShader m_pixelshader;
+		CUniformBuffer m_uniforms;
 
 	public:
 

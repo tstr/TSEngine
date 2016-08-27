@@ -80,7 +80,7 @@ void Application::onInit(CEngineSystem* system)
 	api->createContext(&m_context);
 
 	bool shader_debug = true;
-
+	
 	SShaderCompileConfig vsconfig;
 	vsconfig.debuginfo = shader_debug;
 	vsconfig.entrypoint = "VS";
@@ -94,14 +94,8 @@ void Application::onInit(CEngineSystem* system)
 	tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShader(m_pixelshader, code, psconfig)));
 
 	//Test uniform buffer
-	ResourceProxy uniformbuffer;
-	SBufferResourceData bufdata;
-	Vector v;
-	bufdata.memory = &v;
-	bufdata.size = sizeof(Vector);
-	bufdata.usage = EBufferUsage::eUsageUniform;
-	status = api->createResourceBuffer(uniformbuffer, bufdata);
-	tsassert(!status);
+	Vector uniformVec(1,1,1,1);
+	m_uniforms = CUniformBuffer(m_system->getRenderModule(), uniformVec);
 
 	tsassert(m_system->getRenderModule()->getTextureManager().loadTexture2D("testimage.png", m_tex2D));
 
@@ -126,7 +120,7 @@ void Application::onInit(CEngineSystem* system)
 	m_command.vertexCount = 6;
 	m_command.vertexStart = 0;
 	m_command.vertexTopology = EVertexTopology::eTopologyTriangleList;
-	m_command.uniformBuffers[0] = uniformbuffer;
+	m_command.uniformBuffers[0] = m_uniforms.getBuffer();
 	m_command.shaders.stageVertex = m_vertexshader.getShader();
 	m_command.shaders.stagePixel = m_pixelshader.getShader();
 	m_command.viewport.w = rendercfg.width;

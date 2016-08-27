@@ -4,9 +4,6 @@
 
 #include "rendermodule.h"
 #include <tscore/debug/log.h>
-#include <tscore/system/time.h>
-
-#include "API/DX11/DX11render.h"
 
 using namespace std;
 using namespace ts;

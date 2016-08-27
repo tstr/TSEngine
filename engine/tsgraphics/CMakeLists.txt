@@ -8,12 +8,19 @@ SET(src_list
 	rendermoduleloader.cpp
 	renderapi.h
 	rendercommon.h
+	
 	texturemanager.h
 	texturemanager.cpp
 	shadermanager.h
 	shadermanager.cpp
-
-	nvoptimus.cpp
+	
+	indexbuffer.h
+	vertexbuffer.h
+	uniformbuffer.h
+	renderbuffer.cpp
+	buffercommon.h
+	
+	internal/nvoptimus.cpp
 
 	api/DX11/DX11base.h
 	api/DX11/DX11render.h

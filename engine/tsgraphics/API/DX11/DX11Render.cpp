@@ -269,9 +269,9 @@ ERenderStatus DX11RenderApi::createResourceBuffer(ResourceProxy& rsc, const SBuf
 
 	switch (data.usage)
 	{
-		case EBufferUsage::eUsageVertex: { subdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER; break; }
-		case EBufferUsage::eUsageIndex: { subdesc.BindFlags = D3D11_BIND_INDEX_BUFFER; break; }
-		case EBufferUsage::eUsageUniform: { subdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; break; }
+		case EBufferType::eBufferTypeVertex: { subdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER; break; }
+		case EBufferType::eBufferTypeIndex: { subdesc.BindFlags = D3D11_BIND_INDEX_BUFFER; break; }
+		case EBufferType::eBufferTypeUniform: { subdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; break; }
 	}
 	
 	//Only dynamic resources are allowed direct access to buffer memory

@@ -17,6 +17,10 @@
 #include "shadermanager.h"
 #include "texturemanager.h"
 
+#include "indexbuffer.h"
+#include "vertexbuffer.h"
+#include "uniformbuffer.h"
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace ts
