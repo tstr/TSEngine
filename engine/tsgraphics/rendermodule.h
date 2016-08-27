@@ -8,10 +8,14 @@
 
 #include <tsconfig.h>
 #include <tscore/system/memory.h>
+#include <tscore/filesystem/path.h>
 #include <tscore/maths.h>
 
 #include "rendercommon.h"
 #include "renderapi.h"
+
+#include "shadermanager.h"
+#include "texturemanager.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -32,6 +36,8 @@ namespace ts
 		uint32 height = 0;
 		EWindowMode windowMode = eWindowDefault;
 		ERenderApiID apiEnum = ERenderApiID::eRenderApiNull;
+		//Root asset loading path for textures/shaders/models
+		Path rootpath;
 	};
 
 	class IRenderApi;
@@ -43,14 +49,25 @@ namespace ts
 		SRenderModuleConfiguration m_config;
 		UniquePtr<IRenderApi> m_api;
 
+		CTextureManager m_textureManager;
+		CShaderManager m_shaderManager;
+
 		bool loadApi(ERenderApiID id);
 
 	public:
 
 		CRenderModule(const SRenderModuleConfiguration&);
 		~CRenderModule();
-		
+
+		CRenderModule(const CRenderModule&) = delete;
+		CRenderModule& operator=(const CRenderModule&) = delete;
+
+		CTextureManager& getTextureManager() { return m_textureManager; }
+		CShaderManager& getShaderManager() { return m_shaderManager; }
+		IRenderApi* const getApi() const { return m_api.get(); }
+
 		void setWindowMode(EWindowMode mode);
+		void getConfiguration(SRenderModuleConfiguration& cfg) { cfg = m_config; }
 
 		void drawBegin(const Vector& vec);
 		void drawEnd();

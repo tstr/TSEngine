@@ -8,6 +8,10 @@ SET(src_list
 	rendermoduleloader.cpp
 	renderapi.h
 	rendercommon.h
+	texturemanager.h
+	texturemanager.cpp
+	shadermanager.h
+	shadermanager.cpp
 
 	nvoptimus.cpp
 

@@ -60,8 +60,7 @@ namespace ts
 		uint16 getDirectoryCount() const;
 
 		//Add a directory or group of directories to this path
-		void addDirectories(const std::string& dir) { addDirectories(dir.c_str()); }
-		void addDirectories(const char* dir);
+		void addDirectories(const Path& dir);
 
 		//Get the name of a directory at a particular index of the path
 		Path getDirectory(uint16 idx) const;
@@ -70,9 +69,6 @@ namespace ts
 		inline Path getDirectoryTop() const { return getDirectory(getDirectoryCount() - 1); }
 		//Get the bottom-most directory in the path
 		inline Path getDirectoryRoot() const { return getDirectory(0); }
-
-		//Get a path relative to this path
-		Path getRelativePath(const Path& subpath) const;
 
 	private:
 		

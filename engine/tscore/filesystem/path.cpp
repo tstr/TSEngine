@@ -51,10 +51,14 @@ void Path::composePath(const char* pathstr)
 		offset = 1;
 	}
 
-	if (strbuf[length - 1] == '\\' || strbuf[length - 1] == '/')
+	if (length > 0)
 	{
-		strbuf[length - 1] = 0;
+		if (strbuf[length - 1] == '\\' || strbuf[length - 1] == '/')
+		{
+			strbuf[length - 1] = 0;
+		}
 	}
+
 
 	m_path.set(strbuf.get() + offset);
 }
@@ -85,7 +89,7 @@ uint16 Path::getDirectoryCount() const
 Path Path::getDirectory(uint16 idx) const
 {
 	uint16 idxcounter = 0;	//Current directory index
-	uint16 prevchar = 0;	//Previous char offset
+	uint prevchar = 0;	//Previous char offset
 
 	for (uint curchar = 0; curchar < Path::MaxLength; curchar++)
 	{
@@ -93,10 +97,11 @@ Path Path::getDirectory(uint16 idx) const
 		{
 			if (idxcounter == idx)
 			{
-				return Path(string(m_path.get() + prevchar, curchar));
+				auto str = string(m_path.get() + prevchar, m_path.get() + curchar);
+				return Path(move(str));
 			}
 
-			prevchar = curchar;
+			prevchar = curchar + 1;
 
 			idxcounter++;
 		}
@@ -107,28 +112,9 @@ Path Path::getDirectory(uint16 idx) const
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Path::addDirectories(const char* dirstr)
+void Path::addDirectories(const Path& subpath)
 {
-	Path dir(dirstr);
-	uint16 count = dir.getDirectoryCount();
-
-	auto len = (uint16)strlen(m_path.get());
-
-	for (uint16 i = 0; i < count; i++)
-	{
-		Path subdir(dir.getDirectory(i));
-
-		m_path.at(len) = '/';
-
-		m_path.set(subdir.str(), len + 1);
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-Path Path::getRelativePath(const Path& subpath) const
-{
-	Path destpath(*this);
+	Path& destpath = *this;
 	
 	//iterate over each directory in subpath
 	uint16 numdirs = subpath.getDirectoryCount();
@@ -144,12 +130,11 @@ Path Path::getRelativePath(const Path& subpath) const
 		else
 		{
 			//Append a single directory
-			destpath.addDirectories(dirstr);
+			size_t len = destpath.m_path.length();
+			destpath.m_path.set("/", len);
+			destpath.m_path.set(dirstr.c_str(), len + 1);
 		}
-	}
-
-	
-	return destpath;
+	}	
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -8,8 +8,6 @@
 
 #include "rendercommon.h"
 
-#include <tscore/filesystem/path.h>
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace ts
@@ -25,61 +23,88 @@ namespace ts
 		eResourceUnknown,
 		eResourceBuffer,
 		eResourceTexture,
+		eResourceTextureSampler,
 		eResourceViewTexture,
 		eResourceViewRender,
 		eResourceViewDepth,
-		eResourceShader
+		eResourceShader,
+		eResourceShaderInput
 	};
 
 	struct IRenderResource
 	{
 		virtual EResourceType getType() const = 0;
 		virtual IRenderApi* getApi() const = 0;
-		virtual void release() const = 0;
+
+		virtual uint32 addref() = 0;
+		virtual void release() = 0;
 	};
 
 	class ResourceProxy
 	{
 	private:
 		
+		//uint32 m_refcount = 0;
 		IRenderResource* m_handle = nullptr;
 		
 	public:
 
-		void set(IRenderResource* rsc) { m_handle = rsc; }
 		IRenderResource* const get() const { return m_handle; }
-		IRenderResource** getPtr() { return &m_handle; }
 		bool isNull() const { return (m_handle != nullptr); }
-		
+
 		ResourceProxy() {}
 		ResourceProxy(IRenderResource* h) : m_handle(h) {}
-		
-		//ResourceProxy(const ResourceProxy& h) = delete;
-		
-		ResourceProxy(ResourceProxy&& h) : m_handle(h.m_handle)
+
+		void reset(IRenderResource* rsc)
 		{
 			if (m_handle)
-			{
-				h.m_handle->release();
-			}
+				m_handle->release();
+
+			m_handle = rsc;
+		}
+		
+		ResourceProxy(const ResourceProxy& h) :
+			m_handle(h.m_handle)
+		{
+			if (m_handle)
+				m_handle->addref();
+		}
+		
+		ResourceProxy(ResourceProxy&& h) :
+			m_handle(h.m_handle)
+		{
+			h.m_handle = nullptr;
 		}
 		
 		~ResourceProxy()
 		{
-			if (m_handle) m_handle->release();
+			if (m_handle != nullptr)
+				m_handle->release();
+
+			m_handle = nullptr;
 		}
 		
-		//ResourceProxy& operator=(const ResourceProxy& handle) = delete;
-		
-		ResourceProxy& operator=(ResourceProxy&& handle)
+		ResourceProxy& operator=(const ResourceProxy& h)
 		{
-			if (m_handle)
+			if (m_handle != nullptr)
 				m_handle->release();
-			
-			if (m_handle = handle.m_handle)
-			{
-				handle.m_handle->release();
-			}
+
+			m_handle = h.m_handle;
+
+			if (m_handle)
+				m_handle->addref();
+
+			return *this;
+		}
+		
+		ResourceProxy& operator=(ResourceProxy&& h)
+		{
+			//Swap handles
+			auto oldhandle = m_handle;
+			m_handle = h.m_handle;
+			h.m_handle = oldhandle;
+
+			return *this;
 		}
 		
 		EResourceType getType() const { return m_handle->getType(); }
@@ -97,7 +122,7 @@ namespace ts
 		eUsageUniform
 	};
 
-	struct SResourceBufferData
+	struct SBufferResourceData
 	{
 		const void* memory = nullptr;
 		uint32 size = 0;
@@ -173,10 +198,9 @@ namespace ts
 		uint32 arrayCount = 0;
 	};
 
-	enum ETextureSampleFilter
+	enum ETextureFilterMode
 	{
 		eTextureFilterPoint,
-		eTextureFilterLinear,
 		eTextureFilterBilinear,
 		eTextureFilterTrilinear,
 		eTextureFilterAnisotropic2x,
@@ -185,17 +209,19 @@ namespace ts
 		eTextureFilterAnisotropic16x
 	};
 
-	enum ETextureSampleAddress
+	enum ETextureAddressMode
 	{
 		eTextureAddressWrap,
 		eTextureAddressMirror,
 		eTextureAddressClamp,
 	};
 
-	struct STextureSampler
+	struct STextureSamplerDescriptor
 	{
-		ETextureSampleAddress addressMode;
-		ETextureSampleFilter filtering;
+		ETextureAddressMode addressU;
+		ETextureAddressMode addressV;
+		ETextureAddressMode addressW;
+		ETextureFilterMode filtering;
 	};
 
 	///////////////////////////////////////////////////////////////////////////////////////////
@@ -289,11 +315,13 @@ namespace ts
 	{
 	public:
 		
-		virtual ERenderStatus createResourceBuffer(ResourceProxy& rsc, const SResourceBufferData& data) = 0;
+		//Resource creation methods
+		virtual ERenderStatus createResourceBuffer(ResourceProxy& rsc, const SBufferResourceData& data) = 0;
 		virtual ERenderStatus createResourceTexture(ResourceProxy& rsc, const STextureResourceData* data, const STextureResourceDescriptor& desc) = 0;
+		virtual ERenderStatus createTextureSampler(ResourceProxy& sampler, const STextureSamplerDescriptor& desc) = 0;
 		
-		virtual ERenderStatus createTargetDepth(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) = 0;
-		virtual ERenderStatus createTargetRender(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) = 0;
+		virtual ERenderStatus createViewDepthTarget(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) = 0;
+		virtual ERenderStatus createViewRenderTarget(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) = 0;
 
 		virtual ERenderStatus createViewTextureCube(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) = 0;
 		virtual ERenderStatus createViewTexture2D(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) = 0;
@@ -302,11 +330,15 @@ namespace ts
 		virtual ERenderStatus createShader(ResourceProxy& shader, const void* bytecode, uint32 bytecodesize, EShaderStage stage) = 0;
 		virtual ERenderStatus createShaderInputDescriptor(ResourceProxy& rsc, const ResourceProxy& vertexshader, const ShaderInputDescriptor* sids, uint32 sidnum) = 0;
 		
-		virtual IRenderContext* createRenderContext() = 0;
-		virtual void destroyRenderContext(IRenderContext* context) = 0;
+		//Render context methods
+		virtual void createContext(IRenderContext** context) = 0;
+		virtual void destroyContext(IRenderContext* context) = 0;
+		virtual void executeContext(IRenderContext* context) = 0;
 
+		//Window/swapchain methods
 		virtual void setWindowMode(EWindowMode mode) = 0;
 		virtual void setWindowDimensions(uint32 w, uint32 h) = 0;
+		virtual void getWindowRenderTarget(ResourceProxy& target) = 0;
 
 		virtual void drawBegin(const Vector& vec) = 0;
 		virtual void drawEnd() = 0;
@@ -341,11 +373,11 @@ namespace ts
 
 		SShaderProgram shaders;
 		ResourceProxy textures[EResourceLimits::eMaxTextureSlots];
-		STextureSampler textureSamplers[EResourceLimits::eMaxTextureSamplerSlots];
+		ResourceProxy textureSamplers[EResourceLimits::eMaxTextureSamplerSlots];
 		
 		ResourceProxy indexBuffer;
 		ResourceProxy vertexBuffer;
-		uint32 vertexStride;
+		uint32 vertexStride = 0;
 		//todo: multiple vertex buffers
 		//ResourceProxy vertexBuffers[EResourceLimits::eMaxVertexBuffers];
 		ResourceProxy uniformBuffers[EResourceLimits::eMaxUniformBuffers];
@@ -400,7 +432,7 @@ namespace ts
 	public:
 
 		virtual bool compile(const char* str, const SShaderCompileConfig& options, MemoryBuffer& bytecode) = 0;
-		virtual bool compileFromFile(const Path& file, const SShaderCompileConfig& options, MemoryBuffer& bytecode) = 0;
+		virtual bool compileFromFile(const char* filepath, const SShaderCompileConfig& options, MemoryBuffer& bytecode) = 0;
 	};
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////

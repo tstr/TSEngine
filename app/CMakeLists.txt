@@ -12,6 +12,8 @@ ADD_EXECUTABLE(
 	${src_list}
 )
 
+copy_source_groups(${src_list})
+
 TARGET_LINK_LIBRARIES(application tsengine)
 
 #Copy config.ini file to the build folder

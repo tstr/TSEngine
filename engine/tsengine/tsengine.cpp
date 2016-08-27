@@ -92,7 +92,7 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 
 	//Config loader
 	Path cfgpath(params.appPath.getParent());
-	cfgpath.addDirectories("config.ini");
+	cfgpath.addDirectories((args.isArgumentTag("config")) ? args.getArgumentValue("config") : "config.ini");
 	ConfigFile config(cfgpath);
 
 	//Set application instance
@@ -132,13 +132,20 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	config.getProperty("video.fullscreen", fullscreenmode);
 	tsassert(fullscreenmode <= 2);
 
+
+	string assetpathbuf;
+	config.getProperty("system.assetdir", assetpathbuf);
+	Path assetpath = params.appPath.getParent();
+	assetpath.addDirectories(assetpathbuf);
+
 	SRenderModuleConfiguration rendercfg;
 	rendercfg.windowHandle = m_window->handle();
 	rendercfg.width = width;
 	rendercfg.height = height;
 	rendercfg.apiEnum = ERenderApiID::eRenderApiD3D11;
 	rendercfg.windowMode = (EWindowMode)fullscreenmode;
-	m_moduleRender.reset(new CRenderModule(rendercfg));
+	rendercfg.rootpath = assetpath;
+	m_renderModule.reset(new CRenderModule(rendercfg));
 
 	//Close application from console
 	thread([this] {
@@ -175,12 +182,13 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 		framecolour.z() = 0.5f + (float)cos(pheta);
 
 		//Clear the frame to a specific colour
-		m_moduleRender->drawBegin(framecolour);
+		m_renderModule->drawBegin(framecolour);
 
 		//rendering here
+		m_app->onUpdate(dt);
 
 		//Present the frame
-		m_moduleRender->drawEnd();
+		m_renderModule->drawEnd();
 	}
 
 	onExit();
@@ -220,7 +228,7 @@ void CEngineSystem::onExit()
 
 void CEngineSystem::onInit()
 {
-	m_app->onInit();
+	m_app->onInit(this);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

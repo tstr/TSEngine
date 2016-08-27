@@ -4,44 +4,25 @@
 
 #include "rendermodule.h"
 #include <tscore/debug/log.h>
+#include <tscore/system/time.h>
 
+#include "API/DX11/DX11render.h"
+
+using namespace std;
 using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////s
 
-ResourceProxy textureRsc;
-ResourceProxy textureView;
-
 CRenderModule::CRenderModule(const SRenderModuleConfiguration& cfg) :
-	m_config(cfg)
+	m_config(cfg),
+	m_textureManager(this),
+	m_shaderManager(this)
 {
 	if (!loadApi(cfg.apiEnum))
 		tserror("Unable to load graphics api (ERenderApiID::eRenderApiD3D11)");
 
-	STextureResourceData data;
-	Vector vec(1, 0.4f, 0.2f, 1);
-	data.memory = (const void*)&vec;
-	data.memoryByteWidth = sizeof(Vector);
-	data.memoryByteDepth = 0;
-	STextureResourceDescriptor desc;
-	desc.textype = ETextureResourceType::eTypeTexture2D;
-	desc.texmask = eTextureMaskShaderResource | eTextureMaskRenderTarget;
-	desc.height = 1;
-	desc.width = 1;
-	desc.multisampling.count = 1;
-	desc.texformat = ETextureFormat::eTextureFormatFloat3;
-	desc.depth = 0;
-	desc.useMips = false;
-	ERenderStatus status = m_api->createResourceTexture(textureRsc, &data, desc);
-
-	if (status) { tserror("%", status); }
-
-	STextureViewDescriptor viewdesc;
-	viewdesc.arrayIndex = 0;
-	viewdesc.arrayCount = 1;
-	status = m_api->createTargetRender(textureView, textureRsc, viewdesc);
-
-	if (status) { tserror("%", status); }
+	m_textureManager.setRootpath(m_config.rootpath);
+	m_shaderManager.setRootpath(m_config.rootpath);
 }
 
 CRenderModule::~CRenderModule()
@@ -58,14 +39,14 @@ void CRenderModule::setWindowMode(EWindowMode mode)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CRenderModule::drawBegin(const Vector& vec)
+void CRenderModule::drawBegin(const Vector& colour)
 {
-	m_api->drawBegin(vec);
-	//m_api->test(textureView);
+	m_api->drawBegin(colour);
 }
 
 void CRenderModule::drawEnd()
 {
+
 	m_api->drawEnd();
 }
 

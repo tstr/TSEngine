@@ -16,13 +16,13 @@ namespace ts
 	class CWindow;
 	class CRenderModule;
 	class CInputModule;
+	class CEngineSystem;
 
 	struct IApplication
 	{
-		virtual void onInit() = 0;
+		virtual void onInit(CEngineSystem* system) = 0;
 		virtual void onExit() = 0;
-		virtual void onUpdate() = 0;
-		virtual void onRender() = 0;
+		virtual void onUpdate(double deltatime) = 0;
 
 		virtual ~IApplication() {}
 	};
@@ -49,8 +49,8 @@ namespace ts
 
 		UniquePtr<IApplication> m_app;
 		UniquePtr<CWindow> m_window;
-		UniquePtr<CRenderModule> m_moduleRender;
-		//UniquePtr<CInputModule> m_moduleInput;		//todo: implement
+		UniquePtr<CRenderModule> m_renderModule;
+		//UniquePtr<CInputModule> m_inputModule;		//todo: implement
 
 		CMessageReciever<ESystemMessage> m_messageReciever;
 
@@ -71,6 +71,7 @@ namespace ts
 		//methods
 		IApplication* const getApp() const { return m_app.get(); }
 		CWindow* const getWindow() const { return m_window.get(); }
+		CRenderModule* const getRenderModule() const { return m_renderModule.get(); }
 
 		//Close the application and shutdown engine
 		void shutdown();

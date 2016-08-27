@@ -229,7 +229,12 @@ void DX11RenderApi::setWindowMode(EWindowMode mode)
 
 void DX11RenderApi::setWindowDimensions(uint32 w, uint32 h)
 {
+	throw exception();
+}
 
+void DX11RenderApi::getWindowRenderTarget(ResourceProxy& target)
+{
+	target.reset(new DX11View(this, this->m_swapChainRenderTarget.Get(), STextureViewDescriptor()));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,7 +254,7 @@ void DX11RenderApi::drawEnd()
 //Resource creation methods
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ERenderStatus DX11RenderApi::createResourceBuffer(ResourceProxy& rsc, const SResourceBufferData& data)
+ERenderStatus DX11RenderApi::createResourceBuffer(ResourceProxy& rsc, const SBufferResourceData& data)
 {
 	ComPtr<ID3D11Buffer> buffer;
 
@@ -282,14 +287,14 @@ ERenderStatus DX11RenderApi::createResourceBuffer(ResourceProxy& rsc, const SRes
 	subdata.SysMemPitch = 0;
 	subdata.SysMemSlicePitch = 0;
 
-	HRESULT hr = m_device->CreateBuffer(&subdesc, &subdata, &buffer);
+	HRESULT hr = m_device->CreateBuffer(&subdesc, &subdata, buffer.GetAddressOf());
 	
 	if (FAILED(hr))
 	{
 		return RenderStatusFromHRESULT(hr);
 	}
 
-	rsc.set(new DX11Buffer(this, buffer));
+	rsc.reset(new DX11Buffer(this, buffer));
 
 	return eOk;
 }
@@ -502,7 +507,75 @@ ERenderStatus DX11RenderApi::createResourceTexture(ResourceProxy& rsc, const STe
 		return RenderStatusFromHRESULT(hr);
 	}
 
-	rsc.set(new DX11Texture(this, resource, desc));
+	rsc.reset(new DX11Texture(this, resource, desc));
+
+	return eOk;
+}
+
+inline D3D11_TEXTURE_ADDRESS_MODE getAddressMode(ETextureAddressMode mode)
+{
+	switch (mode)
+	{
+	case (eTextureAddressClamp): return D3D11_TEXTURE_ADDRESS_CLAMP;
+	case (eTextureAddressMirror): return D3D11_TEXTURE_ADDRESS_MIRROR;
+	case (eTextureAddressWrap): return D3D11_TEXTURE_ADDRESS_WRAP;
+	}
+
+	return D3D11_TEXTURE_ADDRESS_MODE(0);
+}
+
+ERenderStatus DX11RenderApi::createTextureSampler(ResourceProxy& rsc, const STextureSamplerDescriptor& desc)
+{
+	D3D11_SAMPLER_DESC sd;
+	ZeroMemory(&sd, sizeof(D3D11_SAMPLER_DESC));
+	
+	sd.AddressU = getAddressMode(desc.addressU);
+	sd.AddressV = getAddressMode(desc.addressV);
+	sd.AddressW = getAddressMode(desc.addressW);
+
+	switch (desc.filtering)
+	{
+	case eTextureFilterPoint:
+		sd.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+		break;
+	case eTextureFilterBilinear:
+		sd.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		break;
+	case eTextureFilterTrilinear:
+		sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	case eTextureFilterAnisotropic2x:
+		sd.Filter = D3D11_FILTER_ANISOTROPIC;
+		sd.MaxAnisotropy = 2;
+		break;
+	case eTextureFilterAnisotropic4x:
+		sd.Filter = D3D11_FILTER_ANISOTROPIC;
+		sd.MaxAnisotropy = 4;
+		break;
+	case eTextureFilterAnisotropic8x:
+		sd.Filter = D3D11_FILTER_ANISOTROPIC;
+		sd.MaxAnisotropy = 8;
+		break;
+	case eTextureFilterAnisotropic16x:
+		sd.Filter = D3D11_FILTER_ANISOTROPIC;
+		sd.MaxAnisotropy = 16;
+		break;
+	}
+	
+	sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sd.MinLOD = -FLT_MAX;
+	sd.MaxLOD = FLT_MAX;
+	sd.MipLODBias = 0.0f;
+
+	ComPtr<ID3D11SamplerState> sampler;
+	HRESULT hr = m_device->CreateSamplerState(&sd, sampler.GetAddressOf());
+	
+	if (FAILED(hr))
+	{
+		return RenderStatusFromHRESULT(hr);
+	}
+
+	rsc.reset(new DX11TextureSampler(this, sampler.Get()));
 
 	return eOk;
 }
@@ -511,7 +584,7 @@ ERenderStatus DX11RenderApi::createResourceTexture(ResourceProxy& rsc, const STe
 //Resource view creation methods
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ERenderStatus DX11RenderApi::createTargetDepth(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc)
+ERenderStatus DX11RenderApi::createViewDepthTarget(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc)
 {
 	if (rsc.getType() != EResourceType::eResourceTexture)
 		return eInvalidResource;
@@ -544,12 +617,12 @@ ERenderStatus DX11RenderApi::createTargetDepth(ResourceProxy& view, const Resour
 		return RenderStatusFromHRESULT(hr);
 	}
 
-	view.set(new DX11View(this, dsv, desc));
+	view.reset(new DX11View(this, dsv.Get(), desc));
 
 	return eOk;
 }
 
-ERenderStatus DX11RenderApi::createTargetRender(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc)
+ERenderStatus DX11RenderApi::createViewRenderTarget(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc)
 {
 	if (rsc.getType() != EResourceType::eResourceTexture)
 		return eInvalidResource;
@@ -582,7 +655,7 @@ ERenderStatus DX11RenderApi::createTargetRender(ResourceProxy& view, const Resou
 		return RenderStatusFromHRESULT(hr);
 	}
 
-	view.set(new DX11View(this, rtv, desc));
+	view.reset(new DX11View(this, rtv.Get(), desc));
 
 	return eOk;
 }
@@ -623,7 +696,7 @@ ERenderStatus DX11RenderApi::createViewTextureCube(ResourceProxy& view, const Re
 		return RenderStatusFromHRESULT(hr);
 	}
 
-	view.set(new DX11View(this, srv, desc));
+	view.reset(new DX11View(this, srv.Get(), desc));
 
 	return eOk;
 }
@@ -664,7 +737,7 @@ ERenderStatus DX11RenderApi::createViewTexture2D(ResourceProxy& view, const Reso
 		return RenderStatusFromHRESULT(hr);
 	}
 
-	view.set(new DX11View(this, srv, desc));
+	view.reset(new DX11View(this, srv.Get(), desc));
 
 	return eOk;
 }
@@ -703,7 +776,7 @@ ERenderStatus DX11RenderApi::createViewTexture3D(ResourceProxy& view, const Reso
 		return RenderStatusFromHRESULT(hr);
 	}
 
-	view.set(new DX11View(this, srv, STextureViewDescriptor()));
+	view.reset(new DX11View(this, srv.Get(), STextureViewDescriptor()));
 
 	return eOk;
 }
@@ -722,7 +795,7 @@ ERenderStatus DX11RenderApi::createShader(ResourceProxy& shader, const void* byt
 			ComPtr<ID3D11VertexShader> vertexshader;
 			HRESULT hr = m_device->CreateVertexShader(bytecode, bytecodesize, nullptr, vertexshader.GetAddressOf());
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
-			shader.set(new DX11Shader(this, vertexshader, MemoryBuffer(bytecode, bytecodesize)));
+			shader.reset(new DX11Shader(this, vertexshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -733,7 +806,7 @@ ERenderStatus DX11RenderApi::createShader(ResourceProxy& shader, const void* byt
 
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 
-			shader.set(new DX11Shader(this, pixelshader, MemoryBuffer(bytecode, bytecodesize)));
+			shader.reset(new DX11Shader(this, pixelshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -744,7 +817,7 @@ ERenderStatus DX11RenderApi::createShader(ResourceProxy& shader, const void* byt
 
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 
-			shader.set(new DX11Shader(this, geometryshader, MemoryBuffer(bytecode, bytecodesize)));
+			shader.reset(new DX11Shader(this, geometryshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -754,7 +827,7 @@ ERenderStatus DX11RenderApi::createShader(ResourceProxy& shader, const void* byt
 			HRESULT hr = m_device->CreateHullShader(bytecode, bytecodesize, nullptr, hullshader.GetAddressOf());
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 
-			shader.set(new DX11Shader(this, hullshader, MemoryBuffer(bytecode, bytecodesize)));
+			shader.reset(new DX11Shader(this, hullshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -765,7 +838,7 @@ ERenderStatus DX11RenderApi::createShader(ResourceProxy& shader, const void* byt
 
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 
-			shader.set(new DX11Shader(this, domainshader, MemoryBuffer(bytecode, bytecodesize)));
+			shader.reset(new DX11Shader(this, domainshader, MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -776,7 +849,7 @@ ERenderStatus DX11RenderApi::createShader(ResourceProxy& shader, const void* byt
 
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 
-			shader.set(new DX11Shader(this, computeshader, MemoryBuffer(bytecode, bytecodesize)));
+			shader.reset(new DX11Shader(this, computeshader, MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -840,22 +913,37 @@ ERenderStatus DX11RenderApi::createShaderInputDescriptor(ResourceProxy& rsc, con
 	if (FAILED(hr))
 		return RenderStatusFromHRESULT(hr);
 
-	rsc.set(new DX11ShaderInputDescriptor(this, inputlayout));
+	rsc.reset(new DX11ShaderInputDescriptor(this, inputlayout));
 
 	return eOk;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-IRenderContext* DX11RenderApi::createRenderContext()
+void DX11RenderApi::createContext(IRenderContext** context)
 {
-	return new DX11RenderContext(this);
+	*context = new DX11RenderContext(this);
 }
 
-void DX11RenderApi::destroyRenderContext(IRenderContext* context)
+void DX11RenderApi::destroyContext(IRenderContext* context)
 {
 	if (context)
 		delete context;
+}
+
+void DX11RenderApi::executeContext(IRenderContext* context)
+{
+	auto rcontext = (DX11RenderContext*)context;
+
+	if (rcontext)
+	{
+		ComPtr<ID3D11CommandList> commandlist;
+		rcontext->getDeviceContext()->FinishCommandList(false, commandlist.GetAddressOf());
+
+		m_immediateContext->ExecuteCommandList(commandlist.Get(), false);
+
+		rcontext->getDeviceContext()->ClearState();
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

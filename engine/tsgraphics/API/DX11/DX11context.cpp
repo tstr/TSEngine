@@ -45,8 +45,9 @@ void DX11RenderContext::execute(const SRenderCommand& command)
 	//Bind render targets and depth stencil view
 	auto rtarget = DX11View::upcast(command.renderTarget[0].get());
 	auto dtarget = DX11View::upcast(command.depthTarget.get());
-	auto rtv = rtarget->get();
-	m_context->OMSetRenderTargets(1, (ID3D11RenderTargetView**)&rtv, (dtarget) ? (ID3D11DepthStencilView*)dtarget->get() : nullptr);
+	auto rtv = (rtarget) ? (ID3D11RenderTargetView*)rtarget->get() : nullptr;
+	auto dtv = (dtarget) ? (ID3D11DepthStencilView*)dtarget->get() : nullptr;
+	m_context->OMSetRenderTargets(1, &rtv, dtv);
 
 	//Bind viewport
 	D3D11_VIEWPORT viewport;
@@ -65,11 +66,11 @@ void DX11RenderContext::execute(const SRenderCommand& command)
 	auto dshader = DX11Shader::upcast(command.shaders.stageDomain.get());
 	auto hshader = DX11Shader::upcast(command.shaders.stageHull.get());
 
-	m_context->VSSetShader((ID3D11VertexShader*)vshader->getShader(), nullptr, 0);
-	m_context->PSSetShader((ID3D11PixelShader*)pshader->getShader(), nullptr, 0);
-	m_context->GSSetShader((ID3D11GeometryShader*)gshader->getShader(), nullptr, 0);
-	m_context->DSSetShader((ID3D11DomainShader*)dshader->getShader(), nullptr, 0);
-	m_context->HSSetShader((ID3D11HullShader*)hshader->getShader(), nullptr, 0);
+	if (vshader) m_context->VSSetShader((ID3D11VertexShader*)vshader->getShader(), nullptr, 0);
+	if (pshader) m_context->PSSetShader((ID3D11PixelShader*)pshader->getShader(), nullptr, 0);
+	if (gshader) m_context->GSSetShader((ID3D11GeometryShader*)gshader->getShader(), nullptr, 0);
+	if (dshader) m_context->DSSetShader((ID3D11DomainShader*)dshader->getShader(), nullptr, 0);
+	if (hshader) m_context->HSSetShader((ID3D11HullShader*)hshader->getShader(), nullptr, 0);
 
 	//Bind textures
 	for (int i = 0; i < EResourceLimits::eMaxTextureSlots; i++)
@@ -78,6 +79,16 @@ void DX11RenderContext::execute(const SRenderCommand& command)
 		{
 			auto srv = (ID3D11ShaderResourceView*)tex->get();
 			m_context->PSSetShaderResources(i, 1, &srv);
+		}
+	}
+
+	//Bind texture samples
+	for (int i = 0; i < EResourceLimits::eMaxTextureSamplerSlots; i++)
+	{
+		if (auto texsampler = DX11TextureSampler::upcast(command.textureSamplers[i].get()))
+		{
+			auto sampler = (ID3D11SamplerState*)texsampler->get();
+			m_context->PSSetSamplers(i, 1, &sampler);
 		}
 	}
 

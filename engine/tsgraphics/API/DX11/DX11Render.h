@@ -41,11 +41,12 @@ namespace ts
 
 			//Resource creation methods
 
-			ERenderStatus createResourceBuffer(ResourceProxy& rsc, const SResourceBufferData& data) override;
+			ERenderStatus createResourceBuffer(ResourceProxy& rsc, const SBufferResourceData& data) override;
 			ERenderStatus createResourceTexture(ResourceProxy& rsc, const STextureResourceData* data, const STextureResourceDescriptor& desc) override;
+			ERenderStatus createTextureSampler(ResourceProxy& sampler, const STextureSamplerDescriptor& desc) override;
 
-			ERenderStatus createTargetDepth(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) override;
-			ERenderStatus createTargetRender(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) override;
+			ERenderStatus createViewDepthTarget(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) override;
+			ERenderStatus createViewRenderTarget(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) override;
 
 			ERenderStatus createViewTextureCube(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) override;
 			ERenderStatus createViewTexture2D(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) override;
@@ -54,11 +55,13 @@ namespace ts
 			ERenderStatus createShader(ResourceProxy& shader, const void* bytecode, uint32 bytecodesize, EShaderStage stage) override;
 			ERenderStatus createShaderInputDescriptor(ResourceProxy& rsc, const ResourceProxy& vertexshader, const ShaderInputDescriptor* descs, uint32 descnum) override;
 
-			IRenderContext* createRenderContext() override;
-			void destroyRenderContext(IRenderContext* context) override;
+			void createContext(IRenderContext** context) override;
+			void destroyContext(IRenderContext* context) override;
+			void executeContext(IRenderContext* context) override;
 
 			void setWindowMode(EWindowMode mode) override;
 			void setWindowDimensions(uint32 w, uint32 h) override;
+			void getWindowRenderTarget(ResourceProxy& target) override;
 
 			void drawBegin(const Vector& vec) override;
 			void drawEnd() override;
@@ -91,6 +94,8 @@ namespace ts
 			void clearDepthTarget(const ResourceProxy& depthview, float depth) override;
 
 			void execute(const SRenderCommand& command) override;
+
+			ComPtr<ID3D11DeviceContext> getDeviceContext() const { return m_context; }
 		};
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,7 +114,7 @@ namespace ts
 			~DX11ShaderCompiler();
 
 			bool compile(const char* str, const SShaderCompileConfig& options, MemoryBuffer& bytecode) override;
-			bool compileFromFile(const Path& file, const SShaderCompileConfig& options, MemoryBuffer& bytecode) override;
+			bool compileFromFile(const char* filepath, const SShaderCompileConfig& options, MemoryBuffer& bytecode) override;
 		
 		};
 
@@ -148,6 +153,10 @@ namespace ts
 		//Base class for dx11 implementation resources
 		class IDX11RenderResource : public IRenderResource
 		{
+		private:
+
+			uint32 m_refcount = 1;
+
 		protected:
 
 			IRenderApi* m_api = nullptr;
@@ -164,7 +173,13 @@ namespace ts
 
 			EResourceType getType() const override { return m_type; }
 			IRenderApi* getApi() const override { return m_api; }
-			void release() const override { delete this; }
+			uint32 addref() override { return ++m_refcount; }
+
+			void release() override
+			{
+				if ((--m_refcount) == 0)
+					delete this;
+			}
 		};
 
 
@@ -216,6 +231,24 @@ namespace ts
 			ID3D11Resource* get() const { return m_texture.Get(); }
 		};
 
+		class DX11TextureSampler : public IDX11RenderResource
+		{
+		private:
+
+			ComPtr<ID3D11SamplerState> m_sampler;
+
+		public:
+
+			static DX11TextureSampler* upcast(IRenderResource* ptr) { return (DX11TextureSampler*)ptr; }
+
+			DX11TextureSampler(DX11RenderApi* api, ID3D11SamplerState* state) :
+				IDX11RenderResource(api, eResourceTextureSampler),
+				m_sampler(state)
+			{}
+
+			ID3D11SamplerState* get() const { return m_sampler.Get(); }
+		};
+
 
 		class DX11View : public IDX11RenderResource
 		{
@@ -226,23 +259,25 @@ namespace ts
 
 		public:
 
-			DX11View(DX11RenderApi* api, ComPtr<ID3D11ShaderResourceView> v, const STextureViewDescriptor& desc) :
+			DX11View(DX11RenderApi* api, ID3D11ShaderResourceView* v, const STextureViewDescriptor& desc) :
 				IDX11RenderResource(api, eResourceViewTexture),
 				m_view(v),
 				m_viewDesc(desc)
 			{}
 
-			DX11View(DX11RenderApi* api, ComPtr<ID3D11DepthStencilView> v, const STextureViewDescriptor& desc) :
+			DX11View(DX11RenderApi* api, ID3D11DepthStencilView* v, const STextureViewDescriptor& desc) :
 				IDX11RenderResource(api, eResourceViewDepth),
 				m_view(v),
 				m_viewDesc(desc)
 			{}
 
-			DX11View(DX11RenderApi* api, ComPtr<ID3D11RenderTargetView> v, const STextureViewDescriptor& desc) :
+			DX11View(DX11RenderApi* api, ID3D11RenderTargetView* v, const STextureViewDescriptor& desc) :
 				IDX11RenderResource(api, eResourceViewRender),
 				m_view(v),
 				m_viewDesc(desc)
 			{}
+
+			~DX11View() {}
 
 			static DX11View* upcast(IRenderResource* ptr) { return (DX11View*)ptr; }
 
@@ -252,10 +287,12 @@ namespace ts
 
 			ID3D11View* get() const { return m_view.Get(); }
 
+			/*
 			void getDesc(STextureViewDescriptor& desc) const
 			{
 				desc = m_viewDesc;
 			}
+			*/
 		};
 
 		class DX11Shader : public IDX11RenderResource
@@ -270,30 +307,30 @@ namespace ts
 
 			static DX11Shader* upcast(IRenderResource* ptr) { return (DX11Shader*)ptr; }
 
-			DX11Shader(DX11RenderApi* api, ComPtr<ID3D11VertexShader> s, MemoryBuffer&& buf) :
+			DX11Shader(DX11RenderApi* api, ID3D11VertexShader* s, MemoryBuffer&& buf) :
 				IDX11RenderResource(api, eResourceShader),
-				m_shaderInterface((ID3D11DeviceChild*)s.Get()),
+				m_shaderInterface((ID3D11DeviceChild*)s),
 				m_shaderStage(eShaderStageVertex),
 				m_shaderBytecode(buf)
 			{}
 
-			DX11Shader(DX11RenderApi* api, ComPtr<ID3D11PixelShader> s, MemoryBuffer&& buf) :
+			DX11Shader(DX11RenderApi* api, ID3D11PixelShader* s, MemoryBuffer&& buf) :
 				IDX11RenderResource(api, eResourceShader),
-				m_shaderInterface((ID3D11DeviceChild*)s.Get()),
+				m_shaderInterface((ID3D11DeviceChild*)s),
 				m_shaderStage(eShaderStagePixel),
 				m_shaderBytecode(buf)
 			{}
 
-			DX11Shader(DX11RenderApi* api, ComPtr<ID3D11GeometryShader> s, MemoryBuffer&& buf) :
+			DX11Shader(DX11RenderApi* api, ID3D11GeometryShader* s, MemoryBuffer&& buf) :
 				IDX11RenderResource(api, eResourceShader),
-				m_shaderInterface((ID3D11DeviceChild*)s.Get()),
+				m_shaderInterface((ID3D11DeviceChild*)s),
 				m_shaderStage(eShaderStageGeometry),
 				m_shaderBytecode(buf)
 			{}
 
-			DX11Shader(DX11RenderApi* api, ComPtr<ID3D11HullShader> s, MemoryBuffer&& buf) :
+			DX11Shader(DX11RenderApi* api, ID3D11HullShader* s, MemoryBuffer&& buf) :
 				IDX11RenderResource(api, eResourceShader),
-				m_shaderInterface((ID3D11DeviceChild*)s.Get()),
+				m_shaderInterface((ID3D11DeviceChild*)s),
 				m_shaderStage(eShaderStageHull),
 				m_shaderBytecode(buf)
 			{}
@@ -311,6 +348,8 @@ namespace ts
 				m_shaderStage(eShaderStageCompute),
 				m_shaderBytecode(buf)
 			{}
+
+			~DX11Shader() {}
 
 			ID3D11DeviceChild* getShader() const { return m_shaderInterface.Get(); }
 			EShaderStage getShaderType() const { return m_shaderStage; }
@@ -333,9 +372,11 @@ namespace ts
 			static DX11ShaderInputDescriptor* upcast(IRenderResource* rsc) { return (DX11ShaderInputDescriptor*)rsc; }
 
 			DX11ShaderInputDescriptor(DX11RenderApi* api, ComPtr<ID3D11InputLayout> layout) :
-				IDX11RenderResource(api, EResourceType::eResourceUnknown),
+				IDX11RenderResource(api, EResourceType::eResourceShaderInput),
 				m_inputLayout(layout)
 			{}
+
+			~DX11ShaderInputDescriptor() {}
 
 			ID3D11InputLayout* getLayout() const { return m_inputLayout.Get(); }
 		};
