@@ -120,7 +120,7 @@ bool DX11ShaderCompiler::compile(const char* code, const SShaderCompileConfig& o
 		nullptr,
 		0,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		options.entrypoint.get(),
+		options.entrypoint.str(),
 		shadertarget.tostring(),
 		compileflag,
 		0,

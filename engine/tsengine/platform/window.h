@@ -5,6 +5,7 @@
 #pragma once
 
 #include <tscore/types.h>
+#include <tscore/strings.h>
 
 namespace ts
 {

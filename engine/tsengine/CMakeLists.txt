@@ -7,8 +7,17 @@ SET(src_list
 	event/event.cpp
 	event/messenger.h
 	
+	input/inputdevice.h
+	input/inputdevice.cpp
+	input/keycodes.h
+	input/keycodes.cpp
 	input/inputmodule.h
 	input/inputmodule.cpp
+	
+	platform/console.h
+	platform/console.cpp
+	platform/window.h
+	platform/window.cpp
 
 	tsengine.cpp
 	cmdargs.cpp

@@ -3,13 +3,17 @@
 */
 
 #include <tsengine.h>
-#include <tscore/platform/window.h>
-#include <tscore/platform/console.h>
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 #include <tscore/system/info.h>
 #include <tscore/system/thread.h>
+
+//Modules
 #include <tsgraphics/rendermodule.h>
+#include <tsengine/input/inputmodule.h>
+
+#include "platform/window.h"
+#include "platform/console.h"
 
 #include "event/messenger.h"
 #include "cmdargs.h"
@@ -52,12 +56,11 @@ private:
 			case (EWindowEvent::eEventDestroy) :
 				m_wnd->m_pSystem->shutdown();
 				break;
-			case (EWindowEvent::eEventKeydown) :
-				tsinfo("KeyDown Event (A:%) (B:%)", args.a, args.b);
-				if (args.b == VK_ESCAPE)
-					m_wnd->close();
-				break;
 			}
+
+			auto input = m_wnd->m_pSystem->getInputModule();
+			if (input != nullptr)
+				input->onWindowInputEvent(args);
 
 			return 0;
 		}
@@ -146,6 +149,8 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	rendercfg.windowMode = (EWindowMode)fullscreenmode;
 	rendercfg.rootpath = assetpath;
 	m_renderModule.reset(new CRenderModule(rendercfg));
+
+	m_inputModule.reset(new CInputModule(m_window.get()));
 
 	//Close application from console
 	thread([this] {

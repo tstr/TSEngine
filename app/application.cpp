@@ -5,11 +5,12 @@
 #include <iostream>
 #include "application.h"
 
-#include <tsgraphics/rendermodule.h>
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 #include <tscore/system/info.h>
 #include <tscore/strings.h>
+
+#include <tscore/delegate.h>
 
 using namespace ts;
 using namespace std;
@@ -18,10 +19,27 @@ static void printsysteminfo();
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+int Application::InputListener::onMouse(int16 dx, int16 dy)
+{
+	return 0;
+}
+
+int Application::InputListener::onKeyDown(EKeyCode code)
+{
+	if (code == EKeyCode::eKeyEsc)
+		m_pApp->m_system->shutdown();
+	
+	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Application::onInit(CEngineSystem* system)
 {
 	m_system = system;
 	printsysteminfo();
+
+	m_system->getInputModule()->addEventListener(&m_inputListener);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	

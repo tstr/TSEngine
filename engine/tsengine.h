@@ -42,7 +42,7 @@ namespace ts
 		eMessageExit = 1
 	};
 
-	//Base engine class - this class is the center of the application and is responsible for initializing and connecting all engine modules together
+	//Base engine class - this class is the center of the application and is responsible for initializing and handling communications between engine modules
 	class CEngineSystem
 	{
 	private:
@@ -50,7 +50,7 @@ namespace ts
 		UniquePtr<IApplication> m_app;
 		UniquePtr<CWindow> m_window;
 		UniquePtr<CRenderModule> m_renderModule;
-		//UniquePtr<CInputModule> m_inputModule;		//todo: implement
+		UniquePtr<CInputModule> m_inputModule;		//todo: implement
 
 		CMessageReciever<ESystemMessage> m_messageReciever;
 
@@ -72,6 +72,7 @@ namespace ts
 		IApplication* const getApp() const { return m_app.get(); }
 		CWindow* const getWindow() const { return m_window.get(); }
 		CRenderModule* const getRenderModule() const { return m_renderModule.get(); }
+		CInputModule* const getInputModule() const { return m_inputModule.get(); }
 
 		//Close the application and shutdown engine
 		void shutdown();

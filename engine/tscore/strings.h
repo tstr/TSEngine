@@ -260,7 +260,7 @@ namespace ts
 			strncpy_s(m_chars + offset, n - offset, str, min(len, n - offset));
 		}
 
-		inline const char* get() const
+		inline const char* str() const
 		{
 			return m_chars;
 		}

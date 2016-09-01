@@ -3,11 +3,6 @@
 SET(src_list
 
 	internal/tscoreapi.h
-
-	platform/console.h
-	platform/console.cpp
-	platform/window.h
-	platform/window.cpp
 	
 	debug/assert.h
 	debug/assert.cpp
@@ -41,6 +36,7 @@ SET(src_list
 	
 	types.h
 	strings.h
+	delegate.h
 )
 
 ADD_LIBRARY_EX(

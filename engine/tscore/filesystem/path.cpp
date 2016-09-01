@@ -60,7 +60,7 @@ void Path::composePath(const char* pathstr)
 	}
 
 
-	m_path.set(strbuf.get() + offset);
+	m_path.set(strbuf.str() + offset);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ Path Path::getDirectory(uint16 idx) const
 		{
 			if (idxcounter == idx)
 			{
-				auto str = string(m_path.get() + prevchar, m_path.get() + curchar);
+				auto str = string(m_path.str() + prevchar, m_path.str() + curchar);
 				return Path(move(str));
 			}
 
@@ -161,7 +161,7 @@ Path Path::getParent() const
 		parentbuf[i] = 0;
 	}
 
-	return Path(parentbuf.get());
+	return Path(parentbuf.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

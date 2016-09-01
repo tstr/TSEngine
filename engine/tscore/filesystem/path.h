@@ -47,8 +47,8 @@ namespace ts
 		
 		//methods
 
-		const char* str() const { return m_path.get(); } 
-		void str(std::string& str) const { str = m_path.get(); }
+		const char* str() const { return m_path.str(); } 
+		void str(std::string& str) const { str = m_path.str(); }
 		
 		void composePath(const std::string& str) { composePath(str.c_str()); }
 		void composePath(const char* str);

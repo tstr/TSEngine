@@ -27,7 +27,7 @@ bool CRenderModule::loadApi(ERenderApiID id)
 		SRenderAdapterDesc desc;
 		adapterfactory.enumAdapter(i, desc);
 
-		tsinfo("Adapter(%): %", i, desc.adapterName.get());
+		tsinfo("Adapter(%): %", i, desc.adapterName.str());
 	}
 
 	SRenderApiConfiguration apicfg;
