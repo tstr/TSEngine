@@ -26,6 +26,7 @@ include(InstallSystemLibs)
 
 include(GenerateExportHeader)
 
+
 SET(TS_BUILD_SHARED_LIBRARIES CACHE BOOL OFF)
 
 macro(ADD_LIBRARY_EX libname libsrcs)
@@ -55,6 +56,30 @@ endmacro()
 #	configuration file
 ################################################################################################
 
+#git
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+
+#git executable path
+set (GIT_EXECUTABLE git)
+
+#the date of the commit
+execute_process(COMMAND
+  "${GIT_EXECUTABLE}" log -1 --format=%ad --date=local
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE GIT_DATE
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+#the subject of the commit
+execute_process(COMMAND
+  "${GIT_EXECUTABLE}" log -1 --format=%s
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE GIT_COMMIT_SUBJECT
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+  
+################################################################################################
+
+#platform macros
 if (WIN32)
 	SET(TS_PLATFORM_WIN32 1)
 endif()
@@ -67,6 +92,7 @@ if (APPLE)
 	SET(TS_PLATFORM_APPLE 1)
 endif()
 
+#create the configuration file
 CONFIGURE_FILE (
 	"${PROJECT_SOURCE_DIR}/tsconfig.h.in"
 	"${PROJECT_BINARY_DIR}/cfg/tsconfig.h"

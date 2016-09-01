@@ -16,6 +16,7 @@ using namespace ts;
 using namespace std;
 
 static void printsysteminfo();
+static void printrepositoryinfo();
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -37,7 +38,10 @@ int Application::InputListener::onKeyDown(EKeyCode code)
 void Application::onInit(CEngineSystem* system)
 {
 	m_system = system;
+	
+	//Print basic information
 	printsysteminfo();
+	printrepositoryinfo();
 
 	m_system->getInputModule()->addEventListener(&m_inputListener);
 
@@ -228,6 +232,14 @@ static void printsysteminfo()
 
 	tsinfo("");
 	tsinfo("Hello %", inf.userName);
+}
+
+void printrepositoryinfo()
+{
+	tsinfo("Git refspec: %", TS_GIT_REFSPEC);
+	tsinfo("Git commit SHA1: %", TS_GIT_SHA1);
+	tsinfo("Git commit date: \"%\"", TS_GIT_COMMIT_DATE);
+	tsinfo("Git commit subject: \"%\"", TS_GIT_COMMIT_SUBJECT);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
