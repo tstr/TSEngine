@@ -13,6 +13,7 @@
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "dxguid.lib")
 
 using namespace std;
 using namespace ts;
@@ -45,9 +46,9 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	//initialize direct3D
 	//////////////////////////////////////////////////////////////////////////////////////////////
 
-	UINT msaaCount = 1;
+	UINT msaaCount = cfg.multisampling.count;
 	UINT msaaQuality = 0;
-	msaaQuality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
+	msaaQuality = (msaaCount > 1) ? D3D11_STANDARD_MULTISAMPLE_PATTERN : 0;
 
 	//Create swap chain
 	DXGI_SWAP_CHAIN_DESC scd;
@@ -143,7 +144,12 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 DX11RenderApi::~DX11RenderApi()
 {
-
+	if (m_config.flags & ERenderApiFlags::eFlagDebug)
+	{
+		ComPtr<ID3D11Debug> debug;
+		m_device.As(&debug);
+		debug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY | D3D11_RLDO_DETAIL);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -347,19 +353,19 @@ ERenderStatus DX11RenderApi::createResourceTexture(ResourceProxy& rsc, const STe
 	uint32 miscFlags = (desc.textype == ETextureResourceType::eTypeTextureCube) ? D3D11_RESOURCE_MISC_TEXTURECUBE : 0;
 	uint32 arraySize = (desc.textype == ETextureResourceType::eTypeTextureCube) ? 6 : 1; //Do not allow texture arrays for now
 
-	if (!data)
-		return ERenderStatus::eInvalidParameter;
-
 	vector<D3D11_SUBRESOURCE_DATA> subresources(arraySize);
 
-	for (uint32 i = 0; i < arraySize; i++)
+	if (data)
 	{
-		subresources[i].pSysMem = data[i].memory;
-		subresources[i].SysMemPitch = data[i].memoryByteWidth;
-		subresources[i].SysMemSlicePitch = data[i].memoryByteDepth;
+		for (uint32 i = 0; i < arraySize; i++)
+		{
+			subresources[i].pSysMem = data[i].memory;
+			subresources[i].SysMemPitch = data[i].memoryByteWidth;
+			subresources[i].SysMemSlicePitch = data[i].memoryByteDepth;
+		}
 	}
 
-	D3D11_SUBRESOURCE_DATA* pSubresource = (desc.useMips) ? nullptr : &subresources[0];
+	D3D11_SUBRESOURCE_DATA* pSubresource = (desc.useMips || !data) ? nullptr : &subresources[0];
 
 	if (desc.useMips)
 	{
@@ -378,8 +384,12 @@ ERenderStatus DX11RenderApi::createResourceTexture(ResourceProxy& rsc, const STe
 
 	ComPtr<ID3D11Resource> resource;
 
-	UINT bindFlags = D3D11_BIND_SHADER_RESOURCE;
+	UINT bindFlags = 0;
 
+	if (desc.texmask & eTextureMaskShaderResource)
+	{
+		bindFlags |= D3D11_BIND_SHADER_RESOURCE;
+	}
 	if (desc.texmask & eTextureMaskRenderTarget)
 	{
 		bindFlags |= D3D11_BIND_RENDER_TARGET;
@@ -438,8 +448,8 @@ ERenderStatus DX11RenderApi::createResourceTexture(ResourceProxy& rsc, const STe
 		dtd.Usage = usage;
 		dtd.CPUAccessFlags = access;
 		dtd.MipLevels = miplevels;
-		dtd.SampleDesc.Count = 1;
-		dtd.SampleDesc.Quality = 0;
+		dtd.SampleDesc.Count = desc.multisampling.count;
+		dtd.SampleDesc.Quality = (desc.multisampling.count > 1) ? D3D11_STANDARD_MULTISAMPLE_PATTERN : 0;
 
 		if (desc.useMips)
 		{
@@ -861,7 +871,7 @@ ERenderStatus DX11RenderApi::createShader(ResourceProxy& shader, const void* byt
 	return eFail;
 }
 
-ERenderStatus DX11RenderApi::createShaderInputDescriptor(ResourceProxy& rsc, const ResourceProxy& vertexshader, const ShaderInputDescriptor* sids, uint32 sidnum)
+ERenderStatus DX11RenderApi::createShaderInputDescriptor(ResourceProxy& rsc, const ResourceProxy& vertexshader, const SShaderInputDescriptor* sids, uint32 sidnum)
 {
 	ComPtr<ID3D11InputLayout> inputlayout;
 

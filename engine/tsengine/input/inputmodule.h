@@ -28,16 +28,21 @@ namespace ts
 	{
 	private:
 
+		CWindow* m_window = nullptr;
 		CInputDevice m_device;
 		
 		std::vector<IInputEventListener*> m_eventListeners;
 
 		void inputLayerCallback(const SInputEvent& event);
 
+		bool m_cursorShown = true;
+
 	public:
 		
 		CInputModule(CWindow* window);
 		~CInputModule();
+
+		void showCursor(bool show);
 		
 		bool onWindowInputEvent(const SWindowEventArgs& args) { return m_device.onWindowInputEvent(args); }
 

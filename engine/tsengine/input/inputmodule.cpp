@@ -6,6 +6,8 @@
 #include "inputmodule.h"
 #include "inputdevice.h"
 
+#include <Windows.h>
+
 using namespace ts;
 using namespace std;
 
@@ -14,6 +16,7 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CInputModule::CInputModule(CWindow* window) :
+	m_window(window),
 	m_device(window)
 {
 	m_device.setInputCallback(CInputDevice::Callback::fromMethod<CInputModule, &CInputModule::inputLayerCallback>(this));
@@ -71,6 +74,16 @@ void CInputModule::inputLayerCallback(const SInputEvent& event)
 			for (auto& l : m_eventListeners)
 				l->onKeyDown(event.key.keycode);
 		}
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void CInputModule::showCursor(bool show)
+{
+	if (show != m_cursorShown)
+	{
+		m_window->invoke([=]() { ::ShowCursor(show); });
 	}
 }
 

@@ -86,10 +86,11 @@ namespace ts
 				eHandled = 1	//Return this if IEventListener::onEvent handles the event
 			};
 
-			virtual int onEvent(const SWindowEventArgs& args) = 0;
+			virtual int onWindowEvent(const SWindowEventArgs& args) = 0;
 		};
 
-		void setEventListener(IEventListener* listener);
+		void addEventListener(IEventListener* listener);
+		void removeEventListener(IEventListener* listener);
 
 		void open(int show = 0);
 		void close();

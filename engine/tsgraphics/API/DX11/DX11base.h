@@ -22,7 +22,7 @@ namespace ts
 	{
 		using Microsoft::WRL::ComPtr;
 
-		inline void SetDebugObjectName(ID3D11DeviceChild* child, const char* name)
+		inline void setObjectDebugName(ID3D11DeviceChild* child, const char* name)
 		{
 			//using namespace DirectX;
 

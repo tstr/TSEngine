@@ -195,6 +195,7 @@ bool CTextureManager::loadTexture2D(const Path& file, CTexture2D& texture)
 
 		desc.texformat = texformat;
 		desc.textype = ETextureResourceType::eTypeTexture2D;
+		desc.texmask = ETextureResourceMask::eTextureMaskShaderResource;
 		desc.height = bmpData.Height;
 		desc.width = bmpData.Width;
 		desc.useMips = true;

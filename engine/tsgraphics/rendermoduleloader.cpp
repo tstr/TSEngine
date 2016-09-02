@@ -36,6 +36,7 @@ bool CRenderModule::loadApi(ERenderApiID id)
 	apicfg.resolutionWidth = m_config.width;
 	apicfg.windowMode = m_config.windowMode;
 	apicfg.windowHandle = m_config.windowHandle;
+	apicfg.multisampling = m_config.multisampling;
 
 #ifdef _DEBUG
 	apicfg.flags |= ERenderApiFlags::eFlagDebug;

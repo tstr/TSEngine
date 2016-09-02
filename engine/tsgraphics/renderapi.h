@@ -266,7 +266,7 @@ namespace ts
 		eInputPerInstance
 	};
 
-	struct ShaderInputDescriptor
+	struct SShaderInputDescriptor
 	{
 		uint32 bufferSlot = 0;
 		const char* semanticName = "";
@@ -303,6 +303,7 @@ namespace ts
 		uint32 adapterIndex = 0;
 		uint32 resolutionWidth = 0;
 		uint32 resolutionHeight = 0;
+		SMultisampling multisampling;
 		EWindowMode windowMode = EWindowMode::eWindowDefault;
 		uint16 flags = 0;
 	};
@@ -328,7 +329,7 @@ namespace ts
 		virtual ERenderStatus createViewTexture3D(ResourceProxy& view,const ResourceProxy& rsc ) = 0;
 		
 		virtual ERenderStatus createShader(ResourceProxy& shader, const void* bytecode, uint32 bytecodesize, EShaderStage stage) = 0;
-		virtual ERenderStatus createShaderInputDescriptor(ResourceProxy& rsc, const ResourceProxy& vertexshader, const ShaderInputDescriptor* sids, uint32 sidnum) = 0;
+		virtual ERenderStatus createShaderInputDescriptor(ResourceProxy& rsc, const ResourceProxy& vertexshader, const SShaderInputDescriptor* sids, uint32 sidnum) = 0;
 		
 		//Render context methods
 		virtual void createContext(IRenderContext** context) = 0;

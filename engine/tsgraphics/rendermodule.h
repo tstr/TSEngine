@@ -38,6 +38,7 @@ namespace ts
 		//Screen dimensions
 		uint32 width = 0;
 		uint32 height = 0;
+		SMultisampling multisampling;
 		EWindowMode windowMode = eWindowDefault;
 		ERenderApiID apiEnum = ERenderApiID::eRenderApiNull;
 		//Root asset loading path for textures/shaders/models

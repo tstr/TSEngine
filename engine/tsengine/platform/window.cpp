@@ -51,8 +51,6 @@ static bool EnableVisualStyles()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-using namespace ts;
-
 //Custom window event codes
 #define TSM_CREATE (WM_USER + 0x0001)
 #define TSM_INVOKE (WM_USER + 0x0002)
@@ -139,7 +137,7 @@ struct CWindow::Impl
 	SWindowRect size;
 	SWindowRect sizeCache;
 
-	CWindow::IEventListener* windowEventListener = nullptr;
+	vector<CWindow::IEventListener*> windowEventListeners;
 
 	atomic<int> flags = 0;
 
@@ -211,20 +209,24 @@ struct CWindow::Impl
 			//Only call the event listener for WM_* messages which have a corresponding EWindowEvent enum
 			if (code != EWindowEvent::eEventNull)
 			{
-				if (wnd->windowEventListener != nullptr)
-				{
-					SWindowEventArgs args;
-					args.pWindow = wnd->window;
-					args.eventcode = EventCodes.GetWindowEventEnum(msg);
-					args.a = lparam;
-					args.b = wparam;
+				SWindowEventArgs args;
+				args.pWindow = wnd->window;
+				args.eventcode = EventCodes.GetWindowEventEnum(msg);
+				args.a = lparam;
+				args.b = wparam;
 
-					//If the return value is not equal to zero the event is marked as handled by the listener
-					if (wnd->windowEventListener->onEvent(args))
+				for (CWindow::IEventListener* listener : wnd->windowEventListeners)
+				{
+					if (listener != nullptr)
 					{
-						return 0;
+						//If the return value is not equal to zero the event is marked as handled by the listener
+						if (listener->onWindowEvent(args))
+						{
+							return 0;
+						}
 					}
 				}
+
 			}
 		}
 		
@@ -295,10 +297,19 @@ CWindow::~CWindow()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CWindow::setEventListener(IEventListener* listener)
+//todo: actually make thread safe
+void CWindow::addEventListener(IEventListener* listener)
 {
-	//todo: actually make thread safe
-	pImpl->windowEventListener = listener;
+	pImpl->windowEventListeners.push_back(listener);
+}
+
+void CWindow::removeEventListener(IEventListener* listener)
+{
+	auto& listeners = pImpl->windowEventListeners;
+	auto it = find(listeners.begin(), listeners.end(), listener);
+
+	if (it != listeners.end())
+		pImpl->windowEventListeners.erase(it);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

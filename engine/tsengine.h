@@ -50,7 +50,7 @@ namespace ts
 		UniquePtr<IApplication> m_app;
 		UniquePtr<CWindow> m_window;
 		UniquePtr<CRenderModule> m_renderModule;
-		UniquePtr<CInputModule> m_inputModule;		//todo: implement
+		UniquePtr<CInputModule> m_inputModule;
 
 		CMessageReciever<ESystemMessage> m_messageReciever;
 
@@ -58,6 +58,8 @@ namespace ts
 		void onInit();
 
 		int run();
+
+		mutex m_exitMutex;
 
 	public:
 

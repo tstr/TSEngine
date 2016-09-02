@@ -129,6 +129,16 @@ namespace ts
 			return Matrix(internal::XMMatrixInverse((internal::XMVECTOR*)&v, m));
 		}
 
+		static VECTOR_INLINE void VECTOR_CALL inverse(Matrix& m)
+		{
+			m = m.inverse();
+		}
+
+		static VECTOR_INLINE void VECTOR_CALL transpose(Matrix& m)
+		{
+			m = m.transpose();
+		}
+
 		VECTOR_INLINE bool VECTOR_CALL decompose(_Out_ Vector& scale, _Out_ Quaternion& rotation, _Out_ Vector& translation);
 
 		/////////////////////////////////////////////////////////////////////////////////////

@@ -7,6 +7,7 @@
 #include <tscore/debug/log.h>
 #include <tscore/system/info.h>
 #include <tscore/system/thread.h>
+#include <tsgraphics/colour.h>
 
 //Modules
 #include <tsgraphics/rendermodule.h>
@@ -49,18 +50,20 @@ private:
 			m_wnd(wnd)
 		{}
 
-		int onEvent(const SWindowEventArgs& args) override
+		int onWindowEvent(const SWindowEventArgs& args) override
 		{
-			switch (args.eventcode)
+			if (args.eventcode == EWindowEvent::eEventDestroy)
 			{
-			case (EWindowEvent::eEventDestroy) :
 				m_wnd->m_pSystem->shutdown();
-				break;
+				//return IEventListener::eHandled;
+				return 0;
 			}
 
 			auto input = m_wnd->m_pSystem->getInputModule();
 			if (input != nullptr)
+			{
 				input->onWindowInputEvent(args);
+			}
 
 			return 0;
 		}
@@ -73,7 +76,7 @@ public:
 		m_eventListener(this),
 		CWindow(desc)
 	{
-		this->setEventListener((IEventListener*)&m_eventListener);
+		this->addEventListener((IEventListener*)&m_eventListener);
 	}
 };
 
@@ -133,13 +136,19 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 
 	uint32 fullscreenmode = 0;
 	config.getProperty("video.fullscreen", fullscreenmode);
-	tsassert(fullscreenmode <= 2);
-
+	if (fullscreenmode > 2)
+	{
+		tswarn("% is not a valid fullscreen mode", fullscreenmode);
+		fullscreenmode = 0;
+	}
 
 	string assetpathbuf;
 	config.getProperty("system.assetdir", assetpathbuf);
 	Path assetpath = params.appPath.getParent();
 	assetpath.addDirectories(assetpathbuf);
+
+	uint32 samplecount = 1;
+	config.getProperty("video.multisamplecount", samplecount);
 
 	SRenderModuleConfiguration rendercfg;
 	rendercfg.windowHandle = m_window->handle();
@@ -148,6 +157,7 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	rendercfg.apiEnum = ERenderApiID::eRenderApiD3D11;
 	rendercfg.windowMode = (EWindowMode)fullscreenmode;
 	rendercfg.rootpath = assetpath;
+	rendercfg.multisampling.count = samplecount;
 	m_renderModule.reset(new CRenderModule(rendercfg));
 
 	m_inputModule.reset(new CInputModule(m_window.get()));
@@ -158,12 +168,29 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 		{
 			std::string str;
 			std::cin >> str;
-			if (str == "exit")
+			if (compare_string_weak(str, "exit"))
 				this->shutdown();
 		}
 	}).detach();
 
 	onInit();
+
+	//Run simulation loop
+	run();
+
+	onExit();
+}
+
+CEngineSystem::~CEngineSystem()
+{
+	shutdown();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+int CEngineSystem::run()
+{
+	lock_guard<mutex>lk(m_exitMutex);
 
 	Timer timer;
 	double pheta = 0.0f;
@@ -186,6 +213,8 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 		framecolour.y() = 0.5f - (float)sin(pheta);
 		framecolour.z() = 0.5f + (float)cos(pheta);
 
+		framecolour = colours::AntiqueWhite;
+
 		//Clear the frame to a specific colour
 		m_renderModule->drawBegin(framecolour);
 
@@ -196,21 +225,6 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 		m_renderModule->drawEnd();
 	}
 
-	onExit();
-}
-
-CEngineSystem::~CEngineSystem()
-{
-	shutdown();
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-int CEngineSystem::run()
-{
-
-
-
 	return 0;
 }
 
@@ -219,6 +233,7 @@ int CEngineSystem::run()
 void CEngineSystem::shutdown()
 {
 	m_messageReciever.post(ESystemMessage::eMessageExit);
+	lock_guard<mutex>lk(m_exitMutex);
 }
 
 //Event handlers
@@ -227,6 +242,10 @@ void CEngineSystem::onExit()
 	m_app->onExit();
 
 	m_window->close();
+
+	m_app.reset();
+	m_inputModule.reset();
+	m_renderModule.reset();
 
 	consoleClose();
 }

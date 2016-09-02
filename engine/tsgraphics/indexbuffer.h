@@ -24,7 +24,6 @@ namespace ts
 			CIndexBuffer::CBuffer(module)
 		{}
 
-		template<typename t>
 		CIndexBuffer(CRenderModule* module, const Index* indices, uint32 indexCount) :
 			CIndexBuffer::CBuffer(module)
 		{
@@ -32,7 +31,6 @@ namespace ts
 			m_indexCount = indexCount;
 		}
 
-		template<typename t>
 		bool setIndexArray(const Index* indices, uint32 indexCount)
 		{
 			return setBuffer(indices, sizeof(Index) * indexCount, EBufferType::eBufferTypeIndex);

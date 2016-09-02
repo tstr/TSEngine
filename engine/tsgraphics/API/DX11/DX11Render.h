@@ -53,7 +53,7 @@ namespace ts
 			ERenderStatus createViewTexture3D(ResourceProxy& view, const ResourceProxy& rsc) override;
 
 			ERenderStatus createShader(ResourceProxy& shader, const void* bytecode, uint32 bytecodesize, EShaderStage stage) override;
-			ERenderStatus createShaderInputDescriptor(ResourceProxy& rsc, const ResourceProxy& vertexshader, const ShaderInputDescriptor* descs, uint32 descnum) override;
+			ERenderStatus createShaderInputDescriptor(ResourceProxy& rsc, const ResourceProxy& vertexshader, const SShaderInputDescriptor* descs, uint32 descnum) override;
 
 			void createContext(IRenderContext** context) override;
 			void destroyContext(IRenderContext* context) override;
@@ -245,6 +245,8 @@ namespace ts
 				IDX11RenderResource(api, eResourceTextureSampler),
 				m_sampler(state)
 			{}
+
+			~DX11TextureSampler() {}
 
 			ID3D11SamplerState* get() const { return m_sampler.Get(); }
 		};

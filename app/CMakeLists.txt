@@ -4,6 +4,8 @@ SET(src_list
 	main.cpp
 	application.cpp
 	application.h
+	meshes.cpp
+	meshes.h
 )
 
 ADD_EXECUTABLE(
@@ -22,3 +24,5 @@ ADD_CUSTOM_COMMAND(
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/config.ini" $<TARGET_FILE_DIR:application>
 	DEPENDS ${PROJECT_SOURCE_DIR}/config.ini
 )
+
+SET_TARGET_PROPERTIES(application PROPERTIES FOLDER applications)
