@@ -12,7 +12,6 @@ namespace ts
 	void TSCORE_API consoleOpen();
 	void TSCORE_API consoleClose();
 
-
 	typedef void(*ConsoleClosingHandler_t)();
 
 	void TSCORE_API setConsoleClosingHandler(ConsoleClosingHandler_t f);
