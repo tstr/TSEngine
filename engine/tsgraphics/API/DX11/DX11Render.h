@@ -77,6 +77,7 @@ namespace ts
 
 			DX11RenderApi* m_api;
 			ComPtr<ID3D11DeviceContext> m_context;
+			ComPtr<ID3D11CommandList> m_contextCommandList;
 			SRenderCommand m_prevCommand;
 
 		public:
@@ -95,7 +96,9 @@ namespace ts
 
 			void execute(const SRenderCommand& command) override;
 
-			ComPtr<ID3D11DeviceContext> getDeviceContext() const { return m_context; }
+			void finish() override;
+
+			ComPtr<ID3D11CommandList> getCommandList() const { return m_contextCommandList; }
 		};
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////

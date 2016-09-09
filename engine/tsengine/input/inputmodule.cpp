@@ -83,7 +83,25 @@ void CInputModule::showCursor(bool show)
 {
 	if (show != m_cursorShown)
 	{
-		m_window->invoke([=]() { ::ShowCursor(show); });
+		m_window->invoke([=]() {
+			::ShowCursor(show);
+
+			if (show)
+			{
+				ClipCursor(nullptr);
+			}
+			else
+			{
+				auto hwnd = (HWND)m_window->handle();
+				//POINT p;
+				//ClientToScreen(hwnd, &p);
+				RECT rect;
+				GetWindowRect(hwnd, &rect);
+				ClipCursor(&rect);
+
+				::ClipCursor(&rect);
+			}
+		});
 	}
 }
 

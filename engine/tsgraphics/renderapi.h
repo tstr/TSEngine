@@ -410,6 +410,8 @@ namespace ts
 
 		//Execute a draw call
 		virtual void execute(const SRenderCommand& command) = 0;
+
+		virtual void finish() = 0;
 	};
 
 	class IRenderAdapterFactory

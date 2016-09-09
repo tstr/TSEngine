@@ -22,7 +22,7 @@ namespace ts
 	//A log message
 	struct SLogMessage
 	{
-		StaticString<256> message;
+		StaticString<2048> message;
 		StaticString<256> file;
 		StaticString<256> function;
 		size_t line = 0;

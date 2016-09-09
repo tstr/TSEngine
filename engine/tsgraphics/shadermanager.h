@@ -54,6 +54,7 @@ namespace ts
 		void setRootpath(const Path& rootpath) { m_rootpath = rootpath; }
 
 		bool compileAndLoadShader(CShader& shader, const char* code, const SShaderCompileConfig& config);
+		bool compileAndLoadShaderFile(CShader& shader, const Path& codefile, const SShaderCompileConfig& config);
 	};
 }
 

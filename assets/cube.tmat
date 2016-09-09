@@ -1,0 +1,17 @@
+#
+#	Material file
+#
+
+[DefaultMaterial]
+diffuseColour = 0.6, 0.6, 0.6
+ambientColour = 0, 0, 0
+emissiveColour = 0, 0, 0
+specularColour = 0, 0, 0
+shininess = 0
+alpha = 1
+diffuseMap = 
+specularMap = 
+ambientMap = 
+displacementMap = 
+normalMap = 
+

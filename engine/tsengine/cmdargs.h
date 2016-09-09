@@ -23,6 +23,19 @@ namespace ts
 		CommandLineArgs(const std::string& cmdline) { parse(cmdline); }
 		~CommandLineArgs() {}
 		
+		CommandLineArgs(char** argv, int argc)
+		{
+			std::string cmdline;
+			for (int i = 1; i < argc; i++)
+			{
+				cmdline += " ";
+				cmdline += argv[i];
+				cmdline += " ";
+			}
+
+			parse(cmdline);
+		}
+		
 		void parse(const std::string& cmdline);
 		
 		bool isArgumentTag(const std::string& tag) const

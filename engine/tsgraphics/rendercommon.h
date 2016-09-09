@@ -14,8 +14,9 @@ namespace ts
 {
 	enum ERenderApiFlags : uint16
 	{
-		eFlagNull =  0,
-		eFlagDebug = 1
+		eFlagNull		   = 0,
+		eFlagDebug		   = 1,
+		eFlagReportObjects = 2
 	};
 
 	enum EWindowMode

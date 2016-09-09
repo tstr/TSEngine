@@ -1,11 +1,22 @@
 #Application
 
 SET(src_list
+	
 	main.cpp
 	application.cpp
 	application.h
-	meshes.cpp
-	meshes.h
+	
+	scene/modelimporter.h
+	scene/modelimporter.cpp
+	scene/material.h
+	scene/material.cpp
+	scene/camera.h
+	scene/camera.cpp
+	
+	helpers/geometry.cpp
+	helpers/geometry.h
+	helpers/appinfo.h
+	helpers/appinfo.cpp
 )
 
 ADD_EXECUTABLE(

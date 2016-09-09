@@ -21,6 +21,7 @@ SET(src_list
 	buffercommon.h
 	
 	internal/nvoptimus.cpp
+	model/modeldefs.h
 
 	api/DX11/DX11base.h
 	api/DX11/DX11render.h

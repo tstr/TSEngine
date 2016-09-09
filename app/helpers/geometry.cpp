@@ -2,7 +2,7 @@
 	Meshes
 */
 
-#include "meshes.h"
+#include "geometry.h"
 
 using namespace std;
 
@@ -10,9 +10,9 @@ namespace ts
 {
 	void generateCubeMesh(Vector halfextents, vector<Index>& indices, vector<Vector>& vertices,vector<Vector>& texcoords)
 	{
-		float x = halfextents.x() * 2;
-		float y = halfextents.y() * 2;
-		float z = halfextents.z() * 2;
+		float x = halfextents.x();
+		float y = halfextents.y();
+		float z = halfextents.z();
 
 		indices = vector<Index>{
 			0,2,1,

@@ -144,7 +144,7 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 DX11RenderApi::~DX11RenderApi()
 {
-	if (m_config.flags & ERenderApiFlags::eFlagDebug)
+	if (m_config.flags & ERenderApiFlags::eFlagReportObjects)
 	{
 		ComPtr<ID3D11Debug> debug;
 		m_device.As(&debug);
@@ -937,22 +937,17 @@ void DX11RenderApi::createContext(IRenderContext** context)
 
 void DX11RenderApi::destroyContext(IRenderContext* context)
 {
-	if (context)
-		delete context;
+	//upcast
+	if (auto ptr = static_cast<DX11RenderContext*>(context))
+		delete ptr;
 }
 
 void DX11RenderApi::executeContext(IRenderContext* context)
 {
-	auto rcontext = (DX11RenderContext*)context;
-
-	if (rcontext)
+	//upcast
+	if (auto rcon = static_cast<DX11RenderContext*>(context))
 	{
-		ComPtr<ID3D11CommandList> commandlist;
-		rcontext->getDeviceContext()->FinishCommandList(false, commandlist.GetAddressOf());
-
-		m_immediateContext->ExecuteCommandList(commandlist.Get(), false);
-
-		rcontext->getDeviceContext()->ClearState();
+		m_immediateContext->ExecuteCommandList(rcon->getCommandList().Get(), false);
 	}
 }
 

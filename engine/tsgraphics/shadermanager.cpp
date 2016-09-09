@@ -5,10 +5,12 @@
 #include "shadermanager.h"
 #include "rendermodule.h"
 
+#include <fstream>
 #include <tscore/debug/assert.h>
 
 #include "API/DX11/DX11render.h"
 
+using namespace std;
 using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -54,6 +56,23 @@ bool CShaderManager::compileAndLoadShader(CShader& shader, const char* code, con
 {
 	MemoryBuffer bytecode;
 	if (!m_shaderCompiler->compile(code, config, bytecode))
+		return false;
+	shader = CShader(this, bytecode, config.stage);
+
+	return true;
+}
+
+bool CShaderManager::compileAndLoadShaderFile(CShader& shader, const Path& codefile, const SShaderCompileConfig& config)
+{
+	MemoryBuffer bytecode;
+
+	Path root(m_rootpath);
+	root.addDirectories(codefile);
+	ifstream filestream(root.str());
+
+	string buf((istreambuf_iterator<char>(filestream)), istreambuf_iterator<char>());
+
+	if (!m_shaderCompiler->compile(buf.c_str(), config, bytecode))
 		return false;
 	shader = CShader(this, bytecode, config.stage);
 
