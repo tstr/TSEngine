@@ -38,10 +38,19 @@ namespace ts
 
 	enum class ESystemMessage
 	{
-		eMessageNull = 0,
-		eMessageExit = 1
+		eMessageNull   = 0,
+		eMessageExit   = 1,
 	};
+	
+	struct SSystemMessage
+	{
+		ESystemMessage eventcode = ESystemMessage::eMessageNull;
+		uint64 param = 0;
 
+		SSystemMessage() {}
+		SSystemMessage(ESystemMessage code) : eventcode(code) {}
+	};
+	
 	//Base engine class - this class is the center of the application and is responsible for initializing and handling communications between engine modules
 	class CEngineSystem
 	{
@@ -52,7 +61,7 @@ namespace ts
 		UniquePtr<CRenderModule> m_renderModule;
 		UniquePtr<CInputModule> m_inputModule;
 
-		CMessageReciever<ESystemMessage> m_messageReciever;
+		CMessageReciever<SSystemMessage> m_messageReciever;
 
 		void onExit();
 		void onInit();
@@ -62,7 +71,7 @@ namespace ts
 		mutex m_exitMutex;
 
 	public:
-
+	
 		//constructor/destructor
 		CEngineSystem(const SEngineStartupParams& params);
 		~CEngineSystem();

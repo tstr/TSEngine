@@ -10,6 +10,7 @@
 #include <tscore/system/memory.h>
 #include <tscore/filesystem/path.h>
 #include <tscore/maths.h>
+#include <tscore/system/thread.h>
 
 #include "rendercommon.h"
 #include "renderapi.h"
@@ -72,6 +73,7 @@ namespace ts
 		IRenderApi* const getApi() const { return m_api.get(); }
 
 		void setWindowMode(EWindowMode mode);
+		void setWindowDimensions(uint32 w, uint32 h);
 		void getConfiguration(SRenderModuleConfiguration& cfg) { cfg = m_config; }
 
 		void drawBegin(const Vector& vec);

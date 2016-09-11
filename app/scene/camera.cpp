@@ -60,6 +60,26 @@ int CCamera::onKeyUp(EKeyCode code)
 
 }
 
+int CCamera::onMouseDown(const SInputMouseEvent& args)
+{
+	if (args.buttons == eMouseButtonRight)
+	{
+		m_moveMouse = true;
+		m_inputmodule->showCursor(false);
+	}
+	return 0;
+}
+
+int CCamera::onMouseUp(const SInputMouseEvent& args)
+{
+	if (args.buttons == eMouseButtonRight)
+	{
+		m_moveMouse = false;
+		m_inputmodule->showCursor(true);
+	}
+	return 0;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 void CCamera::update(double dt)
@@ -69,15 +89,18 @@ void CCamera::update(double dt)
 	const float speed = 3.0f;
 	float dis = speed * (float)dt;
 
-	float dx = m_mouseDX.exchange(0);
-	float dy = m_mouseDY.exchange(0);
+	float dx = (float)m_mouseDX.exchange(0);
+	float dy = (float)m_mouseDY.exchange(0);
 
-	const float sensitivity = 0.00012f;
-	const float pi2 = 2 * Pi;
-	m_camAngleX = m_camAngleX + pi2 * sensitivity * (float)dx;
-	m_camAngleY = m_camAngleY + pi2 * sensitivity * (float)dy;
-	m_camAngleX = fmod(m_camAngleX, pi2);
-	m_camAngleY = fmod(m_camAngleY, pi2);
+	if (m_moveMouse.load())
+	{
+		const float sensitivity = 0.00012f;
+		const float pi2 = 2 * Pi;
+		m_camAngleX = m_camAngleX + pi2 * sensitivity * (float)dx;
+		m_camAngleY = m_camAngleY + pi2 * sensitivity * (float)dy;
+		m_camAngleX = fmod(m_camAngleX, pi2);
+		m_camAngleY = fmod(m_camAngleY, pi2);
+	}
 
 	float& ax = m_camAngleX;
 	float& ay = m_camAngleY;

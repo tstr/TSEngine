@@ -1,0 +1,24 @@
+/*
+	Path helper function source
+*/
+
+#include "pathhelpers.h"
+
+#include <Windows.h>
+#include <Shlwapi.h>
+
+using namespace std;
+
+#pragma comment(lib, "Shlwapi.lib")
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace ts
+{
+	bool isAbsolutePath(const Path& path)
+	{
+		return (PathIsRelativeA(path.str()) == FALSE);
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////

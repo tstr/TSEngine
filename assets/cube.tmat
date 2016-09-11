@@ -9,9 +9,12 @@ emissiveColour = 0, 0, 0
 specularColour = 0, 0, 0
 shininess = 0
 alpha = 1
-diffuseMap = 
-specularMap = 
-ambientMap = 
-displacementMap = 
-normalMap = 
+
+[Material]
+diffuseColour = 0.64, 0.64, 0.64
+ambientColour = 0, 0, 0
+emissiveColour = 0, 0, 0
+specularColour = 0.5, 0.5, 0.5
+shininess = 384.314
+alpha = 1
 

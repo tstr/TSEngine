@@ -61,7 +61,7 @@ namespace ts
 		
 		template<
 			typename t,
-			class = std::enable_if<std::is_integral<t>::value>::type
+			class = std::enable_if<!std::is_same<t, std::string>::value>::type
 		>
 		inline bool getProperty(
 			const PropertyKey& key,

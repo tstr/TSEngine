@@ -49,7 +49,7 @@ private:
 		CEventListener(Window* wnd) :
 			m_wnd(wnd)
 		{}
-
+		
 		int onWindowEvent(const SWindowEventArgs& args) override
 		{
 			if (args.eventcode == EWindowEvent::eEventDestroy)
@@ -57,6 +57,13 @@ private:
 				m_wnd->m_pSystem->shutdown();
 				//return IEventListener::eHandled;
 				return 0;
+			}
+			else if (args.eventcode == EWindowEvent::eEventResize)
+			{
+				uint32 w = 1;
+				uint32 h = 1;
+				getWindowResizeEventArgs(args, w, h);
+				m_wnd->getSystem()->getRenderModule()->setWindowDimensions(w, h);
 			}
 
 			auto input = m_wnd->m_pSystem->getInputModule();
@@ -70,6 +77,8 @@ private:
 	} m_eventListener;
 
 public:
+
+	CEngineSystem* getSystem() { return m_pSystem; }
 
 	Window(CEngineSystem* sys, const SWindowDesc& desc) :
 		m_pSystem(sys),
@@ -193,32 +202,23 @@ int CEngineSystem::run()
 	lock_guard<mutex>lk(m_exitMutex);
 
 	Timer timer;
-	double pheta = 0.0f;
-	Vector framecolour;
-	framecolour.x() = 0.0f;
-	framecolour.y() = 1.0f;
 
-	ESystemMessage msg = ESystemMessage::eMessageNull;
+	SSystemMessage msg;
 
 	//Main engine loop
-	while (msg != ESystemMessage::eMessageExit)
+	while (msg.eventcode != ESystemMessage::eMessageExit)
 	{
 		m_messageReciever.peek(msg);
-
+		
 		timer.tick();
 		double dt = timer.deltaTime();
-		pheta += (2 * Pi) * dt / 5;
-		pheta = fmod(pheta, 2 * Pi);
-		framecolour.x() = 0.5f + (float)sin(pheta);
-		framecolour.y() = 0.5f - (float)sin(pheta);
-		framecolour.z() = 0.5f + (float)cos(pheta);
 
-		framecolour = colours::AntiqueWhite;
+		Vector framecolour = colours::AntiqueWhite;
 
 		//Clear the frame to a specific colour
 		m_renderModule->drawBegin(framecolour);
 
-		//rendering here
+		//Update application
 		m_app->onUpdate(dt);
 
 		//Present the frame
@@ -232,7 +232,7 @@ int CEngineSystem::run()
 
 void CEngineSystem::shutdown()
 {
-	m_messageReciever.post(ESystemMessage::eMessageExit);
+	m_messageReciever.post(SSystemMessage(ESystemMessage::eMessageExit));
 	lock_guard<mutex>lk(m_exitMutex);
 }
 

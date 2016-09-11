@@ -7,6 +7,7 @@
 
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
+#include <tscore/filesystem/pathhelpers.h>
 
 //todo: replace gdi+ with a custom texture loader
 #include <Windows.h>
@@ -14,8 +15,6 @@
 #pragma comment(lib, "gdiplus.lib")
 #include <codecvt>
 #include <string>
-
-
 
 using namespace ts;
 using namespace std;
@@ -94,7 +93,15 @@ bool CTextureManager::loadTexture2D(const Path& file, CTexture2D& texture)
 	*/
 
 	Path filepath = m_rootpath;
-	filepath.addDirectories(file);
+
+	if (isAbsolutePath(file))
+	{
+		filepath = file;
+	}
+	else
+	{
+		filepath.addDirectories(file);
+	}
 
 	tsinfo("Loading texture: \"%\"...", filepath.str());
 

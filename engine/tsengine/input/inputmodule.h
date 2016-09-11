@@ -15,8 +15,8 @@ namespace ts
 		
 		virtual int onMouse(int16 dx, int16 dy) { return 0; }
 		//virtual int onMouseClick(const SInputMouseEvent&) { return 0; }
-		//virtual int onMouseDown(const SInputMouseEvent&) { return 0; }
-		//virtual int onMouseUp(const SInputMouseEvent&) { return 0; }
+		virtual int onMouseDown(const SInputMouseEvent&) { return 0; }
+		virtual int onMouseUp(const SInputMouseEvent&) { return 0; }
 		//virtual int onMouseScroll(const SInputMouseEvent&) { return 0; }
 
 		//virtual int onKeyPress(const SInputKeyEvent&) { return 0; }
@@ -36,6 +36,9 @@ namespace ts
 		void inputLayerCallback(const SInputEvent& event);
 
 		bool m_cursorShown = true;
+
+		int m_mouseX = 0;
+		int m_mouseY = 0;
 
 	public:
 		

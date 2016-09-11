@@ -21,6 +21,8 @@ SET(src_list
 
 	filesystem/path.cpp
 	filesystem/path.h
+	filesystem/pathhelpers.h
+	filesystem/pathhelpers.cpp
 
 	containers/circularbuffer.h
 	containers/threadqueue.h

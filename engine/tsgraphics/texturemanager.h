@@ -68,6 +68,7 @@ namespace ts
 		CRenderModule* const getModule() const { return m_renderModule; }
 
 		void setRootpath(const Path& rootpath) { m_rootpath = rootpath; }
+		Path getRootpath() const { return m_rootpath; }
 
 		bool loadTexture2D(const Path& file, CTexture2D& texture);
 		bool loadTextureCube(const Path& file, CTextureCube& texture);

@@ -122,4 +122,7 @@ namespace ts
 		void raiseEvent(EWindowEvent e, uint64 a, uint64 b);
 		void messageBox(const char* text, const char* caption = "");
 	};
+	
+	//Helper functions
+	void getWindowResizeEventArgs(const SWindowEventArgs& args, uint32& w, uint32& h);
 }

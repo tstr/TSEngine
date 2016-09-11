@@ -132,14 +132,15 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	setWindowMode(cfg.windowMode);
 
+	//Save a copy of the configuration
+	m_config = cfg;
+
+	//Create the new render target view
 	ComPtr<ID3D11Texture2D> backbuffer;
 	hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());
 	tsassert(SUCCEEDED(hr));
 	hr = m_device->CreateRenderTargetView(backbuffer.Get(), nullptr, m_swapChainRenderTarget.GetAddressOf());
 	tsassert(SUCCEEDED(hr));
-
-	//Save a copy of the configuration
-	m_config = cfg;
 }
 
 DX11RenderApi::~DX11RenderApi()
@@ -235,7 +236,7 @@ void DX11RenderApi::setWindowMode(EWindowMode mode)
 
 void DX11RenderApi::setWindowDimensions(uint32 w, uint32 h)
 {
-	throw exception();
+	m_cachedRes = MAKELPARAM((uint16)w, (uint16)h);
 }
 
 void DX11RenderApi::getWindowRenderTarget(ResourceProxy& target)
@@ -247,6 +248,52 @@ void DX11RenderApi::getWindowRenderTarget(ResourceProxy& target)
 
 void DX11RenderApi::drawBegin(const Vector& vec)
 {
+	auto res = m_cachedRes.load();
+	uint32 w = LOWORD(res);
+	uint32 h = HIWORD(res);
+
+	if (w != m_config.resolutionWidth || h != m_config.resolutionHeight)
+	{
+		//Reset deferred contexts
+		for (auto& rc : m_renderContexts)
+		{
+			rc->reset();
+		}
+
+		//Destroy the old render target view
+		m_swapChainRenderTarget.Reset();
+
+		w = max(1u, w);
+		h = max(1u, h);
+
+		//Only resize if width/height is different
+		if ((m_config.resolutionWidth != w) || (m_config.resolutionHeight != h))
+		{
+			DXGI_SWAP_CHAIN_DESC desc;
+			m_dxgiSwapchain->GetDesc(&desc);
+
+			//ComPtr<ID3D11Debug> debug;
+			//m_device.As(&debug);
+			//debug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY | D3D11_RLDO_DETAIL);
+
+			//Resize swapchain - DXGI_FORMAT_R8G8B8A8_UNORM
+			if (FAILED(m_dxgiSwapchain->ResizeBuffers(2, w, h, DXGI_FORMAT_UNKNOWN, desc.Flags)))
+			{
+				tswarn("unable to resize IDXGISwapChain");
+			}
+
+			m_config.resolutionWidth = w;
+			m_config.resolutionHeight = h;
+		}
+
+		//Create the new render target view
+		ComPtr<ID3D11Texture2D> backbuffer;
+		HRESULT hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());
+		tsassert(SUCCEEDED(hr));
+		hr = m_device->CreateRenderTargetView(backbuffer.Get(), nullptr, m_swapChainRenderTarget.GetAddressOf());
+		tsassert(SUCCEEDED(hr));
+	}
+
 	const float colour[] = { vec.x(), vec.y(), vec.z(), 1.0f };
 	m_immediateContext->ClearRenderTargetView(m_swapChainRenderTarget.Get(), colour);
 }
@@ -932,14 +979,20 @@ ERenderStatus DX11RenderApi::createShaderInputDescriptor(ResourceProxy& rsc, con
 
 void DX11RenderApi::createContext(IRenderContext** context)
 {
-	*context = new DX11RenderContext(this);
+	auto rc = new DX11RenderContext(this);
+	*context = rc;
+	m_renderContexts.push_back(rc);
 }
 
 void DX11RenderApi::destroyContext(IRenderContext* context)
 {
 	//upcast
 	if (auto ptr = static_cast<DX11RenderContext*>(context))
+	{
+		auto it = find(m_renderContexts.begin(), m_renderContexts.end(), ptr);
+		m_renderContexts.erase(it);
 		delete ptr;
+	}
 }
 
 void DX11RenderApi::executeContext(IRenderContext* context)

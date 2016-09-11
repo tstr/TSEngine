@@ -59,8 +59,29 @@ void CInputModule::inputLayerCallback(const SInputEvent& event)
 {
 	if (event.type == EInputEventType::eInputEventMouse)
 	{
-		for (auto& l : m_eventListeners)
-			l->onMouse(event.mouse.deltaX, event.mouse.deltaY);
+		if (!m_cursorShown)
+		{
+			SetCursorPos(m_mouseX, m_mouseY);
+		}
+
+		if (event.mouse.deltaX || event.mouse.deltaY)
+			for (auto& l : m_eventListeners)
+				l->onMouse(event.mouse.deltaX, event.mouse.deltaY);
+
+		if (event.mouse.buttons)
+		{
+			if (event.mouse.isButtonUp)
+			{
+				for (auto& l : m_eventListeners)
+					l->onMouseUp(event.mouse);
+			}
+			else
+			{
+				for (auto& l : m_eventListeners)
+					l->onMouseDown(event.mouse);
+			}
+		}
+
 	}
 	else if (event.type == EInputEventType::eInputEventKeyboard)
 	{
@@ -83,25 +104,31 @@ void CInputModule::showCursor(bool show)
 {
 	if (show != m_cursorShown)
 	{
-		m_window->invoke([=]() {
+		m_window->invoke([=]()
+		{
 			::ShowCursor(show);
 
 			if (show)
 			{
-				ClipCursor(nullptr);
+				::ClipCursor(nullptr);
 			}
 			else
 			{
 				auto hwnd = (HWND)m_window->handle();
-				//POINT p;
-				//ClientToScreen(hwnd, &p);
-				RECT rect;
-				GetWindowRect(hwnd, &rect);
-				ClipCursor(&rect);
 
+				RECT rect;
+				::GetWindowRect(hwnd, &rect);
 				::ClipCursor(&rect);
+
+				POINT p;
+				GetCursorPos(&p);
+
+				m_mouseY = p.y;
+				m_mouseX = p.x;
 			}
 		});
+
+		m_cursorShown = show;
 	}
 }
 

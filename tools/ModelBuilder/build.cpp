@@ -315,6 +315,7 @@ bool exportModel(const aiScene* scene, ostream& outputstream)
 		
 		mesh.indexOffset = indexoffset;
 		mesh.indexCount = indexcount;
+		mesh.numVertices = aimesh->mNumVertices;
 		mesh.vertexAttributeMask = attribs;
 		
 		meshes.push_back(mesh);
@@ -345,18 +346,14 @@ bool exportMaterials(const aiScene* scene, ostream& outputstream)
 	outputstream << "#\n";
 	outputstream << "#	Material file\n";
 	outputstream << "#\n\n";
+
+	printline("num materials %", scene->mNumMaterials);
 	
 	if (scene->HasMaterials())// || !no_materials)
 	{
 		for (uint32 i = 0; i < scene->mNumMaterials; i++)
 		{
 			aiMaterial* aimaterial = scene->mMaterials[i];
-
-			if (aimaterial == nullptr)
-			{
-				printwarning("null material");
-				continue;
-			}
 			
 			aiString aimatName;
 			aimaterial->Get(AI_MATKEY_NAME, aimatName);
@@ -401,44 +398,43 @@ bool exportMaterials(const aiScene* scene, ostream& outputstream)
 			tex.Clear();
 			aimaterial->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &tex);
 			texpath.composePath(tex.C_Str());
-			if (texpath.str() != "")
+			if ((string)texpath.str() != "")
 				outputstream << "diffuseMap = " << texpath.str() << endl;
 
 			tex.Clear();
 			aimaterial->GetTexture(aiTextureType::aiTextureType_SPECULAR, 0, &tex);
 			texpath.composePath(tex.C_Str());
-			if (texpath.str() != "")
+			if ((string)texpath.str() != "")
 				outputstream << "specularMap = " << texpath.str() << endl;
 
 			tex.Clear();
 			aimaterial->GetTexture(aiTextureType::aiTextureType_AMBIENT, 0, &tex);
 			texpath.composePath(tex.C_Str());
-			if (texpath.str() != "")
+			if ((string)texpath.str() != "")
 				outputstream << "ambientMap = " << texpath.str() << endl;
 
 			tex.Clear();
 			aimaterial->GetTexture(aiTextureType::aiTextureType_DISPLACEMENT, 0, &tex);
 			texpath.composePath(tex.C_Str());
-			if (texpath.str() != "")
+			if ((string)texpath.str() != "")
 				outputstream << "displacementMap = " << texpath.str() << endl;
 
 			tex.Clear();
 			aimaterial->GetTexture(aiTextureType::aiTextureType_NORMALS, 0, &tex);
 			texpath.composePath(tex.C_Str());
-			if (texpath.str() != "")
+			if ((string)texpath.str() != "")
 				outputstream << "normalMap = " << texpath.str() << endl;
 
 			outputstream << endl;
-
-			return true;
 		}
 	}
 	else
 	{
 		printwarning("No materials could be found");
+		return false;
 	}
 	
-	return false;
+	return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

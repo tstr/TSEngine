@@ -8,8 +8,6 @@ SET(src_list
 	
 	scene/modelimporter.h
 	scene/modelimporter.cpp
-	scene/material.h
-	scene/material.cpp
 	scene/camera.h
 	scene/camera.cpp
 	

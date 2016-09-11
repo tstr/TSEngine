@@ -129,6 +129,24 @@ namespace ts
 
 		return elems;
 	}
+	
+	static std::vector<std::string>& split(const std::string &str, const std::string& delim)
+	{
+		std::string s(str);
+		size_t pos = 0;
+		std::string token;
+		std::vector<std::string> tokens;
+		
+		while ((pos = s.find(delim)) != std::string::npos)
+		{
+			token = s.substr(0, pos);
+			tokens.push_back(token);
+			s.erase(0, pos + delim.length());
+		}
+		tokens.push_back(s);
+		
+		return tokens;
+	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

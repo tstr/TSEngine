@@ -10,12 +10,10 @@
 #include <tsengine/input/inputmodule.h>
 #include <tscore/maths.h>
 
-#include "scene/camera.h"
-#include "scene/modelimporter.h"
-
 namespace ts
 {
 	class CCamera;
+	class CModel;
 
 	class Application :
 		public IApplication,
@@ -27,10 +25,9 @@ namespace ts
 		CEngineSystem* m_system = nullptr;
 		
 		UniquePtr<CCamera> m_camera;
+		UniquePtr<CModel> m_model;
 
 		IRenderContext* m_context = nullptr;
-
-		CModelImporter m_model;
 
 		struct SUniforms
 		{
@@ -42,12 +39,9 @@ namespace ts
 		};
 		SUniforms m_uniforms;
 
-		CTexture2D m_tex2D;
 		CShader m_vertexshader;
 		CShader m_pixelshader;
 		CUniformBuffer m_uniformBuffer;
-		CVertexBuffer m_vertexBuffer;
-		CIndexBuffer m_indexBuffer;
 		
 		ResourceProxy m_texSampler;
 		ResourceProxy m_depthTarget;
@@ -55,11 +49,15 @@ namespace ts
 		
 		int onWindowEvent(const SWindowEventArgs& args) override;
 		int onKeyDown(EKeyCode code) override;
+		int onMouseDown(const SInputMouseEvent&) override;
+		int onMouseUp(const SInputMouseEvent&) override;
+
+		void buildDepthTarget();
 
 	public:
 
-		Application() {}
-		~Application() {}
+		Application();
+		~Application();
 		
 		void onInit(CEngineSystem* system) override;
 		void onExit() override;

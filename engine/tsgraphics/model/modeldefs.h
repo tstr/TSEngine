@@ -36,6 +36,7 @@ namespace ts
 	{
 		ModelIndex indexOffset = 0;
 		ModelIndex indexCount = 0;
+		ModelIndex numVertices = 0;
 		uint8 vertexAttributeMask = 0;
 		StaticString<MaxMaterialNameLength> materialName;
 	};

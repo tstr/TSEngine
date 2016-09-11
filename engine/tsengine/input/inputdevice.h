@@ -67,31 +67,10 @@ namespace ts
 		typedef Delegate<void(const SInputEvent&)> Callback;
 	
 	private:
-	
-		enum EInputMessage : uint16
-		{
-			eMessageUnknown	= 0,
-			eMessageInput	= 1,
-			eMessageExit	= 0xffff,
-		};
-
-		struct SInputMessage
-		{
-			EInputMessage code;
-			SInputEvent event;
-
-			SInputMessage() {}
-			SInputMessage(EInputMessage msgcode) { code = msgcode; }
-		};
 		
 		CWindow* m_pWindow = nullptr;
-		CMessageReciever<SInputMessage> m_messageReciever;
 
-		void messageProcedure();
-
-		std::mutex m_exitMutex;
 		Callback m_inputCallback;
-
 		CKeyTable m_keyTable;
 		
 	public:

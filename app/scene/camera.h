@@ -16,6 +16,8 @@ namespace ts
 	
 		CInputModule* m_inputmodule = nullptr;
 		
+		std::atomic<bool> m_moveMouse;
+
 		//Input state
 		std::atomic<int8> m_actionflags = 0;
 		std::atomic<int16> m_mouseDX = 0;
@@ -30,12 +32,14 @@ namespace ts
 		float m_fov = Pi / 2;
 		float m_aspectRatio = 1.0f;
 		const float m_nearplane = 0.1f;
-		const float m_farplane = 20.0f;
+		const float m_farplane = 200.0f;
 		
 		//Input handlers
 		int onMouse(int16 dx, int16 dy) override;
 		int onKeyDown(EKeyCode code) override;
 		int onKeyUp(EKeyCode code) override;
+		int onMouseDown(const SInputMouseEvent& args) override;
+		int onMouseUp(const SInputMouseEvent& args) override;
 		
 	public:
 		
@@ -45,10 +49,12 @@ namespace ts
 			m_inputmodule(input)
 		{
 			m_inputmodule->addEventListener(this);
+			m_moveMouse = false;
 		}
 
 		~CCamera() {}
 		
+		void setPosition(Vector v) { m_camPosition = v; }
 		void setAspectRatio(float ratio) { m_aspectRatio = ratio; }
 		void setFov(float fov) { m_fov = fov; }
 		

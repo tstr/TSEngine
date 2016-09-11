@@ -6,6 +6,8 @@
 
 #include "cmdargs.h"
 
+#include <tscore/debug/log.h>
+
 using namespace ts;
 using namespace std;
 
@@ -18,8 +20,10 @@ void CommandLineArgs::parse(const std::string& cmdline)
 	//split command line into list of argument pairs
 	auto list = split(m_commandLine, '-');
 
-	for (const string& s : list)
+	for (const string& token : list)
 	{
+		string s(trim(token));
+
 		if (s == "")
 			continue;
 

@@ -44,6 +44,12 @@ void DX11RenderContext::finish()
 	m_context->FinishCommandList(false, m_contextCommandList.GetAddressOf());
 }
 
+void DX11RenderContext::reset()
+{
+	m_context->Flush();
+	m_contextCommandList.Reset();
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Rendering commands
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,11 +160,11 @@ void DX11RenderContext::execute(const SRenderCommand& command)
 	{
 		if (command.instanceCount > 1)
 		{
-			m_context->DrawIndexedInstanced(command.indexCount, command.instanceCount, command.indexStart, 0, 0);
+			m_context->DrawIndexedInstanced(command.indexCount, command.instanceCount, command.indexStart, command.vertexBase, 0);
 		}
 		else
 		{
-			m_context->DrawIndexed(command.indexCount, command.indexStart, 0);
+			m_context->DrawIndexed(command.indexCount, command.indexStart, command.vertexBase);
 		}
 	}
 	else

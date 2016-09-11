@@ -14,9 +14,18 @@
 #include "helpers/appinfo.h"
 
 #include "scene/camera.h"
+#include "scene/modelimporter.h"
 
 using namespace ts;
 using namespace std;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//Ctor/dtor
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+Application::Application() {}
+
+Application::~Application() {}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //Window/Input event handlers
@@ -24,25 +33,43 @@ using namespace std;
 
 int Application::onWindowEvent(const SWindowEventArgs& args)
 {
-	auto input = m_system->getInputModule();
-
-	if (args.eventcode == EWindowEvent::eEventSetfocus)
+	if (args.eventcode == EWindowEvent::eEventResize)
 	{
-		input->showCursor(false);
+		//Recreate the depth target
+		buildDepthTarget();
 	}
-	else if (args.eventcode == EWindowEvent::eEventKillfocus)
-	{
-		input->showCursor(true);
-	}
-
 	return 0;
 }
 
 int Application::onKeyDown(EKeyCode code)
 {
 	if (code == EKeyCode::eKeyEsc)
-	m_system->shutdown();
+		m_system->shutdown();
 
+	return 0;
+}
+
+inline string getMouseCodeName(EMouseButtons button)
+{
+	switch (button)
+	{
+	case(EMouseButtons::eMouseButtonLeft): { return "Mouse Left"; }
+	case(EMouseButtons::eMouseButtonRight): { return "Mouse Right"; }
+	case(EMouseButtons::eMouseButtonMiddle): { return "Mouse Middle"; }
+	case(EMouseButtons::eMouseXbutton1): { return "Mouse 1"; }
+	case(EMouseButtons::eMouseXbutton2): { return "Mouse 2"; }
+	}
+
+	return "";
+}
+
+int Application::onMouseDown(const SInputMouseEvent& args)
+{
+	return 0;
+}
+
+int Application::onMouseUp(const SInputMouseEvent& args)
+{
 	return 0;
 }
 
@@ -61,9 +88,10 @@ void Application::onInit(CEngineSystem* system)
 	m_system->getInputModule()->addEventListener(this);
 	m_system->getWindow()->addEventListener(this);
 
-	m_system->getInputModule()->showCursor(false);
+	//m_system->getInputModule()->showCursor(false);
 	
 	m_camera.reset(new CCamera(m_system->getInputModule()));
+	m_camera->setPosition(Vector(0, 1.0f, 0));
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -167,6 +195,7 @@ char cubeshadercode[] = R"(
 
 		output.colour = input.colour;
 		output.texcoord = input.texcoord;
+		output.texcoord.y = 1.0f - output.texcoord.y;
 		
 		output.vnormal = mul(output.vnormal, u_world);
 		output.vnormal = mul(output.vnormal, u_view);
@@ -179,16 +208,15 @@ char cubeshadercode[] = R"(
 	
 	float4 PS(PSinput input) : SV_TARGET
 	{	
-		float4 colour = float4(0.6f, 0.7f, 0.3f, 1.0f);
+		//float4 colour = float4(0.6f, 0.7f, 0.3f, 1.0f);
+		float4 colour = float4(tex.Sample(texSampler, input.texcoord).rgb, 1.0f);
 
 		float diffuseIntensity = dot(input.vnormal, input.ldir);
 
-		float3 ambient = float3(0.23f, 0.22f, 0.23f);
-		float3 diffuse = float3(1.0f, 0.95f, 1.0f) * diffuseIntensity;
-		
-		return (colour * float4((ambient + diffuse), 1.0f));
-
-		//return float4(tex.Sample(texSampler, input.texcoord).rgb, 1.0f) * factor;
+		float3 ambient = float3(0.13f, 0.12f, 0.13f);
+		float3 diffuse = float3(1.0f, 1.0f, 1.0f) * diffuseIntensity;
+		return colour;
+		//return (colour * float4((ambient + diffuse), 1.0f));
 	}
 	)";
 
@@ -222,15 +250,12 @@ char cubeshadercode[] = R"(
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	//Assets
 	/////////////////////////////////////////////////////////////////////////////////////////////////
+	
 
 	Path modelfile(rendercfg.rootpath);
-	modelfile.addDirectories("cube.tsm");
-	m_model.import(modelfile);
+	modelfile.addDirectories("sponza/sponza.tsm");
 
-	m_model.getVertexBuffer(0, m_system->getRenderModule(), m_vertexBuffer);
-	m_model.getIndexBuffer(0, m_system->getRenderModule(), m_indexBuffer);
-
-	SModelMesh mesh = m_model.getMesh(0);
+	m_model.reset(new CModel(m_system->getRenderModule(), modelfile));
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -269,8 +294,6 @@ char cubeshadercode[] = R"(
 	//Test uniform buffer
 	m_uniformBuffer = CUniformBuffer(m_system->getRenderModule(), m_uniforms);
 
-	tsassert(m_system->getRenderModule()->getTextureManager().loadTexture2D("cubetexture.png", m_tex2D));
-
 	//Test texture sampler
 	STextureSamplerDescriptor sampledesc;
 	sampledesc.addressU = ETextureAddressMode::eTextureAddressWrap;
@@ -282,24 +305,8 @@ char cubeshadercode[] = R"(
 	tsassert(!status);
 	
 	//Depth target view
-	ResourceProxy depthtargetrsc;
-	STextureResourceDescriptor depthdesc;
-	depthdesc.height = rendercfg.height;
-	depthdesc.width = rendercfg.width;
-	depthdesc.texformat = ETextureFormat::eTextureFormatDepth32;
-	depthdesc.texmask = eTextureMaskDepthTarget;
-	depthdesc.textype = eTypeTexture2D;
-	depthdesc.useMips = false;
-	depthdesc.multisampling = rendercfg.multisampling;
-	status = api->createResourceTexture(depthtargetrsc, nullptr, depthdesc);
-	tsassert(!status);
-	
-	STextureViewDescriptor depthviewdesc;
-	depthviewdesc.arrayCount = 1;
-	depthviewdesc.arrayIndex = 0;
-	status = api->createViewDepthTarget(m_depthTarget, depthtargetrsc, depthviewdesc);
-	tsassert(!status);
-	
+	buildDepthTarget();
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
@@ -313,7 +320,7 @@ void Application::onUpdate(double dt)
 	m_camera->update(dt);
 	
 	//Set uniforms
-	m_uniforms.u_world = Matrix::translation(Vector(0.0f, 0.5f, 3.0f));
+	m_uniforms.u_world = Matrix::translation(Vector(0.0f, 0.0f, 0.0f)) * Matrix::scale(0.1f);
 	m_uniforms.u_view = m_camera->getViewMatrix();
 	m_uniforms.u_projection = m_camera->getProjectionMatrix();
 
@@ -324,6 +331,9 @@ void Application::onUpdate(double dt)
 	Matrix::transpose(m_uniforms.u_world);
 	Matrix::transpose(m_uniforms.u_view);
 	Matrix::transpose(m_uniforms.u_projection);
+
+	//Update uniforms
+	m_context->resourceBufferUpdate(m_uniformBuffer.getBuffer(), (const void*)&m_uniforms);
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -348,23 +358,39 @@ void Application::onUpdate(double dt)
 	command.shaders.stagePixel = m_pixelshader.getShader();
 
 	command.textureSamplers[0] = m_texSampler;
-	command.textures[0] = m_tex2D.getView();
 
+	CVertexBuffer vbuf;
+	CIndexBuffer ibuf;
+	m_model->getVertexBuffer(vbuf);
+	m_model->getIndexBuffer(ibuf);
+
+	command.vertexBuffer = vbuf.getBuffer();
+	command.indexBuffer = ibuf.getBuffer();
+	command.vertexStride = vbuf.getVertexStride();
+
+	//command.vertexTopology = EVertexTopology::eTopologyTriangleList;
 	command.vertexTopology = EVertexTopology::eTopologyTriangleList;
 	command.vertexInputDescriptor = m_vertexInput;
-	command.vertexBuffer = m_vertexBuffer.getBuffer();
-	command.indexBuffer = m_indexBuffer.getBuffer();
-	
-	command.indexStart = 0;
-	command.indexCount = m_indexBuffer.getIndexCount();
-	command.vertexStride = m_vertexBuffer.getVertexStride();
+
+	for (uint i = 0; i < m_model->getMeshCount(); i++)
+	{
+		const SMesh& mesh = m_model->getMesh(i);
+
+		command.textures[0] = mesh.material.diffuseMap.getView();
+		command.textures[1] = mesh.material.normalMap.getView();
+		command.textures[2] = mesh.material.specularMap.getView();
+		command.textures[3] = mesh.material.displacementMap.getView();
+		
+		command.indexStart = mesh.indexOffset;
+		command.indexCount = mesh.indexCount;
+		command.vertexBase = mesh.vertexBase;
+
+		//Execute draw call
+		m_context->execute(command);
+	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
-	
-	//Update uniforms
-	m_context->resourceBufferUpdate(m_uniformBuffer.getBuffer(), (const void*)&m_uniforms);
-	//Execute draw call
-	m_context->execute(command);
+
 	//Mark context as finished
 	m_context->finish();
 	//Execute context
@@ -375,6 +401,37 @@ void Application::onUpdate(double dt)
 void Application::onExit()
 {
 	m_system->getRenderModule()->getApi()->destroyContext(m_context);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Application::buildDepthTarget()
+{
+	m_depthTarget.reset(nullptr);
+
+	SRenderModuleConfiguration rendercfg;
+	m_system->getRenderModule()->getConfiguration(rendercfg);
+	ERenderStatus status = eOk;
+	auto api = m_system->getRenderModule()->getApi();
+
+	//Depth target view
+	ResourceProxy depthtargetrsc;
+	STextureResourceDescriptor depthdesc;
+	depthdesc.height = rendercfg.height;
+	depthdesc.width = rendercfg.width;
+	depthdesc.texformat = ETextureFormat::eTextureFormatDepth32;
+	depthdesc.texmask = eTextureMaskDepthTarget;
+	depthdesc.textype = eTypeTexture2D;
+	depthdesc.useMips = false;
+	depthdesc.multisampling = rendercfg.multisampling;
+	status = api->createResourceTexture(depthtargetrsc, nullptr, depthdesc);
+	tsassert(!status);
+
+	STextureViewDescriptor depthviewdesc;
+	depthviewdesc.arrayCount = 1;
+	depthviewdesc.arrayIndex = 0;
+	status = api->createViewDepthTarget(m_depthTarget, depthtargetrsc, depthviewdesc);
+	tsassert(!status);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

@@ -52,39 +52,11 @@ CInputDevice::CInputDevice(CWindow* window) :
 		tswarn("A raw input device could not be registered.");
 		return;
 	}
-
-	thread(&CInputDevice::messageProcedure, this).detach();
 }
 
 CInputDevice::~CInputDevice()
 {
-	m_messageReciever.post(SInputMessage(EInputMessage::eMessageExit));
-	lock_guard<mutex>lk(m_exitMutex);
-}
 
-///////////////////////////////////////////////////////////////////////////////////////////
-//Internal message processor - all input messages are handled on a separate thread to the
-// win32 window message thread.
-///////////////////////////////////////////////////////////////////////////////////////////
-void CInputDevice::messageProcedure()
-{
-	lock_guard<mutex>lk(m_exitMutex);
-
-	SInputMessage msg;
-
-	while(true)
-	{
-		m_messageReciever.get(msg);
-
-		if (msg.code == EInputMessage::eMessageExit)
-			return;
-
-		if (msg.code == EInputMessage::eMessageInput)
-		{
-			if (m_inputCallback != nullptr)
-				m_inputCallback(msg.event);
-		}
-	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -103,17 +75,39 @@ bool CInputDevice::onWindowInputEvent(const SWindowEventArgs& args)
 
 		auto Raw = reinterpret_cast<RAWINPUT*>(rawinputBuffer);
 
-		SInputMessage msg;
-		msg.code = EInputMessage::eMessageInput;
+		SInputEvent event;
 
 		//Check if input device is mouse
 		if (Raw->header.dwType == RIM_TYPEMOUSE)
 		{
 			auto mdata = Raw->data.mouse;
 
-			msg.event.mouse.deltaX = (int16)mdata.lLastX;
-			msg.event.mouse.deltaY = (int16)mdata.lLastY;
-			msg.event.type = EInputEventType::eInputEventMouse;
+			EMouseButtons& button = event.mouse.buttons;
+			bool& up = event.mouse.isButtonUp;
+
+			switch (mdata.usButtonFlags)
+			{
+			case (RI_MOUSE_LEFT_BUTTON_DOWN): { button = eMouseButtonLeft; up = false; break; }
+			case (RI_MOUSE_LEFT_BUTTON_UP): { button = eMouseButtonLeft; up = true; break; }
+
+			case (RI_MOUSE_RIGHT_BUTTON_DOWN): { button = eMouseButtonRight; up = false; break; }
+			case (RI_MOUSE_RIGHT_BUTTON_UP): { button = eMouseButtonRight; up = true; break; }
+
+			case (RI_MOUSE_MIDDLE_BUTTON_DOWN): { button = eMouseButtonMiddle; up = false; break; }
+			case (RI_MOUSE_MIDDLE_BUTTON_UP): { button = eMouseButtonMiddle; up = true; break; }
+
+			case (RI_MOUSE_BUTTON_4_DOWN): { button = eMouseXbutton1; up = false; break; }
+			case (RI_MOUSE_BUTTON_4_UP): { button = eMouseXbutton1; up = true; break; }
+
+			case (RI_MOUSE_BUTTON_5_DOWN): { button = eMouseXbutton2; up = false; break; }
+			case (RI_MOUSE_BUTTON_5_UP): { button = eMouseXbutton2; up = true; break; }
+
+			default: { button = eMouseButtonUnknown; up = false; }
+			}
+
+			event.mouse.deltaX = (int16)mdata.lLastX;
+			event.mouse.deltaY = (int16)mdata.lLastY;
+			event.type = EInputEventType::eInputEventMouse;
 
 			//tswarn("(x:%) (y:%) %", mdata.lLastX, mdata.lLastY, mdata.ulButtons);
 
@@ -254,9 +248,9 @@ bool CInputDevice::onWindowInputEvent(const SWindowEventArgs& args)
 
 			const bool keyUp = ((flags & RI_KEY_BREAK) != 0);
 
-			msg.event.key.keycode = m_keyTable.mapFromVirtualKey(virtualKey);
-			msg.event.key.isKeyUp = keyUp;
-			msg.event.type = EInputEventType::eInputEventKeyboard;
+			event.key.keycode = m_keyTable.mapFromVirtualKey(virtualKey);
+			event.key.isKeyUp = keyUp;
+			event.type = EInputEventType::eInputEventKeyboard;
 
 #ifdef DEBUG_PRINT_KEYS
 			UINT key = (scanCode << 16) | (isE0 << 24);
@@ -277,7 +271,9 @@ bool CInputDevice::onWindowInputEvent(const SWindowEventArgs& args)
 			return false;
 		}
 
-		m_messageReciever.post(msg);
+		//Call the input callback
+		if (m_inputCallback != nullptr)
+			m_inputCallback(event);
 	}
 
 	return false;

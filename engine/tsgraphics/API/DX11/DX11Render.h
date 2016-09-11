@@ -7,6 +7,7 @@
 #pragma once
 
 #include <vector>
+#include <atomic>
 #include <tsgraphics/renderapi.h>
 #include "dx11base.h"
 
@@ -14,6 +15,8 @@ namespace ts
 {
 	namespace dx11
 	{
+		class DX11RenderContext;
+
 		/////////////////////////////////////////////////////////////////////////////////////////////////
 		//Main D3D11 class
 		/////////////////////////////////////////////////////////////////////////////////////////////////
@@ -30,6 +33,9 @@ namespace ts
 			ComPtr<ID3D11DeviceContext> m_immediateContext;
 
 			ComPtr<ID3D11RenderTargetView> m_swapChainRenderTarget;
+
+			std::atomic<uint32> m_cachedRes;
+			std::vector<DX11RenderContext*> m_renderContexts;
 
 		public:
 
@@ -98,6 +104,7 @@ namespace ts
 
 			void finish() override;
 
+			void reset();
 			ComPtr<ID3D11CommandList> getCommandList() const { return m_contextCommandList; }
 		};
 

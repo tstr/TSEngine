@@ -20,6 +20,8 @@ CRenderModule::CRenderModule(const SRenderModuleConfiguration& cfg) :
 
 	m_textureManager.setRootpath(m_config.rootpath);
 	m_shaderManager.setRootpath(m_config.rootpath);
+
+	setWindowDimensions(cfg.width, cfg.height);
 }
 
 CRenderModule::~CRenderModule()
@@ -28,10 +30,19 @@ CRenderModule::~CRenderModule()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
+//todo: make these methods threadsafe
 
 void CRenderModule::setWindowMode(EWindowMode mode)
 {
 	m_api->setWindowMode(mode);
+	m_config.windowMode = mode;
+}
+
+void CRenderModule::setWindowDimensions(uint32 w, uint32 h)
+{
+	m_api->setWindowDimensions(w, h);
+	m_config.width = w;
+	m_config.height = h;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +54,6 @@ void CRenderModule::drawBegin(const Vector& colour)
 
 void CRenderModule::drawEnd()
 {
-
 	m_api->drawEnd();
 }
 

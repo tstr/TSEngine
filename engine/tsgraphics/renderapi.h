@@ -387,6 +387,7 @@ namespace ts
 		uint32 indexCount = 0;
 		uint32 vertexStart = 0;
 		uint32 vertexCount = 0;
+		int32 vertexBase = 0;
 		uint32 instanceCount = 1;
 		
 		EVertexTopology vertexTopology = EVertexTopology::eTopologyUnknown;
