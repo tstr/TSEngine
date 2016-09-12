@@ -63,11 +63,13 @@ private:
 				uint32 w = 1;
 				uint32 h = 1;
 				getWindowResizeEventArgs(args, w, h);
-				m_wnd->getSystem()->getRenderModule()->setWindowDimensions(w, h);
+				if (auto render = m_wnd->getSystem()->getRenderModule())
+				{
+					render->setWindowDimensions(w, h);
+				}
 			}
 
-			auto input = m_wnd->m_pSystem->getInputModule();
-			if (input != nullptr)
+			if (auto input = m_wnd->m_pSystem->getInputModule())
 			{
 				input->onWindowInputEvent(args);
 			}

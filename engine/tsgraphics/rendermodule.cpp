@@ -19,7 +19,10 @@ CRenderModule::CRenderModule(const SRenderModuleConfiguration& cfg) :
 		tserror("Unable to load graphics api (ERenderApiID::eRenderApiD3D11)");
 
 	m_textureManager.setRootpath(m_config.rootpath);
-	m_shaderManager.setRootpath(m_config.rootpath);
+
+	Path sourcepath(m_config.rootpath);
+	sourcepath.addDirectories("shaders");
+	m_shaderManager.setSourcepath(sourcepath);
 
 	setWindowDimensions(cfg.width, cfg.height);
 }

@@ -13,12 +13,19 @@ namespace ts
 {
 	struct SMaterial
 	{
-		//Properties
-		Vector diffuseColour;
-		Vector ambientColour;
-		Vector emissiveColour;
-		float shininess = 0.0f;
-		int alpha = 1;
+		struct SParams
+		{
+			Vector diffuseColour;
+			Vector ambientColour;
+			Vector specularColour;
+			Vector emissiveColour;
+			float specularPower = 0.0f;
+			
+			uint useDiffuseMap = 0;
+			uint useNormalMap = 0;
+			uint useDisplacementMap = 0;
+			uint useSpecularMap = 0;
+		} params;
 
 		//Textures
 		CTexture2D diffuseMap;
@@ -33,6 +40,8 @@ namespace ts
 		Index indexOffset = 0;
 		Index indexCount = 0;
 		Index vertexBase = 0;
+
+		uint8 vertexAttributes = 0;
 		
 		SMaterial material;
 	};

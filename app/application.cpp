@@ -95,131 +95,6 @@ void Application::onInit(CEngineSystem* system)
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
-	/*
-	char code[] = R"(
-	Texture2D tex : register(t0);
-	SamplerState texSampler : register(s0);
-	
-	cbuffer uniforms : register(b0)
-	{
-		float4 u_vector;
-	}
-
-
-	struct VSinput
-	{
-		uint vertexID : SV_VertexID;
-	};
-
-	struct PSinput
-	{
-		float4 pos : SV_POSITION;
-		float2 texcoord : TEXCOORD;
-	};
-
-	PSinput VS(VSinput input)
-	{
-		PSinput output = (PSinput)0;
-	
-		float2 texcoord = float2( (input.vertexID << 1) & 2, input.vertexID & 2 );
-		output.pos = float4( texcoord * float2( 2.0f, -2.0f ) + float2( -1.0f, 1.0f), 0.0f, 1.0f );
-		output.texcoord = texcoord;
-	
-		return output;
-	}
-	
-	float4 PS(PSinput input) : SV_TARGET
-	{
-		//float4 colour = float4(0.7, 0.5, 0.3, 1);
-		
-		float d = length(u_vector - input.texcoord);
-		d = 1.0f - d;
-		d = d * d;
-		//d = d + d / exp(d);
-		//float4 colour = float4(d, d, d, 1.0f);
-		
-		float4 colour = float4(tex.Sample(texSampler, input.texcoord).rgb * d, 1.0f);
-
-		return colour;
-	}
-	)";
-	*/
-
-char cubeshadercode[] = R"(
-	Texture2D tex : register(t0);
-	SamplerState texSampler : register(s0);
-	
-	cbuffer uniforms : register(b0)
-	{
-		matrix u_world;
-		matrix u_view;
-		matrix u_projection;
-		
-		float3 u_lightdirection;
-		float3 u_eyeposition;
-	}
-	
-	struct VSinput
-	{
-		float4 pos : POSITION;
-		float4 colour : COLOUR;
-		float2 texcoord : TEXCOORD;
-		float3 normal : NORMAL;
-	};
-
-	struct PSinput
-	{
-		float4 pos : SV_POSITION;
-		float4 colour : COLOUR;
-		float2 texcoord : TEXCOORD;
-		
-		float3 vnormal : VIEW_NORMAL;
-		float4 vpos : VIEW_POSITION;
-		float3 ldir : LIGHT_DIR;
-		float3 vdir : VIEW_DIR;
-	};
-
-	PSinput VS(VSinput input)
-	{
-		PSinput output = (PSinput)0;
-		
-		output.pos = input.pos;
-		output.pos.w = 1.0f;
-		
-		output.vnormal = input.normal;
-		
-		output.pos = mul(output.pos, u_world);
-		output.pos = mul(output.pos, u_view);
-		output.vpos = output.pos;
-		output.pos = mul(output.pos, u_projection);
-
-		output.colour = input.colour;
-		output.texcoord = input.texcoord;
-		output.texcoord.y = 1.0f - output.texcoord.y;
-		
-		output.vnormal = mul(output.vnormal, u_world);
-		output.vnormal = mul(output.vnormal, u_view);
-
-		output.ldir = u_lightdirection;
-		output.ldir = mul(output.ldir, u_view);
-
-		return output;
-	}
-	
-	float4 PS(PSinput input) : SV_TARGET
-	{	
-		//float4 colour = float4(0.6f, 0.7f, 0.3f, 1.0f);
-		float4 colour = float4(tex.Sample(texSampler, input.texcoord).rgb, 1.0f);
-
-		float diffuseIntensity = dot(input.vnormal, input.ldir);
-
-		float3 ambient = float3(0.13f, 0.12f, 0.13f);
-		float3 diffuse = float3(1.0f, 1.0f, 1.0f) * diffuseIntensity;
-		return colour;
-		//return (colour * float4((ambient + diffuse), 1.0f));
-	}
-	)";
-
 	ERenderStatus status = eOk;
 
 	auto api = m_system->getRenderModule()->getApi();
@@ -239,60 +114,84 @@ char cubeshadercode[] = R"(
 	vsconfig.debuginfo = shader_debug;
 	vsconfig.entrypoint = "VS";
 	vsconfig.stage = EShaderStage::eShaderStageVertex;
-	tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShader(m_vertexshader, cubeshadercode, vsconfig)));
+	tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_vertexshader, "standard", vsconfig)));
 
 	SShaderCompileConfig psconfig;
 	psconfig.debuginfo = shader_debug;
 	psconfig.entrypoint = "PS";
 	psconfig.stage = EShaderStage::eShaderStagePixel;
-	tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShader(m_pixelshader, cubeshadercode, psconfig)));
+	tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_pixelshader, "standard", psconfig)));
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	//Assets
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
-
 	Path modelfile(rendercfg.rootpath);
 	modelfile.addDirectories("sponza/sponza.tsm");
 
 	m_model.reset(new CModel(m_system->getRenderModule(), modelfile));
 
+	uint8 vertexAttribs = 0;
+	for (uint x = 0; x < m_model->getMeshCount(); x++)
+	{
+		vertexAttribs |= m_model->getMesh(x).vertexAttributes;
+	}
+	
+	m_materialBuffer = CUniformBuffer(m_system->getRenderModule(), SMaterial::SParams());
+	m_sceneBuffer = CUniformBuffer(m_system->getRenderModule(), m_uniforms);
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define VECTOR_OFFSET(idx) (uint32)(idx * sizeof(Vector))
 
-	SShaderInputDescriptor inputdescriptor[4];
+	SShaderInputDescriptor inputdescriptor[6];
+
+	//Position attribute
 	inputdescriptor[0].bufferSlot = 0;
 	inputdescriptor[0].byteOffset = VECTOR_OFFSET(0);
 	inputdescriptor[0].channel = EShaderInputChannel::eInputPerVertex;
 	inputdescriptor[0].semanticName = "POSITION";
 	inputdescriptor[0].type = eShaderInputFloat4;
 
+	//Texcoord attribute
 	inputdescriptor[1].bufferSlot = 0;
-	inputdescriptor[1].byteOffset = VECTOR_OFFSET(2);
+	inputdescriptor[1].byteOffset = VECTOR_OFFSET(1);
 	inputdescriptor[1].channel = EShaderInputChannel::eInputPerVertex;
-	inputdescriptor[1].semanticName = "COLOUR";
-	inputdescriptor[1].type = eShaderInputFloat4;
+	inputdescriptor[1].semanticName = "TEXCOORD";
+	inputdescriptor[1].type = eShaderInputFloat2;
 
+	//Colour attribute
 	inputdescriptor[2].bufferSlot = 0;
-	inputdescriptor[2].byteOffset = VECTOR_OFFSET(1);
+	inputdescriptor[2].byteOffset = VECTOR_OFFSET(2);
 	inputdescriptor[2].channel = EShaderInputChannel::eInputPerVertex;
-	inputdescriptor[2].semanticName = "TEXCOORD";
-	inputdescriptor[2].type = eShaderInputFloat2;
+	inputdescriptor[2].semanticName = "COLOUR";
+	inputdescriptor[2].type = eShaderInputFloat4;
 
+	//Normal attribute
 	inputdescriptor[3].bufferSlot = 0;
 	inputdescriptor[3].byteOffset = VECTOR_OFFSET(3);
 	inputdescriptor[3].channel = EShaderInputChannel::eInputPerVertex;
 	inputdescriptor[3].semanticName = "NORMAL";
 	inputdescriptor[3].type = eShaderInputFloat3;
 
+	//Tangent attribute
+	inputdescriptor[4].bufferSlot = 0;
+	inputdescriptor[4].byteOffset = VECTOR_OFFSET(4);
+	inputdescriptor[4].channel = EShaderInputChannel::eInputPerVertex;
+	inputdescriptor[4].semanticName = "TANGENT";
+	inputdescriptor[4].type = eShaderInputFloat3;
+
+	//Bitangent attribute
+	inputdescriptor[5].bufferSlot = 0;
+	inputdescriptor[5].byteOffset = VECTOR_OFFSET(5);
+	inputdescriptor[5].channel = EShaderInputChannel::eInputPerVertex;
+	inputdescriptor[5].semanticName = "BITANGENT";
+	inputdescriptor[5].type = eShaderInputFloat3;
+
 	status = api->createShaderInputDescriptor(m_vertexInput, m_vertexshader.getShader(), inputdescriptor, ARRAYSIZE(inputdescriptor));
 	tsassert(!status);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//Test uniform buffer
-	m_uniformBuffer = CUniformBuffer(m_system->getRenderModule(), m_uniforms);
 
 	//Test texture sampler
 	STextureSamplerDescriptor sampledesc;
@@ -318,22 +217,38 @@ void Application::onUpdate(double dt)
 	//Update camera
 	m_camera->setAspectRatio((float)rendercfg.width / rendercfg.height);
 	m_camera->update(dt);
+
+	float scale = 0.1f;
+
+	//Update displacement of light source
+	m_pulsatance += (float)(((2.0 * Pi) / 5.0) * dt);
+	Vector lightpos;
+	lightpos.x() = 12.0f * sin(m_pulsatance = fmod(m_pulsatance, 2 * Pi));
+	//lightpos.y() = 4.0f + 2.0f * sin(m_pulsatance * 2.0f);
+	lightpos.y() = 2.0f;
+	lightpos.z() = 0.0f;
+	lightpos = lightpos / scale;
 	
 	//Set uniforms
-	m_uniforms.u_world = Matrix::translation(Vector(0.0f, 0.0f, 0.0f)) * Matrix::scale(0.1f);
-	m_uniforms.u_view = m_camera->getViewMatrix();
-	m_uniforms.u_projection = m_camera->getProjectionMatrix();
+	m_uniforms.world = Matrix::scale(scale, scale, scale);
+	m_uniforms.view = m_camera->getViewMatrix();
+	m_uniforms.projection = m_camera->getProjectionMatrix();
 
-	m_uniforms.u_lightdirection = Vector(0.1f, 0.4f, -0.4f); //Light direction
-	m_uniforms.u_lightdirection = Matrix::transform(m_uniforms.u_lightdirection, Matrix::fromYawPitchRoll(Vector(0.1f, -0.4f, 0)));// Matrix::rotationY((float)angle));
-	m_uniforms.u_lightdirection.normalize();
-	
-	Matrix::transpose(m_uniforms.u_world);
-	Matrix::transpose(m_uniforms.u_view);
-	Matrix::transpose(m_uniforms.u_projection);
+	m_uniforms.lightPos = lightpos;
+	m_uniforms.eyePos = m_camera->getPosition();
+
+	m_uniforms.lightConstantAttenuation = 1.0f;
+	m_uniforms.lightLinearAttenuation = 0.04f;
+	m_uniforms.lightQuadraticAttenuation = 0.0f;
+
+	//m_uniforms.u_lightdirection = Vector(0.1f, 0.4f, -0.4f); //Light direction
+	//m_uniforms.u_lightdirection = Matrix::transform(m_uniforms.u_lightdirection, Matrix::fromYawPitchRoll(Vector(0.1f, -0.4f, 0)));// Matrix::rotationY((float)angle));
+	//m_uniforms.u_lightdirection.normalize();
+
+	m_uniforms.init();
 
 	//Update uniforms
-	m_context->resourceBufferUpdate(m_uniformBuffer.getBuffer(), (const void*)&m_uniforms);
+	m_context->resourceBufferUpdate(m_sceneBuffer.getBuffer(), (const void*)&m_uniforms);
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -353,7 +268,8 @@ void Application::onUpdate(double dt)
 	command.viewport.x = 0;
 	command.viewport.y = 0;
 	
-	command.uniformBuffers[0] = m_uniformBuffer.getBuffer();
+	command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
+	command.uniformBuffers[1] = m_materialBuffer.getBuffer();
 	command.shaders.stageVertex = m_vertexshader.getShader();
 	command.shaders.stagePixel = m_pixelshader.getShader();
 
@@ -384,7 +300,9 @@ void Application::onUpdate(double dt)
 		command.indexStart = mesh.indexOffset;
 		command.indexCount = mesh.indexCount;
 		command.vertexBase = mesh.vertexBase;
-
+		
+		m_context->resourceBufferUpdate(m_materialBuffer.getBuffer(), (const void*)&mesh.material.params);
+		
 		//Execute draw call
 		m_context->execute(command);
 	}

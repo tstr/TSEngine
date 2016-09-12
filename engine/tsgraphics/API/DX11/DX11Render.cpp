@@ -135,6 +135,8 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	//Save a copy of the configuration
 	m_config = cfg;
 
+	setWindowDimensions(cfg.resolutionWidth, cfg.resolutionHeight);
+
 	//Create the new render target view
 	ComPtr<ID3D11Texture2D> backbuffer;
 	hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());

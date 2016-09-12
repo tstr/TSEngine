@@ -31,17 +31,47 @@ namespace ts
 
 		struct SUniforms
 		{
-			Matrix u_world;
-			Matrix u_view;
-			Matrix u_projection;
-			Vector u_lightdirection;
-			Vector u_eyeposition;
+			Matrix world;
+			Matrix invWorld;
+			Matrix view;
+			Matrix invView;
+			Matrix projection;
+			Matrix invProjection;
+
+			Vector lightPos;
+			Vector lightColour;
+			Vector globalAmbientColour;
+			Vector eyePos;
+
+			float nearplane;
+			float farplane;
+
+			float lightConstantAttenuation;
+			float lightLinearAttenuation;
+			float lightQuadraticAttenuation;
+
+			void init()
+			{
+				invWorld = world.inverse();
+				invView = view.inverse();
+				invProjection = projection.inverse();
+
+				Matrix::transpose(invWorld);
+				Matrix::transpose(invView);
+				Matrix::transpose(invProjection);
+				Matrix::transpose(world);
+				Matrix::transpose(view);
+				Matrix::transpose(projection);
+			}
 		};
 		SUniforms m_uniforms;
 
+		float m_pulsatance = 0.0f;
+
 		CShader m_vertexshader;
 		CShader m_pixelshader;
-		CUniformBuffer m_uniformBuffer;
+		CUniformBuffer m_sceneBuffer;
+		CUniformBuffer m_materialBuffer;
 		
 		ResourceProxy m_texSampler;
 		ResourceProxy m_depthTarget;

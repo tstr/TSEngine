@@ -131,20 +131,30 @@ bool CModel::import(const Path& path)
 		mesh.vertexBase = basevertex;
 		basevertex += fmesh.numVertices;
 
+		mesh.vertexAttributes = fmesh.vertexAttributeMask;
+
 		const char* mname = fmesh.materialName.str();
+
+		if (!matfile.isSection(mname))
+		{
+			tswarn("material(%) % was not found", idx, mname);
+			continue;
+		}
 
 		tsinfo("material(%) : %", idx, mname);
 
-		matfile.getProperty(getKey(mname, "alpha"), mesh.material.alpha);
-		matfile.getProperty(getKey(mname, "shininess"), mesh.material.shininess);
+		float alpha = 0.0f;
+
+		matfile.getProperty(getKey(mname, "alpha"), alpha);
+		matfile.getProperty(getKey(mname, "shininess"), mesh.material.params.specularPower);
 
 		string buf;
 		matfile.getProperty(getKey(mname, "diffuseColour"), buf);
-		mesh.material.diffuseColour = getVectorProperty(buf); buf = "";
+		mesh.material.params.diffuseColour = getVectorProperty(buf); buf = "";
 		matfile.getProperty(getKey(mname, "ambientColour"), buf);
-		mesh.material.ambientColour = getVectorProperty(buf); buf = "";
+		mesh.material.params.ambientColour = getVectorProperty(buf); buf = "";
 		matfile.getProperty(getKey(mname, "emissiveColour"), buf);
-		mesh.material.emissiveColour = getVectorProperty(buf); buf = "";
+		mesh.material.params.emissiveColour = getVectorProperty(buf); buf = "";
 
 		buf = "";
 		matfile.getProperty(getKey(mname, "diffuseMap"), buf);
@@ -153,6 +163,7 @@ bool CModel::import(const Path& path)
 			Path texpath(materialroot);
 			texpath.addDirectories(buf);
 			m_rendermodule->getTextureManager().loadTexture2D(texpath, mesh.material.diffuseMap);
+			mesh.material.params.useDiffuseMap = true;
 		}
 
 		buf = "";
@@ -162,6 +173,7 @@ bool CModel::import(const Path& path)
 			Path texpath(materialroot);
 			texpath.addDirectories(buf);
 			m_rendermodule->getTextureManager().loadTexture2D(texpath, mesh.material.normalMap);
+			mesh.material.params.useNormalMap = true;
 		}
 
 		buf = "";
@@ -171,6 +183,7 @@ bool CModel::import(const Path& path)
 			Path texpath(materialroot);
 			texpath.addDirectories(buf);
 			m_rendermodule->getTextureManager().loadTexture2D(texpath, mesh.material.specularMap);
+			mesh.material.params.useSpecularMap = true;
 		}
 
 		buf = "";
@@ -180,6 +193,7 @@ bool CModel::import(const Path& path)
 			Path texpath(materialroot);
 			texpath.addDirectories(buf);
 			m_rendermodule->getTextureManager().loadTexture2D(texpath, mesh.material.displacementMap);
+			mesh.material.params.useDisplacementMap = true;
 		}
 
 		buf = "";

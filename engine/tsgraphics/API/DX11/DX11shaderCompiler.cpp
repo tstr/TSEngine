@@ -113,11 +113,13 @@ bool DX11ShaderCompiler::compile(const char* code, const SShaderCompileConfig& o
 	
 	ComPtr<ID3DBlob> bytecode;
 	ComPtr<ID3DBlob> errors;
+
+	LPCSTR source = (options.sourcename.length() > 0) ? options.sourcename.str() : nullptr;
 	
 	HRESULT hr = fn_compile(
 		code,
 		strlen(code),
-		nullptr,
+		source,
 		0,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		options.entrypoint.str(),

@@ -165,6 +165,13 @@ ConfigFile::~ConfigFile()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+bool ConfigFile::isSection(const Section& section)
+{
+	string key(section);
+	toLower(key);
+	return (m_properties.count(key) > 0);
+}
+
 size_t ConfigFile::getSectionPropertyCount(const Section& section) const
 {
 	string key(section);

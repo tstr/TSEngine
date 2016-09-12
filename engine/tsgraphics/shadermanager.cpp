@@ -36,9 +36,9 @@ CShader::~CShader()
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-CShaderManager::CShaderManager(CRenderModule* module, const Path& rootpath) :
+CShaderManager::CShaderManager(CRenderModule* module, const Path& sourcepath) :
 	m_renderModule(module),
-	m_rootpath(rootpath)
+	m_sourcePath(sourcepath)
 {
 	tsassert(module);
 
@@ -62,13 +62,16 @@ bool CShaderManager::compileAndLoadShader(CShader& shader, const char* code, con
 	return true;
 }
 
-bool CShaderManager::compileAndLoadShaderFile(CShader& shader, const Path& codefile, const SShaderCompileConfig& config)
+bool CShaderManager::compileAndLoadShaderFile(CShader& shader, const Path& codefile, const SShaderCompileConfig& _config)
 {
 	MemoryBuffer bytecode;
 
-	Path root(m_rootpath);
-	root.addDirectories(codefile);
-	ifstream filestream(root.str());
+	Path source(m_sourcePath);
+	source.addDirectories((string)codefile.str() + ".fx");
+	ifstream filestream(source.str());
+
+	SShaderCompileConfig config(_config);
+	config.sourcename.set(source.str());
 
 	string buf((istreambuf_iterator<char>(filestream)), istreambuf_iterator<char>());
 

@@ -42,16 +42,16 @@ namespace ts
 
 		IShaderCompiler* m_shaderCompiler = nullptr;
 		CRenderModule* m_renderModule = nullptr;
-		Path m_rootpath;
+		Path m_sourcePath;
 
 	public:
 
-		CShaderManager(CRenderModule* module, const Path& rootpath = "");
+		CShaderManager(CRenderModule* module, const Path& sourcepath = "");
 		~CShaderManager();
 
 		CRenderModule* const getModule() const { return m_renderModule; }
 
-		void setRootpath(const Path& rootpath) { m_rootpath = rootpath; }
+		void setSourcepath(const Path& sourcepath) { m_sourcePath = sourcepath; }
 
 		bool compileAndLoadShader(CShader& shader, const char* code, const SShaderCompileConfig& config);
 		bool compileAndLoadShaderFile(CShader& shader, const Path& codefile, const SShaderCompileConfig& config);

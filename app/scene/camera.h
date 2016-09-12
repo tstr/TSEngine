@@ -25,14 +25,14 @@ namespace ts
 
 		//Camera state
 		Vector m_camPosition;
-		float m_camAngleX = 0.0f;
-		float m_camAngleY = 0.0f;
+		float m_camAngleH = 0.0f; //Rotation of camera horizontally about Y axis
+		float m_camAngleV = 0.0f; //Rotation of camera vertically about the X axis
 		
 		//Projection state
 		float m_fov = Pi / 2;
 		float m_aspectRatio = 1.0f;
 		const float m_nearplane = 0.1f;
-		const float m_farplane = 200.0f;
+		const float m_farplane = 1000.0f;
 		
 		//Input handlers
 		int onMouse(int16 dx, int16 dy) override;
@@ -55,12 +55,13 @@ namespace ts
 		~CCamera() {}
 		
 		void setPosition(Vector v) { m_camPosition = v; }
+		Vector getPosition() const { return m_camPosition; }
 		void setAspectRatio(float ratio) { m_aspectRatio = ratio; }
 		void setFov(float fov) { m_fov = fov; }
 		
 		void update(double deltatime);
 		
-		Matrix getViewMatrix() const { return (Matrix::rotationX(m_camAngleY) * Matrix::rotationY(m_camAngleX) * Matrix::translation(m_camPosition)).inverse(); }
+		Matrix getViewMatrix() const { return (Matrix::rotationX(m_camAngleV) * Matrix::rotationY(m_camAngleH) * Matrix::translation(m_camPosition)).inverse(); }
 		Matrix getProjectionMatrix() const { return Matrix::perspectiveFieldOfView(m_fov, m_aspectRatio, m_nearplane, m_farplane); }
 	};
 	

@@ -135,7 +135,6 @@ struct CWindow::Impl
 	string windowTitle;
 
 	SWindowRect size;
-	SWindowRect sizeCache;
 
 	vector<CWindow::IEventListener*> windowEventListeners;
 
@@ -240,15 +239,29 @@ struct CWindow::Impl
 		tsassert(EnableVisualStyles());
 #endif
 
+		UINT styles = WS_VISIBLE | WS_OVERLAPPEDWINDOW;
+		UINT exStyles = WS_EX_APPWINDOW;
+
+		RECT r = { size.x, size.y, size.w, size.h };
+		AdjustWindowRectEx(&r,
+			styles,
+			false,
+			exStyles  
+		);
+
 		windowHandle = CreateWindowEx(
-			WS_EX_APPWINDOW,
+			exStyles,
 			windowClassname.c_str(),
 			windowTitle.c_str(),
-			WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-			size.x,
-			size.y,
-			size.w,
-			size.h,
+			styles,
+			//size.x,
+			//size.y,
+			//size.w,
+			//size.h,
+			r.left,
+			r.top,
+			r.right,
+			r.bottom,
 			0,
 			0,
 			windowModule,

@@ -19,6 +19,8 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_thorn_diff.tga
 ambientMap = textures/sponza_thorn_diff.tga
+normalMap = textures/sponza_thorn_norm.png
+specularMap = textures/sponza_thorn_spec.tga
 
 [vase_round]
 diffuseColour = 0.588, 0.588, 0.588
@@ -29,6 +31,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/vase_round.tga
 ambientMap = textures/vase_round.tga
+normalMap = textures/vase_round_norm.png
 
 [Material__57]
 diffuseColour = 0.588, 0.588, 0.588
@@ -49,6 +52,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/background.tga
 ambientMap = textures/background.tga
+normalMap = textures/background_norm.png
 
 [16___Default]
 diffuseColour = 0.588, 0.588, 0.588
@@ -69,6 +73,9 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/spnza_bricks_a_diff.tga
 ambientMap = textures/spnza_bricks_a_diff.tga
+displacementMap = textures/spnza_bricks_a_disp.png
+normalMap = textures/spnza_bricks_a_norm.png
+specularMap = textures/spnza_bricks_a_spec.tga
 
 [arch]
 diffuseColour = 0.588, 0.588, 0.588
@@ -79,6 +86,8 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_arch_diff.tga
 ambientMap = textures/sponza_arch_diff.tga
+normalMap = textures/sponza_arch_norm.png
+specularMap = textures/sponza_arch_spec.tga
 
 [ceiling]
 diffuseColour = 0.588, 0.588, 0.588
@@ -89,6 +98,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_ceiling_a_diff.tga
 ambientMap = textures/sponza_ceiling_a_diff.tga
+specularMap = textures/sponza_ceiling_a_spec.tga
 
 [column_a]
 diffuseColour = 0.588, 0.588, 0.588
@@ -99,6 +109,8 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_column_a_diff.tga
 ambientMap = textures/sponza_column_a_diff.tga
+normalMap = textures/sponza_column_a_norm.png
+specularMap = textures/sponza_column_a_spec.tga
 
 [floor]
 diffuseColour = 0.588, 0.588, 0.588
@@ -109,6 +121,9 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_floor_a_diff.tga
 ambientMap = textures/sponza_floor_a_diff.tga
+displacementMap = textures/sponza_floor_a_disp.png
+normalMap = textures/sponza_floor_a_norm.png
+specularMap = textures/sponza_floor_a_spec.tga
 
 [column_c]
 diffuseColour = 0.588, 0.588, 0.588
@@ -119,6 +134,8 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_column_c_diff.tga
 ambientMap = textures/sponza_column_c_diff.tga
+normalMap = textures/sponza_column_c_norm.png
+specularMap = textures/sponza_column_c_spec.tga
 
 [details]
 diffuseColour = 0.588, 0.588, 0.588
@@ -129,6 +146,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_details_diff.tga
 ambientMap = textures/sponza_details_diff.tga
+specularMap = textures/sponza_details_spec.tga
 
 [column_b]
 diffuseColour = 0.588, 0.588, 0.588
@@ -139,6 +157,8 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_column_b_diff.tga
 ambientMap = textures/sponza_column_b_diff.tga
+normalMap = textures/sponza_column_b_norm.png
+specularMap = textures/sponza_column_b_spec.tga
 
 [Material__47]
 diffuseColour = 0.588, 0.588, 0.588
@@ -157,6 +177,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_flagpole_diff.tga
 ambientMap = textures/sponza_flagpole_diff.tga
+specularMap = textures/sponza_flagpole_spec.tga
 
 [fabric_e]
 diffuseColour = 0.588, 0.588, 0.588
@@ -167,6 +188,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_fabric_green_diff.tga
 ambientMap = textures/sponza_fabric_green_diff.tga
+specularMap = textures/sponza_fabric_green_spec.tga
 
 [fabric_d]
 diffuseColour = 0.588, 0.588, 0.588
@@ -177,6 +199,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_fabric_blue_diff.tga
 ambientMap = textures/sponza_fabric_blue_diff.tga
+specularMap = textures/sponza_fabric_blue_spec.tga
 
 [fabric_a]
 diffuseColour = 0.588, 0.588, 0.588
@@ -187,6 +210,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_fabric_diff.tga
 ambientMap = textures/sponza_fabric_diff.tga
+specularMap = textures/sponza_fabric_spec.tga
 
 [fabric_g]
 diffuseColour = 0.588, 0.588, 0.588
@@ -197,6 +221,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_curtain_blue_diff.tga
 ambientMap = textures/sponza_curtain_blue_diff.tga
+specularMap = textures/sponza_curtain_blue_spec.tga
 
 [fabric_c]
 diffuseColour = 0.588, 0.588, 0.588
@@ -207,6 +232,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_curtain_diff.tga
 ambientMap = textures/sponza_curtain_diff.tga
+specularMap = textures/sponza_curtain_spec.tga
 
 [fabric_f]
 diffuseColour = 0.588, 0.588, 0.588
@@ -217,6 +243,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_curtain_green_diff.tga
 ambientMap = textures/sponza_curtain_green_diff.tga
+specularMap = textures/sponza_curtain_green_spec.tga
 
 [chain]
 diffuseColour = 0.588, 0.588, 0.588
@@ -227,6 +254,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/chain_texture.tga
 ambientMap = textures/chain_texture.tga
+normalMap = textures/chain_texture_norm.png
 
 [vase_hanging]
 diffuseColour = 0.588, 0.588, 0.588
@@ -247,6 +275,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/vase_dif.tga
 ambientMap = textures/vase_dif.tga
+normalMap = textures/vase_norm.png
 
 [Material__25]
 diffuseColour = 0.588, 0.588, 0.588
@@ -257,6 +286,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/lion.tga
 ambientMap = textures/lion.tga
+normalMap = textures/lion_norm.png
 
 [roof]
 diffuseColour = 0.588, 0.588, 0.588
@@ -267,4 +297,4 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_roof_diff.tga
 ambientMap = textures/sponza_roof_diff.tga
-
+specularMap = textures/sponza_roof_spec.tga

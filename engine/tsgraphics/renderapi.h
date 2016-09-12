@@ -429,6 +429,7 @@ namespace ts
 		EShaderStage stage;
 		//Compile a shader with debug information
 		bool debuginfo = false;
+		StaticString<128> sourcename;
 	};
 
 	class IShaderCompiler

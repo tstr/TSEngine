@@ -86,9 +86,10 @@ void CCamera::update(double dt)
 {
 	//Update position
 	int8 actions = m_actionflags.load();
-	const float speed = 3.0f;
+	const float speed = 30.0f;
 	float dis = speed * (float)dt;
 
+	//Reset the value of the x/y mouse displacement
 	float dx = (float)m_mouseDX.exchange(0);
 	float dy = (float)m_mouseDY.exchange(0);
 
@@ -96,14 +97,17 @@ void CCamera::update(double dt)
 	{
 		const float sensitivity = 0.00012f;
 		const float pi2 = 2 * Pi;
-		m_camAngleX = m_camAngleX + pi2 * sensitivity * (float)dx;
-		m_camAngleY = m_camAngleY + pi2 * sensitivity * (float)dy;
-		m_camAngleX = fmod(m_camAngleX, pi2);
-		m_camAngleY = fmod(m_camAngleY, pi2);
+		m_camAngleH = m_camAngleH + pi2 * sensitivity * (float)dx;
+		m_camAngleV = m_camAngleV + pi2 * sensitivity * (float)dy;
+		m_camAngleH = fmod(m_camAngleH, pi2);
+		m_camAngleV = fmod(m_camAngleV, pi2);
 	}
 
-	float& ax = m_camAngleX;
-	float& ay = m_camAngleY;
+	//Clamp the vertical rotation of the camera between -90 and 90 degrees
+	m_camAngleV = max(min(m_camAngleV, Pi / 2), -(Pi / 2));
+
+	float& ax = m_camAngleH;//horizontal
+	float& ay = m_camAngleV;//vertical
 
 	if (actions & eForward)
 	{

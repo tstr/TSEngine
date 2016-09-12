@@ -56,6 +56,7 @@ namespace ts
 		void getSectionProperties(const Section& section, SPropertyArray& properties);
 		size_t getSectionPropertyCount(const Section& section) const;
 		size_t getSectionCount() const;
+		bool isSection(const Section& section);
 		
 		bool getProperty(const PropertyKey& key, PropertyValue& val);
 		
