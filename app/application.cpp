@@ -40,6 +40,11 @@ int Application::onWindowEvent(const SWindowEventArgs& args)
 		//Recreate the depth target
 		buildDepthTarget();
 	}
+	else if (args.eventcode == EWindowEvent::eEventKillfocus)
+	{
+		m_mouseHeld = false;
+	}
+
 	return 0;
 }
 
@@ -85,6 +90,21 @@ int Application::onMouseUp(const SInputMouseEvent& args)
 
 int Application::onMouse(int16 dx, int16 dy)
 {
+	return 0;
+}
+
+int Application::onMouseScroll(const SInputMouseEvent& args)
+{
+	const float scrollMax = 20.0f;
+	const float scrollMin = 2.0f;
+	const float scrollInterval = 0.8f;
+
+	float depth = m_scrollDepth.load();
+	depth += (args.deltaScroll * scrollInterval);
+	depth = min(depth, scrollMax);
+	depth = max(depth, scrollMin);
+	m_scrollDepth.store(depth);
+
 	return 0;
 }
 
@@ -363,6 +383,10 @@ void Application::onInit(CEngineSystem* system)
 		tsassert(!status);
 	}
 
+	//Reset mouse held variable
+	m_mouseHeld = false;
+	m_scrollDepth = 5.0f;
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
@@ -399,18 +423,20 @@ void Application::onUpdate(double dt)
 		mousePosX = max(min(mousePosX, (uint16)rendercfg.width), 0);
 		mousePosY = max(min(mousePosY, (uint16)rendercfg.height), 0);
 
-		float depth = 10.0f;
+		float depth = m_scrollDepth.load();
 
+		//Convert screen coordinates into clip space coordinates
 		float x = (((2.0f * mousePosX) / (float)rendercfg.width) - 1);
 		float y = -(((2.0f * mousePosY) / (float)rendercfg.height) - 1);
 
 		Vector ray(x, y, 0.0f, 0.0f);
-		ray = internal::XMVector3Transform(ray, projection.inverse());
-
+		//Transform ray from clip space to view space
+		ray = Matrix::transform3D(ray, projection.inverse());
+		
 		Vector vscale;
 		Vector vpos;
 		Quaternion vrot;
-		m_camera->getViewMatrix().inverse().decompose(vscale, vrot, vpos);
+		view.inverse().decompose(vscale, vrot, vpos);
 
 		//Transform ray from view space to world space
 		ray = Quaternion::transform(ray, vrot);
@@ -436,6 +462,15 @@ void Application::onUpdate(double dt)
 	sceneuniforms.lightConstantAttenuation = 1.0f;
 	sceneuniforms.lightLinearAttenuation = 0.04f;
 	sceneuniforms.lightQuadraticAttenuation = 0.0f;
+
+	//Load values from cvars
+	m_system->getCVarTable()->getVarVector3D("lightColour", sceneuniforms.lightColour);
+	m_system->getCVarTable()->getVarVector3D("ambientColour", sceneuniforms.globalAmbientColour);
+
+	m_system->getCVarTable()->getVarFloat("attenConst", sceneuniforms.lightConstantAttenuation);
+	m_system->getCVarTable()->getVarFloat("attenLinear", sceneuniforms.lightLinearAttenuation);
+	m_system->getCVarTable()->getVarFloat("attenQuad", sceneuniforms.lightQuadraticAttenuation);
+
 
 	sceneuniforms.init();
 

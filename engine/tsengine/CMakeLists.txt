@@ -24,6 +24,8 @@ SET(src_list
 	cmdargs.h
 	configfile.h
 	configfile.cpp
+	cvar.h
+	cvar.cpp
 )
 
 ADD_LIBRARY_EX(

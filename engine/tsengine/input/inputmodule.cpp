@@ -64,6 +64,12 @@ void CInputModule::inputLayerCallback(const SInputEvent& event)
 			SetCursorPos(m_mouseX, m_mouseY);
 		}
 
+		if (event.mouse.deltaScroll != 0.0f)
+		{
+			for (auto& l : m_eventListeners)
+				l->onMouseScroll(event.mouse);
+		}
+
 		if (event.mouse.deltaX || event.mouse.deltaY)
 			for (auto& l : m_eventListeners)
 				l->onMouse(event.mouse.deltaX, event.mouse.deltaY);

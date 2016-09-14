@@ -31,6 +31,7 @@ namespace ts
 		EMouseButtons buttons;
 		int16 deltaX = 0;
 		int16 deltaY = 0;
+		float deltaScroll = 0.0f;
 		bool isButtonUp = false;
 	};
 

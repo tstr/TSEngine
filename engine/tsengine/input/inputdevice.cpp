@@ -105,6 +105,14 @@ bool CInputDevice::onWindowInputEvent(const SWindowEventArgs& args)
 			default: { button = eMouseButtonUnknown; up = false; }
 			}
 
+			event.mouse.deltaScroll = 0.0f;
+
+			if (mdata.usButtonFlags == RI_MOUSE_WHEEL)
+			{
+				short scroll = (short)mdata.usButtonData;
+				event.mouse.deltaScroll = (float)scroll / WHEEL_DELTA;
+			}
+
 			event.mouse.deltaX = (int16)mdata.lLastX;
 			event.mouse.deltaY = (int16)mdata.lLastY;
 			event.type = EInputEventType::eInputEventMouse;

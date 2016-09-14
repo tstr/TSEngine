@@ -194,8 +194,9 @@ namespace ts
 
 		/////////////////////////////////////////////////////////////////////////////////////
 
-		VECTOR_INLINE static Vector VECTOR_CALL transform(Vector v, Matrix q) { return internal::XMVector4Transform(v, q); }
-
+		VECTOR_INLINE static Vector VECTOR_CALL transform4D(Vector v, Matrix q) { return internal::XMVector4Transform(v, q); }
+		VECTOR_INLINE static Vector VECTOR_CALL transform3D(Vector v, Matrix q) { return internal::XMVector3Transform(v, q); }
+		VECTOR_INLINE static Vector VECTOR_CALL transform2D(Vector v, Matrix q) { return internal::XMVector2Transform(v, q); }
 		//Identity matrix
 		static Matrix identity()
 		{

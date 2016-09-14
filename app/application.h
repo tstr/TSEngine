@@ -33,6 +33,7 @@ namespace ts
 		float m_pulsatance = 0.0f;
 		atomic<bool> m_simulation = true;
 		atomic<bool> m_mouseHeld = false;
+		atomic<float> m_scrollDepth;
 
 		CShader m_standardVertexshader;
 		CShader m_standardPixelshader;
@@ -57,6 +58,7 @@ namespace ts
 		
 		int onWindowEvent(const SWindowEventArgs& args) override;
 		int onKeyDown(EKeyCode code) override;
+		int onMouseScroll(const SInputMouseEvent&) override;
 		int onMouseDown(const SInputMouseEvent&) override;
 		int onMouseUp(const SInputMouseEvent&) override;
 		int onMouse(int16 dx, int16 dy) override;

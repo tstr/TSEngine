@@ -10,6 +10,7 @@
 #include <tscore/system/thread.h>
 #include <tscore/filesystem/path.h>
 #include <tsengine/event/messenger.h>
+#include <tsengine/cvar.h>
 
 namespace ts
 {
@@ -60,6 +61,7 @@ namespace ts
 		UniquePtr<CWindow> m_window;
 		UniquePtr<CRenderModule> m_renderModule;
 		UniquePtr<CInputModule> m_inputModule;
+		UniquePtr<CVarTable> m_cvarTable;
 
 		CMessageReciever<SSystemMessage> m_messageReciever;
 
@@ -67,6 +69,7 @@ namespace ts
 		void onInit();
 
 		int run();
+		void consoleCommands();
 
 		mutex m_exitMutex;
 
@@ -84,6 +87,7 @@ namespace ts
 		CWindow* const getWindow() const { return m_window.get(); }
 		CRenderModule* const getRenderModule() const { return m_renderModule.get(); }
 		CInputModule* const getInputModule() const { return m_inputModule.get(); }
+		CVarTable* const getCVarTable() const { return m_cvarTable.get(); }
 
 		//Close the application and shutdown engine
 		void shutdown();

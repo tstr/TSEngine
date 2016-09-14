@@ -115,7 +115,21 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	//Set application instance
 	m_app.reset(params.app);
 	tsassert(m_app.get());
-
+	
+	//Create cvar table
+	m_cvarTable.reset(new CVarTable());
+	
+	if (config.isSection("CVars"))
+	{
+		ConfigFile::SPropertyArray properties;
+		config.getSectionProperties("CVars", properties);
+		
+		for (auto p : properties)
+		{
+			m_cvarTable->setVar(p.key, p.value);
+		}
+	}
+	
 	//Set application window parameters
 	SDisplayInfo dispinf;
 	getPrimaryDisplayInformation(dispinf);
@@ -173,15 +187,9 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 
 	m_inputModule.reset(new CInputModule(m_window.get()));
 
-	//Close application from console
+	//Console commands
 	thread([this] {
-		while (true)
-		{
-			std::string str;
-			std::cin >> str;
-			if (compare_string_weak(str, "exit"))
-				this->shutdown();
-		}
+		this->consoleCommands();
 	}).detach();
 
 	onInit();
@@ -228,6 +236,69 @@ int CEngineSystem::run()
 	}
 
 	return 0;
+}
+
+void CEngineSystem::consoleCommands()
+{
+	while (true)
+	{
+		string commandbuf;
+		getline(cin, commandbuf);
+		commandbuf = trim(commandbuf);
+
+		auto pos = commandbuf.find_first_of(' ');
+		string commandname(commandbuf.substr(0, pos));
+		string commandargs;
+		if (pos != string::npos)
+		{
+			commandargs = commandbuf.substr(pos, string::npos);
+		}
+
+		if (compare_string_weak(commandname.c_str(), "exit"))
+		{
+			shutdown();
+		}
+		else if (compare_string_weak(commandname.c_str(), "setvar"))
+		{
+			commandargs = trim(commandargs);
+			pos = commandargs.find_first_of(' ');
+
+			if (pos == string::npos)
+			{
+				tswarn("a value must be specified");
+			}
+			else
+			{
+				string cvar(commandargs.substr(0, pos));
+				string cval(commandargs.substr(pos));
+				getCVarTable()->setVar(cvar.c_str(), cval.c_str());
+			}
+		}
+		else if (compare_string_weak(commandname.c_str(), "getvar"))
+		{
+			commandargs = trim(commandargs);
+			string val;
+			if (getCVarTable()->isVar(commandargs))
+			{
+				getCVarTable()->getVarString(commandargs.c_str(), val);
+				tsinfo(val);
+			}
+			else
+			{
+				tswarn("cvar '%' does not exist", commandargs);
+			}
+
+		}
+		else if (compare_string_weak(commandname.c_str(), "listvars"))
+		{
+			CVarTable::CVarArray array;
+			getCVarTable()->getVarArray(array);
+			for (auto& s : array)
+			{
+				cout << s.name << " = " << s.value << endl;
+			}
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
