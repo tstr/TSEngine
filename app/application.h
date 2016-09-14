@@ -26,61 +26,40 @@ namespace ts
 		
 		UniquePtr<CCamera> m_camera;
 		UniquePtr<CModel> m_model;
+		UniquePtr<CModel> m_sphere;
 
 		IRenderContext* m_context = nullptr;
 
-		struct SUniforms
-		{
-			Matrix world;
-			Matrix invWorld;
-			Matrix view;
-			Matrix invView;
-			Matrix projection;
-			Matrix invProjection;
-
-			Vector lightPos;
-			Vector lightColour;
-			Vector globalAmbientColour;
-			Vector eyePos;
-
-			float nearplane;
-			float farplane;
-
-			float lightConstantAttenuation;
-			float lightLinearAttenuation;
-			float lightQuadraticAttenuation;
-
-			void init()
-			{
-				invWorld = world.inverse();
-				invView = view.inverse();
-				invProjection = projection.inverse();
-
-				Matrix::transpose(invWorld);
-				Matrix::transpose(invView);
-				Matrix::transpose(invProjection);
-				Matrix::transpose(world);
-				Matrix::transpose(view);
-				Matrix::transpose(projection);
-			}
-		};
-		SUniforms m_uniforms;
-
 		float m_pulsatance = 0.0f;
+		atomic<bool> m_simulation = true;
+		atomic<bool> m_mouseHeld = false;
 
-		CShader m_vertexshader;
-		CShader m_pixelshader;
+		CShader m_standardVertexshader;
+		CShader m_standardPixelshader;
+		CShader m_lightVertexShader;
+		CShader m_lightPixelShader;
+		CShader m_shadowVertexShader;
+		CShader m_shadowPixelShader;
+
 		CUniformBuffer m_sceneBuffer;
 		CUniformBuffer m_materialBuffer;
+		CUniformBuffer m_shadowSceneBuffer;
 		
 		ResourceProxy m_texSampler;
 		ResourceProxy m_depthTarget;
 		ResourceProxy m_vertexInput;
+		ResourceProxy m_vertexInputLight;
+		ResourceProxy m_vertexInputShadow;
+		
+		ResourceProxy m_shadowDepthTarget;
+		ResourceProxy m_shadowCubeRsc;
+		ResourceProxy m_shadowCube;
 		
 		int onWindowEvent(const SWindowEventArgs& args) override;
 		int onKeyDown(EKeyCode code) override;
 		int onMouseDown(const SInputMouseEvent&) override;
 		int onMouseUp(const SInputMouseEvent&) override;
+		int onMouse(int16 dx, int16 dy) override;
 
 		void buildDepthTarget();
 

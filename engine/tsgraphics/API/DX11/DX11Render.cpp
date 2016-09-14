@@ -671,6 +671,8 @@ ERenderStatus DX11RenderApi::createViewDepthTarget(ResourceProxy& view, const Re
 	ComPtr<ID3D11Resource> dt(tex->get());
 	HRESULT hr = m_device->CreateDepthStencilView(dt.Get(), &viewdesc, dsv.GetAddressOf());
 
+	setObjectDebugName(dsv.Get(), format("depthstencil-idx-%", desc.arrayIndex).c_str());
+
 	if (FAILED(hr))
 	{
 		return RenderStatusFromHRESULT(hr);
@@ -701,13 +703,16 @@ ERenderStatus DX11RenderApi::createViewRenderTarget(ResourceProxy& view, const R
 	ZeroMemory(&viewdesc, sizeof(viewdesc));
 	
 	viewdesc.Format = TextureFormatToDXGIFormat(texdesc.texformat);
-	viewdesc.ViewDimension = (multisampled) ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
+	viewdesc.ViewDimension = (multisampled) ? D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY : D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 	viewdesc.Texture2DArray.FirstArraySlice = desc.arrayIndex;
 	viewdesc.Texture2DArray.ArraySize = 1;
+	viewdesc.Texture2DArray.MipSlice = 0;
 
 	ComPtr<ID3D11RenderTargetView> rtv;
 	ComPtr<ID3D11Resource> rt(tex->get());
 	HRESULT hr = m_device->CreateRenderTargetView(rt.Get(), &viewdesc, rtv.GetAddressOf());
+
+	setObjectDebugName(rtv.Get(), format("rendertarget-idx-%", desc.arrayIndex).c_str());
 
 	if (FAILED(hr))
 	{
@@ -731,7 +736,7 @@ ERenderStatus DX11RenderApi::createViewTextureCube(ResourceProxy& view, const Re
 	STextureResourceDescriptor texdesc;
 	tex->getDesc(texdesc);
 
-	uint32 miplevels = getNumMipLevels(texdesc.width, texdesc.height);
+	uint32 miplevels = (texdesc.useMips) ? getNumMipLevels(texdesc.width, texdesc.height) : 1;
 
 	if (~texdesc.texmask & eTextureMaskShaderResource)
 		return eInvalidResource;
@@ -749,6 +754,8 @@ ERenderStatus DX11RenderApi::createViewTextureCube(ResourceProxy& view, const Re
 	ComPtr<ID3D11ShaderResourceView> srv;
 	ComPtr<ID3D11Resource> t(tex->get());
 	HRESULT hr = m_device->CreateShaderResourceView(t.Get(), &viewdesc, srv.GetAddressOf());
+
+	setObjectDebugName(srv.Get(), "cubemapView");
 
 	if (FAILED(hr))
 	{
@@ -770,7 +777,7 @@ ERenderStatus DX11RenderApi::createViewTexture2D(ResourceProxy& view, const Reso
 	STextureResourceDescriptor texdesc;
 	tex->getDesc(texdesc);
 
-	uint32 miplevels = getNumMipLevels(texdesc.width, texdesc.height);
+	uint32 miplevels = (texdesc.useMips) ? getNumMipLevels(texdesc.width, texdesc.height) : 1;
 
 	if (~texdesc.texmask & eTextureMaskShaderResource)
 		return eInvalidResource;
@@ -790,6 +797,8 @@ ERenderStatus DX11RenderApi::createViewTexture2D(ResourceProxy& view, const Reso
 	ComPtr<ID3D11ShaderResourceView> srv;
 	ComPtr<ID3D11Resource> t(tex->get());
 	HRESULT hr = m_device->CreateShaderResourceView(t.Get(), &viewdesc, srv.GetAddressOf());
+
+	setObjectDebugName(srv.Get(), format("texture2DView-idx-%-sz-%", desc.arrayIndex, desc.arrayCount).c_str());
 
 	if (FAILED(hr))
 	{
@@ -829,6 +838,8 @@ ERenderStatus DX11RenderApi::createViewTexture3D(ResourceProxy& view, const Reso
 	ComPtr<ID3D11ShaderResourceView> srv;
 	ComPtr<ID3D11Resource> t(tex3D->get());
 	HRESULT hr = m_device->CreateShaderResourceView(t.Get(), &viewdesc, srv.GetAddressOf());
+
+	setObjectDebugName(srv.Get(), "texture3DView");
 
 	if (FAILED(hr))
 	{

@@ -21,6 +21,8 @@ Texture2D texNormal : register(t1);
 Texture2D texSpecular : register(t2);
 Texture2D texDisplacement : register(t3);
 
+TextureCube shadowMap : register(t8);
+
 SamplerState texSampler : register(s0);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,9 +47,32 @@ struct PSinput
 	float3 normal : NORMAL;
 };
 
+struct PSoutput
+{
+	float4 colour : SV_TARGET0;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 float ComputeAttenuation(float ca, float la, float qa, float d)
 {
 	return 1.0f / (ca + (la * d) + (qa * d * d));
+}
+
+float ComputeVSMShadowFactor(float2 moments, float fragDepth)
+{
+	//Surface is fully lit. as the current fragment is before the light occluder
+	if (fragDepth <= moments.x)
+		return 1.0f;
+	
+	//The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to calculate the probability of this pixel being lit
+	float variance = moments.y - (moments.x * moments.x);
+	variance = max(variance,0.0002);
+
+	float d = fragDepth - moments.x; //t - mu
+	float probability = variance / (variance + d*d);
+
+	return probability;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -74,8 +99,13 @@ PSinput VS(VSinput input)
 	return output;
 }
 
-float4 PS(PSinput input) : SV_TARGET
+PSoutput PS(PSinput input)
 {
+	float4 L = scene.lightPos - input.posw;
+	float2 depth = shadowMap.Sample(texSampler, -L.xyz).rg;
+	
+	float factor = ComputeVSMShadowFactor(depth, length(L.xyz));
+
 	float2 texcoord = input.texcoord;
 	float3 normal = input.normal;
 	
@@ -103,8 +133,8 @@ float4 PS(PSinput input) : SV_TARGET
 	
 	float diffuseIntensity = dot(normalize(normal), ldir);
 	float3 specular = float3(0, 0, 0);
-	float3 ambient = float3(0.31f, 0.31f, 0.31f);
-	float3 diffuse = float3(1.0f, 1.0f, 1.0f) * diffuseIntensity * attenuation;
+	float3 ambient = scene.globalAmbientColour;
+	float3 diffuse = scene.lightColour * diffuseIntensity * attenuation * factor;
 
 	if (diffuseIntensity > 0.0f)
 	{
@@ -115,13 +145,14 @@ float4 PS(PSinput input) : SV_TARGET
 		float specularPow = 128;
 		
 		//Calculate specular factor, using Phong shading algorithm
-		float specularIntensity = pow(saturate(dot(reflection, -vdir)), specularPow) * attenuation;
+		float specularIntensity = pow(saturate(dot(reflection, -vdir)), specularPow) * attenuation * factor;
 		
 		specular = specularIntensity.xxx;
 	}
 	
-	//return colour;
-	return (colour * float4((ambient + diffuse + specular).rgb, 1.0f));
+	PSoutput output = (PSoutput)0;
+	output.colour = (colour * float4((ambient + diffuse + specular).rgb, 1.0f));
+	return output;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

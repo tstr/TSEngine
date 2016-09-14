@@ -17,7 +17,7 @@ namespace ts
 		//virtual int onMouseClick(const SInputMouseEvent&) { return 0; }
 		virtual int onMouseDown(const SInputMouseEvent&) { return 0; }
 		virtual int onMouseUp(const SInputMouseEvent&) { return 0; }
-		//virtual int onMouseScroll(const SInputMouseEvent&) { return 0; }
+		virtual int onMouseScroll(const SInputMouseEvent&) { return 0; }
 
 		//virtual int onKeyPress(const SInputKeyEvent&) { return 0; }
 		virtual int onKeyDown(EKeyCode code) { return 0; }
@@ -46,7 +46,9 @@ namespace ts
 		~CInputModule();
 
 		void showCursor(bool show);
-		
+		void getCursorPos(int16& x, int16& y);
+		void setCursorPos(int16 x, int16 y);
+
 		bool onWindowInputEvent(const SWindowEventArgs& args) { return m_device.onWindowInputEvent(args); }
 
 		bool addEventListener(IInputEventListener* listener);

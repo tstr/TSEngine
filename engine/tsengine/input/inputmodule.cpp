@@ -133,3 +133,23 @@ void CInputModule::showCursor(bool show)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void CInputModule::getCursorPos(int16& x, int16& y)
+{
+	POINT p;
+	::GetCursorPos(&p);
+	::ScreenToClient((HWND)m_window->handle(), &p);
+	x = (uint16)p.x;
+	y = (uint16)p.y;
+}
+
+void CInputModule::setCursorPos(int16 x, int16 y)
+{
+	POINT p;
+	p.x = x;
+	p.y = y;
+	::ClientToScreen((HWND)m_window->handle(), &p);
+	::SetCursorPos(p.x, p.y);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////

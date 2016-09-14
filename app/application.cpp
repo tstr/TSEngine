@@ -19,6 +19,8 @@
 using namespace ts;
 using namespace std;
 
+#define VECTOR_OFFSET(idx) (uint32)(idx * sizeof(Vector))
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //Ctor/dtor
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,6 +47,8 @@ int Application::onKeyDown(EKeyCode code)
 {
 	if (code == EKeyCode::eKeyEsc)
 		m_system->shutdown();
+	else if (code == EKeyCode::eKeyY)
+		m_simulation = !m_simulation;
 
 	return 0;
 }
@@ -65,13 +69,62 @@ inline string getMouseCodeName(EMouseButtons button)
 
 int Application::onMouseDown(const SInputMouseEvent& args)
 {
+	if (args.buttons == EMouseButtons::eMouseButtonLeft)
+		m_mouseHeld = true;
+
 	return 0;
 }
 
 int Application::onMouseUp(const SInputMouseEvent& args)
 {
+	if (args.buttons == EMouseButtons::eMouseButtonLeft)
+		m_mouseHeld = false;
+
 	return 0;
 }
+
+int Application::onMouse(int16 dx, int16 dy)
+{
+	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct SUniforms
+{
+	Matrix world;
+	Matrix invWorld;
+	Matrix view;
+	Matrix invView;
+	Matrix projection;
+	Matrix invProjection;
+
+	Vector lightPos;
+	Vector lightColour;
+	Vector globalAmbientColour;
+	Vector eyePos;
+
+	float nearplane;
+	float farplane;
+
+	float lightConstantAttenuation;
+	float lightLinearAttenuation;
+	float lightQuadraticAttenuation;
+
+	void init()
+	{
+		invWorld = world.inverse();
+		invView = view.inverse();
+		invProjection = projection.inverse();
+
+		Matrix::transpose(invWorld);
+		Matrix::transpose(invView);
+		Matrix::transpose(invProjection);
+		Matrix::transpose(world);
+		Matrix::transpose(view);
+		Matrix::transpose(projection);
+	}
+};
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //Application event handlers
@@ -110,17 +163,126 @@ void Application::onInit(CEngineSystem* system)
 
 	bool shader_debug = true;
 	
-	SShaderCompileConfig vsconfig;
-	vsconfig.debuginfo = shader_debug;
-	vsconfig.entrypoint = "VS";
-	vsconfig.stage = EShaderStage::eShaderStageVertex;
-	tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_vertexshader, "standard", vsconfig)));
+	{
+		SShaderCompileConfig vsconfig;
+		vsconfig.debuginfo = shader_debug;
+		vsconfig.entrypoint = "VS";
+		vsconfig.stage = EShaderStage::eShaderStageVertex;
+		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_standardVertexshader, "standard", vsconfig)));
 
-	SShaderCompileConfig psconfig;
-	psconfig.debuginfo = shader_debug;
-	psconfig.entrypoint = "PS";
-	psconfig.stage = EShaderStage::eShaderStagePixel;
-	tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_pixelshader, "standard", psconfig)));
+		SShaderCompileConfig psconfig;
+		psconfig.debuginfo = shader_debug;
+		psconfig.entrypoint = "PS";
+		psconfig.stage = EShaderStage::eShaderStagePixel;
+		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_standardPixelshader, "standard", psconfig)));
+
+		SShaderInputDescriptor inputdescriptor[6];
+
+		//Position attribute
+		inputdescriptor[0].bufferSlot = 0;
+		inputdescriptor[0].byteOffset = VECTOR_OFFSET(0);
+		inputdescriptor[0].channel = EShaderInputChannel::eInputPerVertex;
+		inputdescriptor[0].semanticName = "POSITION";
+		inputdescriptor[0].type = eShaderInputFloat4;
+
+		//Texcoord attribute
+		inputdescriptor[1].bufferSlot = 0;
+		inputdescriptor[1].byteOffset = VECTOR_OFFSET(1);
+		inputdescriptor[1].channel = EShaderInputChannel::eInputPerVertex;
+		inputdescriptor[1].semanticName = "TEXCOORD";
+		inputdescriptor[1].type = eShaderInputFloat2;
+
+		//Colour attribute
+		inputdescriptor[2].bufferSlot = 0;
+		inputdescriptor[2].byteOffset = VECTOR_OFFSET(2);
+		inputdescriptor[2].channel = EShaderInputChannel::eInputPerVertex;
+		inputdescriptor[2].semanticName = "COLOUR";
+		inputdescriptor[2].type = eShaderInputFloat4;
+
+		//Normal attribute
+		inputdescriptor[3].bufferSlot = 0;
+		inputdescriptor[3].byteOffset = VECTOR_OFFSET(3);
+		inputdescriptor[3].channel = EShaderInputChannel::eInputPerVertex;
+		inputdescriptor[3].semanticName = "NORMAL";
+		inputdescriptor[3].type = eShaderInputFloat3;
+
+		//Tangent attribute
+		inputdescriptor[4].bufferSlot = 0;
+		inputdescriptor[4].byteOffset = VECTOR_OFFSET(4);
+		inputdescriptor[4].channel = EShaderInputChannel::eInputPerVertex;
+		inputdescriptor[4].semanticName = "TANGENT";
+		inputdescriptor[4].type = eShaderInputFloat3;
+
+		//Bitangent attribute
+		inputdescriptor[5].bufferSlot = 0;
+		inputdescriptor[5].byteOffset = VECTOR_OFFSET(5);
+		inputdescriptor[5].channel = EShaderInputChannel::eInputPerVertex;
+		inputdescriptor[5].semanticName = "BITANGENT";
+		inputdescriptor[5].type = eShaderInputFloat3;
+
+		status = api->createShaderInputDescriptor(m_vertexInput, m_standardVertexshader.getShader(), inputdescriptor, ARRAYSIZE(inputdescriptor));
+		tsassert(!status);
+	}
+
+	{
+		SShaderCompileConfig vsconfig;
+		vsconfig.debuginfo = shader_debug;
+		vsconfig.entrypoint = "VS";
+		vsconfig.stage = EShaderStage::eShaderStageVertex;
+		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_lightVertexShader, "lightsource", vsconfig)));
+
+		SShaderCompileConfig psconfig;
+		psconfig.debuginfo = shader_debug;
+		psconfig.entrypoint = "PS";
+		psconfig.stage = EShaderStage::eShaderStagePixel;
+		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_lightPixelShader, "lightsource", psconfig)));
+
+		SShaderInputDescriptor inputdescriptor[2];
+
+		//Position attribute
+		inputdescriptor[0].bufferSlot = 0;
+		inputdescriptor[0].byteOffset = VECTOR_OFFSET(0);
+		inputdescriptor[0].channel = EShaderInputChannel::eInputPerVertex;
+		inputdescriptor[0].semanticName = "POSITION";
+		inputdescriptor[0].type = eShaderInputFloat4;
+
+
+		//Colour attribute
+		inputdescriptor[1].bufferSlot = 0;
+		inputdescriptor[1].byteOffset = VECTOR_OFFSET(2);
+		inputdescriptor[1].channel = EShaderInputChannel::eInputPerVertex;
+		inputdescriptor[1].semanticName = "COLOUR";
+		inputdescriptor[1].type = eShaderInputFloat4;
+
+		status = api->createShaderInputDescriptor(m_vertexInputLight, m_lightVertexShader.getShader(), inputdescriptor, ARRAYSIZE(inputdescriptor));
+		tsassert(!status);
+	}
+
+	{
+		SShaderCompileConfig vsconfig;
+		vsconfig.debuginfo = shader_debug;
+		vsconfig.entrypoint = "VS";
+		vsconfig.stage = EShaderStage::eShaderStageVertex;
+		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_shadowVertexShader, "shadowmap", vsconfig)));
+
+		SShaderCompileConfig psconfig;
+		psconfig.debuginfo = shader_debug;
+		psconfig.entrypoint = "PS";
+		psconfig.stage = EShaderStage::eShaderStagePixel;
+		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_shadowPixelShader, "shadowmap", psconfig)));
+
+		SShaderInputDescriptor inputdescriptor;
+
+		//Position attribute
+		inputdescriptor.bufferSlot = 0;
+		inputdescriptor.byteOffset = VECTOR_OFFSET(0);
+		inputdescriptor.channel = EShaderInputChannel::eInputPerVertex;
+		inputdescriptor.semanticName = "POSITION";
+		inputdescriptor.type = eShaderInputFloat4;
+
+		status = api->createShaderInputDescriptor(m_vertexInputShadow, m_shadowVertexShader.getShader(), &inputdescriptor, 1);
+		tsassert(!status);
+	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	//Assets
@@ -128,8 +290,11 @@ void Application::onInit(CEngineSystem* system)
 	
 	Path modelfile(rendercfg.rootpath);
 	modelfile.addDirectories("sponza/sponza.tsm");
+	Path spherefile(rendercfg.rootpath);
+	spherefile.addDirectories("sphere.tsm");
 
 	m_model.reset(new CModel(m_system->getRenderModule(), modelfile));
+	m_sphere.reset(new CModel(m_system->getRenderModule(), spherefile));
 
 	uint8 vertexAttribs = 0;
 	for (uint x = 0; x < m_model->getMeshCount(); x++)
@@ -138,62 +303,11 @@ void Application::onInit(CEngineSystem* system)
 	}
 	
 	m_materialBuffer = CUniformBuffer(m_system->getRenderModule(), SMaterial::SParams());
-	m_sceneBuffer = CUniformBuffer(m_system->getRenderModule(), m_uniforms);
+	m_sceneBuffer = CUniformBuffer(m_system->getRenderModule(), SUniforms());
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define VECTOR_OFFSET(idx) (uint32)(idx * sizeof(Vector))
-
-	SShaderInputDescriptor inputdescriptor[6];
-
-	//Position attribute
-	inputdescriptor[0].bufferSlot = 0;
-	inputdescriptor[0].byteOffset = VECTOR_OFFSET(0);
-	inputdescriptor[0].channel = EShaderInputChannel::eInputPerVertex;
-	inputdescriptor[0].semanticName = "POSITION";
-	inputdescriptor[0].type = eShaderInputFloat4;
-
-	//Texcoord attribute
-	inputdescriptor[1].bufferSlot = 0;
-	inputdescriptor[1].byteOffset = VECTOR_OFFSET(1);
-	inputdescriptor[1].channel = EShaderInputChannel::eInputPerVertex;
-	inputdescriptor[1].semanticName = "TEXCOORD";
-	inputdescriptor[1].type = eShaderInputFloat2;
-
-	//Colour attribute
-	inputdescriptor[2].bufferSlot = 0;
-	inputdescriptor[2].byteOffset = VECTOR_OFFSET(2);
-	inputdescriptor[2].channel = EShaderInputChannel::eInputPerVertex;
-	inputdescriptor[2].semanticName = "COLOUR";
-	inputdescriptor[2].type = eShaderInputFloat4;
-
-	//Normal attribute
-	inputdescriptor[3].bufferSlot = 0;
-	inputdescriptor[3].byteOffset = VECTOR_OFFSET(3);
-	inputdescriptor[3].channel = EShaderInputChannel::eInputPerVertex;
-	inputdescriptor[3].semanticName = "NORMAL";
-	inputdescriptor[3].type = eShaderInputFloat3;
-
-	//Tangent attribute
-	inputdescriptor[4].bufferSlot = 0;
-	inputdescriptor[4].byteOffset = VECTOR_OFFSET(4);
-	inputdescriptor[4].channel = EShaderInputChannel::eInputPerVertex;
-	inputdescriptor[4].semanticName = "TANGENT";
-	inputdescriptor[4].type = eShaderInputFloat3;
-
-	//Bitangent attribute
-	inputdescriptor[5].bufferSlot = 0;
-	inputdescriptor[5].byteOffset = VECTOR_OFFSET(5);
-	inputdescriptor[5].channel = EShaderInputChannel::eInputPerVertex;
-	inputdescriptor[5].semanticName = "BITANGENT";
-	inputdescriptor[5].type = eShaderInputFloat3;
-
-	status = api->createShaderInputDescriptor(m_vertexInput, m_vertexshader.getShader(), inputdescriptor, ARRAYSIZE(inputdescriptor));
-	tsassert(!status);
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//Test texture sampler
+	//Texture sampler
 	STextureSamplerDescriptor sampledesc;
 	sampledesc.addressU = ETextureAddressMode::eTextureAddressWrap;
 	sampledesc.addressV = ETextureAddressMode::eTextureAddressWrap;
@@ -205,6 +319,49 @@ void Application::onInit(CEngineSystem* system)
 	
 	//Depth target view
 	buildDepthTarget();
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+
+	{
+		//Shadow render target	
+		STextureResourceDescriptor shadowdesc;
+		shadowdesc.arraySize = 6;
+		shadowdesc.depth = 0;
+		shadowdesc.width = 1024;
+		shadowdesc.height = 1024;
+		shadowdesc.multisampling.count = 1;
+		shadowdesc.texformat = eTextureFormatFloat2;
+		shadowdesc.texmask = eTextureMaskShaderResource | eTextureMaskRenderTarget;
+		shadowdesc.textype = eTypeTextureCube;
+		shadowdesc.useMips = false;
+		status = api->createResourceTexture(m_shadowCubeRsc, nullptr, shadowdesc);
+		tsassert(!status);
+
+		STextureViewDescriptor cubeviewdesc;
+		cubeviewdesc.arrayCount = 1;
+		cubeviewdesc.arrayIndex = 0;
+		status = api->createViewTextureCube(m_shadowCube, m_shadowCubeRsc, cubeviewdesc);
+		tsassert(!status);
+
+		//Shadow depth target view
+		ResourceProxy depthtargetrsc;
+		STextureResourceDescriptor depthdesc;
+		depthdesc.height = 1024;
+		depthdesc.width = 1024;
+		depthdesc.texformat = ETextureFormat::eTextureFormatDepth32;
+		depthdesc.texmask = eTextureMaskDepthTarget;
+		depthdesc.textype = eTypeTexture2D;
+		depthdesc.useMips = false;
+		depthdesc.multisampling.count = 1;
+		status = api->createResourceTexture(depthtargetrsc, nullptr, depthdesc);
+		tsassert(!status);
+
+		STextureViewDescriptor depthviewdesc;
+		depthviewdesc.arrayCount = 1;
+		depthviewdesc.arrayIndex = 0;
+		status = api->createViewDepthTarget(m_shadowDepthTarget, depthtargetrsc, depthviewdesc);
+		tsassert(!status);
+	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 }
@@ -221,89 +378,261 @@ void Application::onUpdate(double dt)
 	float scale = 0.1f;
 
 	//Update displacement of light source
-	m_pulsatance += (float)(((2.0 * Pi) / 5.0) * dt);
+	if (m_simulation)
+		m_pulsatance += (float)(((2.0 * Pi) / 5.0) * dt);
 	Vector lightpos;
 	lightpos.x() = 12.0f * sin(m_pulsatance = fmod(m_pulsatance, 2 * Pi));
 	//lightpos.y() = 4.0f + 2.0f * sin(m_pulsatance * 2.0f);
 	lightpos.y() = 2.0f;
 	lightpos.z() = 0.0f;
 	lightpos = lightpos / scale;
-	
+
+	Matrix projection = m_camera->getProjectionMatrix();
+	Matrix view = m_camera->getViewMatrix();
+	Vector position = m_camera->getPosition();
+
+	if (m_mouseHeld)
+	{
+		int16 mousePosX = 0;
+		int16 mousePosY = 0;
+		m_system->getInputModule()->getCursorPos(mousePosX, mousePosY);
+		mousePosX = max(min(mousePosX, (uint16)rendercfg.width), 0);
+		mousePosY = max(min(mousePosY, (uint16)rendercfg.height), 0);
+
+		float depth = 10.0f;
+
+		float x = (((2.0f * mousePosX) / (float)rendercfg.width) - 1);
+		float y = -(((2.0f * mousePosY) / (float)rendercfg.height) - 1);
+
+		Vector ray(x, y, 0.0f, 0.0f);
+		ray = internal::XMVector3Transform(ray, projection.inverse());
+
+		Vector vscale;
+		Vector vpos;
+		Quaternion vrot;
+		m_camera->getViewMatrix().inverse().decompose(vscale, vrot, vpos);
+
+		//Transform ray from view space to world space
+		ray = Quaternion::transform(ray, vrot);
+		ray.normalize();
+
+		lightpos = position + (ray * depth);
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+
+	SUniforms sceneuniforms;
+
 	//Set uniforms
-	m_uniforms.world = Matrix::scale(scale, scale, scale);
-	m_uniforms.view = m_camera->getViewMatrix();
-	m_uniforms.projection = m_camera->getProjectionMatrix();
+	sceneuniforms.world = Matrix::scale(scale, scale, scale);
+	sceneuniforms.view = view;
+	sceneuniforms.projection = projection;
 
-	m_uniforms.lightPos = lightpos;
-	m_uniforms.eyePos = m_camera->getPosition();
+	sceneuniforms.lightPos = lightpos;
+	sceneuniforms.lightColour = Vector(1.0f, 1.0f, 1.0f);
+	sceneuniforms.globalAmbientColour = Vector(0.21f, 0.2f, 0.21f);
+	sceneuniforms.eyePos = position;
 
-	m_uniforms.lightConstantAttenuation = 1.0f;
-	m_uniforms.lightLinearAttenuation = 0.04f;
-	m_uniforms.lightQuadraticAttenuation = 0.0f;
+	sceneuniforms.lightConstantAttenuation = 1.0f;
+	sceneuniforms.lightLinearAttenuation = 0.04f;
+	sceneuniforms.lightQuadraticAttenuation = 0.0f;
 
-	//m_uniforms.u_lightdirection = Vector(0.1f, 0.4f, -0.4f); //Light direction
-	//m_uniforms.u_lightdirection = Matrix::transform(m_uniforms.u_lightdirection, Matrix::fromYawPitchRoll(Vector(0.1f, -0.4f, 0)));// Matrix::rotationY((float)angle));
-	//m_uniforms.u_lightdirection.normalize();
+	sceneuniforms.init();
 
-	m_uniforms.init();
+	/////////////////////////////////////////////////////////////////////////////////////////////////
 
-	//Update uniforms
-	m_context->resourceBufferUpdate(m_sceneBuffer.getBuffer(), (const void*)&m_uniforms);
-	
+	auto api = m_system->getRenderModule()->getApi();
+	ResourceProxy defaultrendertarget;
+	api->getWindowRenderTarget(defaultrendertarget);
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	//Shadow pass
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+
+	{
+		SRenderCommand command;
+		SUniforms shadowuniforms(sceneuniforms);
+
+		const float lightFarPlane = 100.0f / scale;
+		const float lightNearPlane = 0.1f;
+
+		const Matrix lightProjection(Matrix::perspectiveFieldOfView(Pi / 2, 1.0f, lightNearPlane, lightFarPlane));
+
+		//View vectors for point light shadow cube
+		Matrix lightViews[6];
+		lightViews[0] = Matrix::lookTo(sceneuniforms.lightPos, Vector(+1, 0, 0), Vector(0, +1, 0));
+		lightViews[1] = Matrix::lookTo(sceneuniforms.lightPos, Vector(-1, 0, 0), Vector(0, +1, 0));
+		lightViews[2] = Matrix::lookTo(sceneuniforms.lightPos, Vector(0, +1, 0), Vector(0, 0, -1));
+		lightViews[3] = Matrix::lookTo(sceneuniforms.lightPos, Vector(0, -1, 0), Vector(0, 0, +1));
+		lightViews[4] = Matrix::lookTo(sceneuniforms.lightPos, Vector(0, 0, +1), Vector(0, +1, 0));
+		lightViews[5] = Matrix::lookTo(sceneuniforms.lightPos, Vector(0, 0, -1), Vector(0, +1, 0));
+
+		command.depthTarget = m_shadowDepthTarget;
+		command.viewport.w = 1024;
+		command.viewport.h = 1024;
+		command.viewport.x = 0;
+		command.viewport.y = 0;
+
+		command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
+		command.shaders.stageVertex = m_shadowVertexShader.getShader();
+		command.shaders.stagePixel = m_shadowPixelShader.getShader();
+		command.vertexInputDescriptor = m_vertexInputShadow;
+		command.vertexTopology = EVertexTopology::eTopologyTriangleList;
+
+		CVertexBuffer vbuf;
+		CIndexBuffer ibuf;
+		m_model->getVertexBuffer(vbuf);
+		m_model->getIndexBuffer(ibuf);
+
+		command.vertexBuffer = vbuf.getBuffer();
+		command.indexBuffer = ibuf.getBuffer();
+		command.vertexStride = vbuf.getVertexStride();
+
+		for (int i = 0; i < 6; i++)
+		{
+			shadowuniforms.eyePos = sceneuniforms.lightPos;
+			shadowuniforms.nearplane = lightNearPlane;
+			shadowuniforms.farplane = lightFarPlane;
+			shadowuniforms.world = Matrix::scale(scale, scale, scale);
+			shadowuniforms.projection = lightProjection;
+			shadowuniforms.view = lightViews[i];
+
+			shadowuniforms.init();
+
+			ResourceProxy shadowRenderTarget;
+			
+			STextureViewDescriptor shadowtargetdesc;
+			shadowtargetdesc.arrayCount = 1;
+			shadowtargetdesc.arrayIndex = i;
+			tsassert(!api->createViewRenderTarget(shadowRenderTarget, m_shadowCubeRsc, shadowtargetdesc));
+			
+			m_context->clearRenderTarget(shadowRenderTarget, Vector());
+			m_context->clearDepthTarget(m_shadowDepthTarget, 1.0f);
+			m_context->resourceBufferUpdate(m_sceneBuffer.getBuffer(), &shadowuniforms);
+
+			command.renderTarget[0] = shadowRenderTarget;
+			command.depthTarget = m_shadowDepthTarget;
+
+			for (uint i = 0; i < m_model->getMeshCount(); i++)
+			{
+				const SMesh& mesh = m_model->getMesh(i);
+				command.indexStart = mesh.indexOffset;
+				command.indexCount = mesh.indexCount;
+				command.vertexBase = mesh.vertexBase;
+
+				//Execute draw call
+				m_context->execute(command);
+			}
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	//Colour pass
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	SRenderCommand command;
-	
-	//Clear the depth buffer
-	m_context->clearDepthTarget(m_depthTarget, 1.0f);
-	
-	ResourceProxy defaultrendertarget;
-	m_system->getRenderModule()->getApi()->getWindowRenderTarget(defaultrendertarget);
+	m_context->resourceBufferUpdate(m_sceneBuffer.getBuffer(), &sceneuniforms);
 
-	//Fill out render command
-	command.renderTarget[0] = defaultrendertarget;
-	command.depthTarget = m_depthTarget;
-	command.viewport.w = rendercfg.width;
-	command.viewport.h = rendercfg.height;
-	command.viewport.x = 0;
-	command.viewport.y = 0;
-	
-	command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
-	command.uniformBuffers[1] = m_materialBuffer.getBuffer();
-	command.shaders.stageVertex = m_vertexshader.getShader();
-	command.shaders.stagePixel = m_pixelshader.getShader();
-
-	command.textureSamplers[0] = m_texSampler;
-
-	CVertexBuffer vbuf;
-	CIndexBuffer ibuf;
-	m_model->getVertexBuffer(vbuf);
-	m_model->getIndexBuffer(ibuf);
-
-	command.vertexBuffer = vbuf.getBuffer();
-	command.indexBuffer = ibuf.getBuffer();
-	command.vertexStride = vbuf.getVertexStride();
-
-	//command.vertexTopology = EVertexTopology::eTopologyTriangleList;
-	command.vertexTopology = EVertexTopology::eTopologyTriangleList;
-	command.vertexInputDescriptor = m_vertexInput;
-
-	for (uint i = 0; i < m_model->getMeshCount(); i++)
+	//Draw model
 	{
-		const SMesh& mesh = m_model->getMesh(i);
+		SRenderCommand command;
 
-		command.textures[0] = mesh.material.diffuseMap.getView();
-		command.textures[1] = mesh.material.normalMap.getView();
-		command.textures[2] = mesh.material.specularMap.getView();
-		command.textures[3] = mesh.material.displacementMap.getView();
-		
+		//Clear the depth buffer
+		m_context->clearDepthTarget(m_depthTarget, 1.0f);
+
+		//Fill out render command
+		command.renderTarget[0] = defaultrendertarget;
+		command.depthTarget = m_depthTarget;
+		command.viewport.w = rendercfg.width;
+		command.viewport.h = rendercfg.height;
+		command.viewport.x = 0;
+		command.viewport.y = 0;
+
+		command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
+		command.uniformBuffers[1] = m_materialBuffer.getBuffer();
+		command.shaders.stageVertex = m_standardVertexshader.getShader();
+		command.shaders.stagePixel = m_standardPixelshader.getShader();
+
+		command.textureSamplers[0] = m_texSampler;
+
+		CVertexBuffer vbuf;
+		CIndexBuffer ibuf;
+		m_model->getVertexBuffer(vbuf);
+		m_model->getIndexBuffer(ibuf);
+
+		command.vertexBuffer = vbuf.getBuffer();
+		command.indexBuffer = ibuf.getBuffer();
+		command.vertexStride = vbuf.getVertexStride();
+
+		//command.vertexTopology = EVertexTopology::eTopologyTriangleList;
+		command.vertexTopology = EVertexTopology::eTopologyTriangleList;
+		command.vertexInputDescriptor = m_vertexInput;
+
+		command.indexStart = 0;
+		command.indexCount = ibuf.getIndexCount();
+		command.vertexBase = 0;
+
+		for (uint i = 0; i < m_model->getMeshCount(); i++)
+		{
+			const SMesh& mesh = m_model->getMesh(i);
+
+			command.textures[0] = mesh.material.diffuseMap.getView();
+			command.textures[1] = mesh.material.normalMap.getView();
+			command.textures[2] = mesh.material.specularMap.getView();
+			command.textures[3] = mesh.material.displacementMap.getView();
+
+			command.textures[8] = m_shadowCube;
+
+			command.indexStart = mesh.indexOffset;
+			command.indexCount = mesh.indexCount;
+			command.vertexBase = mesh.vertexBase;
+
+			m_context->resourceBufferUpdate(m_materialBuffer.getBuffer(), (const void*)&mesh.material.params);
+
+			//Execute draw call
+			m_context->execute(command);
+		}
+	}
+
+	//Draw light source
+	{
+		SRenderCommand command;
+
+		command.renderTarget[0] = defaultrendertarget;
+		command.depthTarget = m_depthTarget;
+		command.viewport.w = rendercfg.width;
+		command.viewport.h = rendercfg.height;
+		command.viewport.x = 0;
+		command.viewport.y = 0;
+
+		//Sphere
+		const SMesh& mesh = m_sphere->getMesh(0);
+
+		command.shaders.stageVertex = m_lightVertexShader.getShader();
+		command.shaders.stagePixel = m_lightPixelShader.getShader();
+		command.vertexInputDescriptor = m_vertexInputLight;
+		command.vertexTopology = EVertexTopology::eTopologyTriangleList;
+
+		CVertexBuffer vbuf;
+		CIndexBuffer ibuf;
+		m_sphere->getVertexBuffer(vbuf);
+		m_sphere->getIndexBuffer(ibuf);
+
+		command.vertexBuffer = vbuf.getBuffer();
+		command.indexBuffer = ibuf.getBuffer();
+		command.vertexStride = vbuf.getVertexStride();
+
 		command.indexStart = mesh.indexOffset;
 		command.indexCount = mesh.indexCount;
 		command.vertexBase = mesh.vertexBase;
-		
-		m_context->resourceBufferUpdate(m_materialBuffer.getBuffer(), (const void*)&mesh.material.params);
-		
-		//Execute draw call
+		sceneuniforms.world = Matrix::translation(sceneuniforms.lightPos);
+		sceneuniforms.view = m_camera->getViewMatrix();
+		sceneuniforms.projection = m_camera->getProjectionMatrix();
+
+		sceneuniforms.init();
+
+		command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
+		m_context->resourceBufferUpdate(m_sceneBuffer.getBuffer(), (const void*)&sceneuniforms);
+
 		m_context->execute(command);
 	}
 
