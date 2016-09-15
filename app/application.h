@@ -34,6 +34,8 @@ namespace ts
 		atomic<bool> m_simulation = true;
 		atomic<bool> m_mouseHeld = false;
 		atomic<float> m_scrollDepth;
+		
+		CTextureCube m_skybox;
 
 		CShader m_standardVertexshader;
 		CShader m_standardPixelshader;
@@ -41,6 +43,8 @@ namespace ts
 		CShader m_lightPixelShader;
 		CShader m_shadowVertexShader;
 		CShader m_shadowPixelShader;
+		CShader m_skyboxVertexShader;
+		CShader m_skyboxPixelShader;
 
 		CUniformBuffer m_sceneBuffer;
 		CUniformBuffer m_materialBuffer;
@@ -64,7 +68,8 @@ namespace ts
 		int onMouse(int16 dx, int16 dy) override;
 
 		void buildDepthTarget();
-
+		void buildVertexInputDescriptor(std::vector<SShaderInputDescriptor>& inputdescriptor, uint32 vertexFlags);
+		
 	public:
 
 		Application();

@@ -298,6 +298,10 @@ void CEngineSystem::consoleCommands()
 				cout << s.name << " = " << s.value << endl;
 			}
 		}
+		else
+		{
+			tswarn("unknown console command: \"%\"", commandname);
+		}
 	}
 }
 

@@ -1,5 +1,7 @@
 /*
-	Shader
+	Standard shader
+	
+	todo: conditional compilation for shaders
 */
 
 #include "common.fxh"
@@ -101,13 +103,82 @@ PSinput VS(VSinput input)
 
 PSoutput PS(PSinput input)
 {
+	float2 texcoord = input.texcoord;
+	float3 normal = input.normal;
+	
+	if (material.useDisplacementMap)
+	{
+		const float height_scale = 0.04f;
+		
+		float3x3 tbn = float3x3( normalize(input.tangent), normalize(input.bitangent), normalize(input.normal) ); //transforms tangent=>world space
+		tbn = transpose(tbn); //world=>tangent space
+		float3 viewDirectionTangent = normalize((input.posw - scene.eyePos).xyz);
+		viewDirectionTangent = mul(viewDirectionTangent, tbn);
+		float3 normalTangent = input.normal;
+		normalTangent = mul(normalTangent, tbn);
+		
+		float2 dx = ddx(input.texcoord);
+		float2 dy = ddy(input.texcoord);
+
+		float minSamples = 5;
+		float maxSamples = 50;
+		
+		//return float4((float)(miplevel) / 128, 0, 0, 1);
+		//return float4(maxSamples / 64.0f, 0, 0, 1);
+		
+		float parallaxLimit = -length( viewDirectionTangent.xy ) / viewDirectionTangent.z;
+		parallaxLimit *= height_scale;
+
+		float2 maxOffsetDirection = normalize(viewDirectionTangent.xy) * parallaxLimit;
+		
+		int numSamples = (int)lerp(maxSamples, minSamples, dot( viewDirectionTangent, normalTangent));
+		
+		float stepSize = 1.0f / (float)numSamples;
+
+		float rayHeightCurrent = 1.0f;
+		float2 offsetCurrent = float2( 0, 0 );
+		float2 offsetLast = float2( 0, 0 );
+
+		float SampledHeightLast = 1;
+		float SampledHeightCurrent = 1;
+
+		int sampleCurrent = 0;
+		
+		while ( sampleCurrent < numSamples )
+		{
+			SampledHeightCurrent = texDisplacement.SampleGrad( texSampler, input.texcoord + offsetCurrent, dx, dy ).r;
+			if ( SampledHeightCurrent > rayHeightCurrent )
+			{
+				float delta1 = SampledHeightCurrent - rayHeightCurrent;
+				float delta2 = ( rayHeightCurrent + stepSize ) - SampledHeightLast;
+
+				float ratio = delta1 / (delta1 + delta2);
+
+				offsetCurrent = (ratio * offsetLast) + ((1.0f - ratio) * offsetCurrent);
+
+				sampleCurrent = numSamples + 1;
+				//break;
+			}
+			else
+			{
+				sampleCurrent++;
+
+				rayHeightCurrent -= stepSize;
+
+				offsetLast = offsetCurrent;
+				offsetCurrent += stepSize * maxOffsetDirection;
+
+				SampledHeightLast = SampledHeightCurrent;
+			}
+		}
+		
+		texcoord = input.texcoord + offsetCurrent;
+	}
+	
 	float4 L = scene.lightPos - input.posw;
 	float2 depth = shadowMap.Sample(texSampler, -L.xyz).rg;
 	
 	float factor = ComputeVSMShadowFactor(depth, length(L.xyz));
-
-	float2 texcoord = input.texcoord;
-	float3 normal = input.normal;
 	
 	if (material.useNormalMap)
 	{
@@ -131,25 +202,24 @@ PSoutput PS(PSinput input)
 	float distance = length(scene.lightPos - input.posw);
 	float attenuation = ComputeAttenuation(scene.lightConstantAttenuation, scene.lightLinearAttenuation, scene.lightQuadraticAttenuation, distance);
 	
+	//Diffuse lighting
 	float diffuseIntensity = dot(normalize(normal), ldir);
 	float3 specular = float3(0, 0, 0);
 	float3 ambient = scene.globalAmbientColour;
 	float3 diffuse = scene.lightColour * diffuseIntensity * attenuation * factor;
 
-	if (diffuseIntensity > 0.0f)
-	{
-		//Reflection Vector
-		float3 reflection = normalize(2 * diffuseIntensity * normal - ldir);
-		
-		//float specularPow = ((1 - material.useSpecularMap) * material.specularPower) + ((material.useSpecularMap) * texSpecular.Sample(texSampler, texcoord));
-		float specularPow = 128;
-		
-		//Calculate specular factor, using Phong shading algorithm
-		float specularIntensity = pow(saturate(dot(reflection, -vdir)), specularPow) * attenuation * factor;
-		
-		specular = specularIntensity.xxx;
-	}
+	//Specular lighting
+	float3 reflection = normalize(2 * diffuseIntensity * normal - ldir); //Reflection Vector
 	
+	//Specular power value lies between 1 and 8192
+	float specularPower = ((1 - material.useSpecularMap) * material.specularPower) + ((material.useSpecularMap) * pow(2, 13.0f * min(texSpecular.Sample(texSampler, texcoord).r, 1.0f)));
+	//float specularPower = 128;
+
+	//Calculate specular factor, using Phong shading algorithm
+	float specularIntensity = pow(saturate(dot(reflection, -vdir)), specularPower) * attenuation * factor;
+	
+	specular = specularIntensity.xxx;
+
 	PSoutput output = (PSoutput)0;
 	output.colour = (colour * float4((ambient + diffuse + specular).rgb, 1.0f));
 	return output;

@@ -24,7 +24,7 @@ static std::string PrintGDIstatus(Gdiplus::Status status);
 static bool LoadTGAFile(const char* filename, STextureResourceDescriptor& desc, vector<uint32>& databuffer);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Texture class
+//Texture classes
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CTexture2D::CTexture2D(CTextureManager* manager, const STextureResourceData& data, const STextureResourceDescriptor& desc) :
@@ -52,6 +52,53 @@ CTexture2D::CTexture2D(CTextureManager* manager, const STextureResourceData& dat
 		tswarn("Unable to create texture view.");
 		return;
 	}
+
+	m_width = desc.width;
+	m_height = desc.height;
+}
+
+CTextureCube::CTextureCube(CTextureManager* manager, const STextureResourceData* data, const STextureResourceDescriptor& desc) :
+	m_manager(manager)
+{
+	STextureViewDescriptor vdesc;
+	vdesc.arrayCount = 1;
+	vdesc.arrayIndex = 0;
+	ERenderStatus rstatus = eOk;
+
+	IRenderApi* api = m_manager->getModule()->getApi();
+
+	rstatus = api->createResourceTexture(m_texCubeRsc, data, desc);
+
+	if (rstatus)
+	{
+		tswarn("Unable to create texture resource.");
+		return;
+	}
+
+	rstatus = api->createViewTextureCube(m_texCubeView, m_texCubeRsc, vdesc);
+
+	if (rstatus)
+	{
+		tswarn("Unable to create texture cube view.");
+		return;
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		STextureViewDescriptor facedesc;
+		vdesc.arrayCount = 1;
+		vdesc.arrayIndex = i;
+		rstatus = api->createViewTexture2D(m_texCubeFaceViews[i], m_texCubeRsc, facedesc);
+
+		if (rstatus)
+		{
+			tswarn("Unable to create texture cube face(%) view.", i);
+			return;
+		}
+	}
+
+	m_facewidth = desc.width;
+	m_faceheight = desc.height;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,14 +130,6 @@ bool CTextureManager::loadTexture2D(const Path& file, CTexture2D& texture)
 	using namespace Gdiplus;
 
 	IRenderApi* api = m_renderModule->getApi();
-
-	/*
-	if (!file || !FileSystem::FileExists(file))
-	{
-		tswarn("Texture file does not exist: %\n", file);
-		return false;
-	}
-	*/
 
 	Path filepath = m_rootpath;
 
@@ -232,8 +271,169 @@ bool CTextureManager::loadTexture2D(const Path& file, CTexture2D& texture)
 	return true;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 bool CTextureManager::loadTextureCube(const Path& file, CTextureCube& texture)
 {
+	using namespace Gdiplus;
+
+	IRenderApi* api = m_renderModule->getApi();
+
+	Path filepath = m_rootpath;
+
+	if (isAbsolutePath(file))
+	{
+		filepath = file;
+	}
+	else
+	{
+		filepath.addDirectories(file);
+	}
+
+	tsinfo("Loading texture cube: \"%\"...", filepath.str());
+
+	wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+	wstring wfilename(converter.from_bytes(filepath.str()));
+	
+	/////////////////////////////////////////////////////////////////////////
+	
+	STextureResourceData data[6];
+	STextureResourceDescriptor desc;
+	//vector<uint32> buffers[6];
+	MemoryBuffer buffers[6];
+	
+	string extension;
+	string filename(filepath.str());
+
+	auto pos = filename.find_last_of('.');
+	if (pos == string::npos)
+		extension = filename;
+	else
+		extension = filename.substr(pos, filename.size() - pos);
+
+	{
+		/////////////////////////////////////////////////////////////////////////
+		using namespace Gdiplus;
+
+		//Load bitmap from file
+		Bitmap* bmp = Bitmap::FromFile(wfilename.c_str());
+
+		if (bmp->GetLastStatus())
+		{
+			tswarn("Texture cube failed to load, GDI+ error: %", PrintGDIstatus(bmp->GetLastStatus()));
+			return false;
+		}
+
+		ETextureFormat format = eTextureFormatUnknown;
+		PixelFormat gdi_format = PixelFormatDontCare;
+
+		switch (bmp->GetPixelFormat())
+		{
+		case PixelFormat8bppIndexed:
+		{
+			format = ETextureFormat::eTextureFormatByte;
+			gdi_format = PixelFormat8bppIndexed;
+			break;
+		}
+		case PixelFormat24bppRGB:
+		{
+			//Graphics API doesn't support texture formats with bytewidths not a power of 2 so we need to force extra colour channel for this texture
+			format = ETextureFormat::eTextureFormatColourARGB;
+			gdi_format = PixelFormat32bppARGB;
+			break;
+		}
+		case PixelFormat32bppARGB:
+		default:
+		{
+			format = ETextureFormat::eTextureFormatColourARGB;
+			gdi_format = PixelFormat32bppARGB;
+		}
+		}
+
+		tsinfo("GDI+ texture format: %", PrintPixelFormat(bmp->GetPixelFormat()));
+
+		/////////////////////////////////////////////////////////////////////////
+
+		uint32 sz = Gdiplus::GetPixelFormatSize(bmp->GetPixelFormat());
+		
+		float offsetsX[] =
+		{
+			2,
+			0,
+			1,
+			1,
+			1,
+			3,
+		};
+
+		float offsetsY[] =
+		{
+			1,
+			1,
+			0,
+			2,
+			1,
+			1,
+		};
+		
+		auto res = (uint32)bmp->GetHeight() / 3;
+		
+		desc.texformat = format;
+		desc.textype = ETextureResourceType::eTypeTextureCube;
+		desc.texmask = ETextureResourceMask::eTextureMaskShaderResource;
+		desc.height = res;
+		desc.width = res;
+		desc.useMips = false;
+		desc.arraySize = 1;
+		
+		for (int i = 0; i < 6; i++)
+		{
+			Gdiplus::Rect dim(
+				(int)(res * offsetsX[i]),
+				(int)(res * offsetsY[i]),
+				(int)res,
+				(int)res
+			);
+
+			Bitmap* subBmp = bmp->Clone(dim, gdi_format);
+			
+			BitmapData subBmpData;
+			Gdiplus::Status s = subBmp->LockBits(nullptr, ImageLockModeRead, gdi_format, &subBmpData);
+
+			if (s)
+			{
+				tswarn("Texture cube failed to lock bits, GDI+ error: %", PrintGDIstatus(s));
+				return false;
+			}
+
+			//buffers[i].resize(subbmpData.Width * subbmpData.Height);
+			//memcpy((void*)&((buffers[i])[0]), subbmpData.Scan0, subbmpData.Stride * subbmpData.Height);
+			buffers[i] = MemoryBuffer(subBmpData.Scan0, subBmpData.Stride * subBmpData.Height);
+
+			//data[i].memory = (const void*)&(buffers[i])[0];
+			data[i].memory = buffers[i].pointer();
+			data[i].memoryByteWidth = subBmpData.Stride;
+			data[i].memoryByteDepth = 0;
+
+			s = subBmp->UnlockBits(&subBmpData);
+
+			if (s)
+			{
+				tserror("Texture cube failed to load.");
+				return false;
+			}
+
+			delete subBmp;
+		}
+
+		//Delete the bitmap image
+		delete bmp;
+	}
+
+	texture = CTextureCube(this, data, desc);
+
+	tsinfo("Texture cube loaded.");
+	
 	return false;
 }
 

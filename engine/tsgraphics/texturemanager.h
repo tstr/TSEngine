@@ -49,6 +49,40 @@ namespace ts
 		uint32 getHeight() const { return m_height; }
 		ETextureFormat getFormat() const { return m_texformat; }
 	};
+	
+	//Texture cube class
+	class CTextureCube
+	{
+	private:
+
+		CTextureManager* m_manager = nullptr;
+
+		ResourceProxy m_texCubeRsc;
+		ResourceProxy m_texCubeView;
+		ResourceProxy m_texCubeFaceViews[6];
+
+		//Properties
+		uint32 m_facewidth = 0;
+		uint32 m_faceheight = 0;
+
+		ETextureFormat m_texformat;
+
+	public:
+
+		CTextureCube() {}
+		CTextureCube(
+			CTextureManager* manager,
+			const STextureResourceData* data,
+			const STextureResourceDescriptor& desc
+		);
+
+		ResourceProxy getView() const { return m_texCubeView; }
+		ResourceProxy getFaceView(uint32 idx) const { return m_texCubeFaceViews[idx]; }
+
+		uint32 getWidth() const { return m_facewidth; }
+		uint32 getHeight() const { return m_faceheight; }
+		ETextureFormat getFormat() const { return m_texformat; }
+	};
 
 	//Texture manager class which is responsible for controlling the lifetime of textures and loading them from disk
 	class CTextureManager

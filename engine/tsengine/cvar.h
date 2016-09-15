@@ -51,6 +51,28 @@ namespace ts
 			val = stof(str);
 			return true;
 		}
+
+		bool getVarInt(CVarString name, int& val) const
+		{
+			if (!isVar(name))
+				return false;
+			std::lock_guard<std::mutex>lk(m_mutex);
+			toLower(name);
+			auto str = m_cvars.find(name)->second;
+			val = stoi(str);
+			return true;
+		}
+
+		bool getVarBool(CVarString name, bool& val) const
+		{
+			if (!isVar(name))
+				return false;
+			std::lock_guard<std::mutex>lk(m_mutex);
+			toLower(name);
+			auto str = m_cvars.find(name)->second;
+			val = (stoi(str) != 0);
+			return true;
+		}
 		
 		bool getVarVector4D(CVarString name, Vector& val) const
 		{

@@ -188,7 +188,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_fabric_green_diff.tga
 ambientMap = textures/sponza_fabric_green_diff.tga
-specularMap = textures/sponza_fabric_green_spec.tga
+specularMap = textures/sponza_fabric_spec.tga
 
 [fabric_d]
 diffuseColour = 0.588, 0.588, 0.588
@@ -199,7 +199,7 @@ shininess = 40
 alpha = 1
 diffuseMap = textures/sponza_fabric_blue_diff.tga
 ambientMap = textures/sponza_fabric_blue_diff.tga
-specularMap = textures/sponza_fabric_blue_spec.tga
+specularMap = textures/sponza_fabric_spec.tga
 
 [fabric_a]
 diffuseColour = 0.588, 0.588, 0.588

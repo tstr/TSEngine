@@ -183,6 +183,7 @@ void Application::onInit(CEngineSystem* system)
 
 	bool shader_debug = true;
 	
+	//Standard shader
 	{
 		SShaderCompileConfig vsconfig;
 		vsconfig.debuginfo = shader_debug;
@@ -196,54 +197,13 @@ void Application::onInit(CEngineSystem* system)
 		psconfig.stage = EShaderStage::eShaderStagePixel;
 		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_standardPixelshader, "standard", psconfig)));
 
-		SShaderInputDescriptor inputdescriptor[6];
-
-		//Position attribute
-		inputdescriptor[0].bufferSlot = 0;
-		inputdescriptor[0].byteOffset = VECTOR_OFFSET(0);
-		inputdescriptor[0].channel = EShaderInputChannel::eInputPerVertex;
-		inputdescriptor[0].semanticName = "POSITION";
-		inputdescriptor[0].type = eShaderInputFloat4;
-
-		//Texcoord attribute
-		inputdescriptor[1].bufferSlot = 0;
-		inputdescriptor[1].byteOffset = VECTOR_OFFSET(1);
-		inputdescriptor[1].channel = EShaderInputChannel::eInputPerVertex;
-		inputdescriptor[1].semanticName = "TEXCOORD";
-		inputdescriptor[1].type = eShaderInputFloat2;
-
-		//Colour attribute
-		inputdescriptor[2].bufferSlot = 0;
-		inputdescriptor[2].byteOffset = VECTOR_OFFSET(2);
-		inputdescriptor[2].channel = EShaderInputChannel::eInputPerVertex;
-		inputdescriptor[2].semanticName = "COLOUR";
-		inputdescriptor[2].type = eShaderInputFloat4;
-
-		//Normal attribute
-		inputdescriptor[3].bufferSlot = 0;
-		inputdescriptor[3].byteOffset = VECTOR_OFFSET(3);
-		inputdescriptor[3].channel = EShaderInputChannel::eInputPerVertex;
-		inputdescriptor[3].semanticName = "NORMAL";
-		inputdescriptor[3].type = eShaderInputFloat3;
-
-		//Tangent attribute
-		inputdescriptor[4].bufferSlot = 0;
-		inputdescriptor[4].byteOffset = VECTOR_OFFSET(4);
-		inputdescriptor[4].channel = EShaderInputChannel::eInputPerVertex;
-		inputdescriptor[4].semanticName = "TANGENT";
-		inputdescriptor[4].type = eShaderInputFloat3;
-
-		//Bitangent attribute
-		inputdescriptor[5].bufferSlot = 0;
-		inputdescriptor[5].byteOffset = VECTOR_OFFSET(5);
-		inputdescriptor[5].channel = EShaderInputChannel::eInputPerVertex;
-		inputdescriptor[5].semanticName = "BITANGENT";
-		inputdescriptor[5].type = eShaderInputFloat3;
-
-		status = api->createShaderInputDescriptor(m_vertexInput, m_standardVertexshader.getShader(), inputdescriptor, ARRAYSIZE(inputdescriptor));
-		tsassert(!status);
+		//Shader input desc
+		vector<SShaderInputDescriptor> inputdescriptor;
+		buildVertexInputDescriptor(inputdescriptor, 0xffffffff);
+		tsassert(!api->createShaderInputDescriptor(m_vertexInput, m_standardVertexshader.getShader(), &inputdescriptor[0], (uint32)inputdescriptor.size()));
 	}
 
+	//Light source shader
 	{
 		SShaderCompileConfig vsconfig;
 		vsconfig.debuginfo = shader_debug;
@@ -256,28 +216,14 @@ void Application::onInit(CEngineSystem* system)
 		psconfig.entrypoint = "PS";
 		psconfig.stage = EShaderStage::eShaderStagePixel;
 		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_lightPixelShader, "lightsource", psconfig)));
-
-		SShaderInputDescriptor inputdescriptor[2];
-
-		//Position attribute
-		inputdescriptor[0].bufferSlot = 0;
-		inputdescriptor[0].byteOffset = VECTOR_OFFSET(0);
-		inputdescriptor[0].channel = EShaderInputChannel::eInputPerVertex;
-		inputdescriptor[0].semanticName = "POSITION";
-		inputdescriptor[0].type = eShaderInputFloat4;
-
-
-		//Colour attribute
-		inputdescriptor[1].bufferSlot = 0;
-		inputdescriptor[1].byteOffset = VECTOR_OFFSET(2);
-		inputdescriptor[1].channel = EShaderInputChannel::eInputPerVertex;
-		inputdescriptor[1].semanticName = "COLOUR";
-		inputdescriptor[1].type = eShaderInputFloat4;
-
-		status = api->createShaderInputDescriptor(m_vertexInputLight, m_lightVertexShader.getShader(), inputdescriptor, ARRAYSIZE(inputdescriptor));
-		tsassert(!status);
+		
+		//Shader input desc
+		vector<SShaderInputDescriptor> inputdescriptor;
+		buildVertexInputDescriptor(inputdescriptor, eModelVertexAttributePosition | eModelVertexAttributeColour);
+		tsassert(!api->createShaderInputDescriptor(m_vertexInputLight, m_lightVertexShader.getShader(), &inputdescriptor[0], (uint32)inputdescriptor.size()));
 	}
 
+	//Shadow mapping shader
 	{
 		SShaderCompileConfig vsconfig;
 		vsconfig.debuginfo = shader_debug;
@@ -291,17 +237,25 @@ void Application::onInit(CEngineSystem* system)
 		psconfig.stage = EShaderStage::eShaderStagePixel;
 		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_shadowPixelShader, "shadowmap", psconfig)));
 
-		SShaderInputDescriptor inputdescriptor;
+		//Shader input desc
+		vector<SShaderInputDescriptor> inputdescriptor;
+		buildVertexInputDescriptor(inputdescriptor, eModelVertexAttributePosition);
+		tsassert(!api->createShaderInputDescriptor(m_vertexInputShadow, m_shadowVertexShader.getShader(), &inputdescriptor[0], (uint32)inputdescriptor.size()));
+	}
+	
+	//Skybox shader
+	{
+		SShaderCompileConfig vsconfig;
+		vsconfig.debuginfo = shader_debug;
+		vsconfig.entrypoint = "VS";
+		vsconfig.stage = EShaderStage::eShaderStageVertex;
+		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_skyboxVertexShader, "skybox", vsconfig)));
 
-		//Position attribute
-		inputdescriptor.bufferSlot = 0;
-		inputdescriptor.byteOffset = VECTOR_OFFSET(0);
-		inputdescriptor.channel = EShaderInputChannel::eInputPerVertex;
-		inputdescriptor.semanticName = "POSITION";
-		inputdescriptor.type = eShaderInputFloat4;
-
-		status = api->createShaderInputDescriptor(m_vertexInputShadow, m_shadowVertexShader.getShader(), &inputdescriptor, 1);
-		tsassert(!status);
+		SShaderCompileConfig psconfig;
+		psconfig.debuginfo = shader_debug;
+		psconfig.entrypoint = "PS";
+		psconfig.stage = EShaderStage::eShaderStagePixel;
+		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_skyboxPixelShader, "skybox", psconfig)));
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
@@ -312,6 +266,9 @@ void Application::onInit(CEngineSystem* system)
 	modelfile.addDirectories("sponza/sponza.tsm");
 	Path spherefile(rendercfg.rootpath);
 	spherefile.addDirectories("sphere.tsm");
+
+	//Skybox texture
+	m_system->getRenderModule()->getTextureManager().loadTextureCube("skybox.png", m_skybox);
 
 	m_model.reset(new CModel(m_system->getRenderModule(), modelfile));
 	m_sphere.reset(new CModel(m_system->getRenderModule(), spherefile));
@@ -324,7 +281,7 @@ void Application::onInit(CEngineSystem* system)
 	
 	m_materialBuffer = CUniformBuffer(m_system->getRenderModule(), SMaterial::SParams());
 	m_sceneBuffer = CUniformBuffer(m_system->getRenderModule(), SUniforms());
-
+	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//Texture sampler
@@ -394,6 +351,9 @@ void Application::onUpdate(double dt)
 {
 	SRenderModuleConfiguration rendercfg;
 	m_system->getRenderModule()->getConfiguration(rendercfg);
+	
+	//CVar table
+	auto table = m_system->getCVarTable();
 
 	//Update camera
 	m_camera->setAspectRatio((float)rendercfg.width / rendercfg.height);
@@ -464,13 +424,11 @@ void Application::onUpdate(double dt)
 	sceneuniforms.lightQuadraticAttenuation = 0.0f;
 
 	//Load values from cvars
-	m_system->getCVarTable()->getVarVector3D("lightColour", sceneuniforms.lightColour);
-	m_system->getCVarTable()->getVarVector3D("ambientColour", sceneuniforms.globalAmbientColour);
-
-	m_system->getCVarTable()->getVarFloat("attenConst", sceneuniforms.lightConstantAttenuation);
-	m_system->getCVarTable()->getVarFloat("attenLinear", sceneuniforms.lightLinearAttenuation);
-	m_system->getCVarTable()->getVarFloat("attenQuad", sceneuniforms.lightQuadraticAttenuation);
-
+	table->getVarVector3D("lightColour", sceneuniforms.lightColour);
+	table->getVarVector3D("ambientColour", sceneuniforms.globalAmbientColour);
+	table->getVarFloat("attenConst", sceneuniforms.lightConstantAttenuation);
+	table->getVarFloat("attenLinear", sceneuniforms.lightLinearAttenuation);
+	table->getVarFloat("attenQuad", sceneuniforms.lightQuadraticAttenuation);
 
 	sceneuniforms.init();
 
@@ -567,6 +525,32 @@ void Application::onUpdate(double dt)
 	
 	m_context->resourceBufferUpdate(m_sceneBuffer.getBuffer(), &sceneuniforms);
 
+	//Draw skybox
+	{
+		SRenderCommand command;
+
+		command.renderTarget[0] = defaultrendertarget;
+		command.depthTarget = m_depthTarget;
+		command.viewport.w = rendercfg.width;
+		command.viewport.h = rendercfg.height;
+		command.viewport.x = 0;
+		command.viewport.y = 0;
+
+		command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
+		command.shaders.stageVertex = m_skyboxVertexShader.getShader();
+		command.shaders.stagePixel = m_skyboxPixelShader.getShader();
+		command.vertexTopology = EVertexTopology::eTopologyTriangleList;
+
+		command.vertexCount = 6;
+		command.vertexStart = 0;
+
+		command.textures[0] = m_skybox.getView();
+		command.textureSamplers[0] = m_texSampler;
+
+		m_context->execute(command);
+	}
+
+
 	//Draw model
 	{
 		SRenderCommand command;
@@ -620,8 +604,28 @@ void Application::onUpdate(double dt)
 			command.indexStart = mesh.indexOffset;
 			command.indexCount = mesh.indexCount;
 			command.vertexBase = mesh.vertexBase;
+			
+			//Update material buffer	
+			SMaterial::SParams params = mesh.material.params;
 
-			m_context->resourceBufferUpdate(m_materialBuffer.getBuffer(), (const void*)&mesh.material.params);
+			//Get global cvars for enabling different maps
+			bool use = 1;
+			table->getVarBool("useDiffMap", use);
+			params.useDiffuseMap *= use;
+			
+			use = 1;
+			table->getVarBool("useNormMap", use);
+			params.useNormalMap *= use;
+			
+			use = 1;
+			table->getVarBool("useDispMap", use);
+			params.useDisplacementMap *= use;
+			
+			use = 1;
+			table->getVarBool("useSpecMap", use);
+			params.useSpecularMap *= use;
+			
+			m_context->resourceBufferUpdate(m_materialBuffer.getBuffer(), (const void*)&params);
 
 			//Execute draw call
 			m_context->execute(command);
@@ -714,6 +718,83 @@ void Application::buildDepthTarget()
 	depthviewdesc.arrayIndex = 0;
 	status = api->createViewDepthTarget(m_depthTarget, depthtargetrsc, depthviewdesc);
 	tsassert(!status);
+}
+
+void Application::buildVertexInputDescriptor(vector<SShaderInputDescriptor>& inputdescriptor, uint32 vertexFlags)
+{
+	inputdescriptor.clear();
+
+	//Position attribute
+	if (vertexFlags & eModelVertexAttributePosition)
+	{
+		SShaderInputDescriptor sid;
+		sid.bufferSlot = 0;
+		sid.byteOffset = VECTOR_OFFSET(0);
+		sid.channel = EShaderInputChannel::eInputPerVertex;
+		sid.semanticName = "POSITION";
+		sid.type = eShaderInputFloat4;
+		inputdescriptor.push_back(sid);
+	}
+
+	//Texcoord attribute
+	if (vertexFlags & eModelVertexAttributeTexcoord)
+	{
+		SShaderInputDescriptor sid;
+		sid.bufferSlot = 0;
+		sid.byteOffset = VECTOR_OFFSET(1);
+		sid.channel = EShaderInputChannel::eInputPerVertex;
+		sid.semanticName = "TEXCOORD";
+		sid.type = eShaderInputFloat2;
+		inputdescriptor.push_back(sid);
+	}
+
+	//Colour attribute
+	if (vertexFlags & eModelVertexAttributeColour)
+	{
+		SShaderInputDescriptor sid;
+		sid.bufferSlot = 0;
+		sid.byteOffset = VECTOR_OFFSET(2);
+		sid.channel = EShaderInputChannel::eInputPerVertex;
+		sid.semanticName = "COLOUR";
+		sid.type = eShaderInputFloat4;
+		inputdescriptor.push_back(sid);
+	}
+
+	//Normal attribute
+	if (vertexFlags & eModelVertexAttributeNormal)
+	{
+		SShaderInputDescriptor sid;
+		sid.bufferSlot = 0;
+		sid.byteOffset = VECTOR_OFFSET(3);
+		sid.channel = EShaderInputChannel::eInputPerVertex;
+		sid.semanticName = "NORMAL";
+		sid.type = eShaderInputFloat3;
+		inputdescriptor.push_back(sid);
+	}
+
+	//Tangent attribute
+	if (vertexFlags & eModelVertexAttributeTangent)
+	{
+		SShaderInputDescriptor sid;
+		sid.bufferSlot = 0;
+		sid.byteOffset = VECTOR_OFFSET(4);
+		sid.channel = EShaderInputChannel::eInputPerVertex;
+		sid.semanticName = "TANGENT";
+		sid.type = eShaderInputFloat3;
+		inputdescriptor.push_back(sid);
+	}
+	
+	//Bitangent attribute
+	if (vertexFlags & eModelVertexAttributeBitangent)
+	{
+		SShaderInputDescriptor sid;
+		sid.bufferSlot = 0;
+		sid.byteOffset = VECTOR_OFFSET(5);
+		sid.channel = EShaderInputChannel::eInputPerVertex;
+		sid.semanticName = "BITANGENT";
+		sid.type = eShaderInputFloat3;
+		inputdescriptor.push_back(sid);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

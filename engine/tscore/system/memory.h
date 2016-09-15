@@ -75,32 +75,25 @@ namespace ts
 
 		MemoryBuffer(size_t reserve)
 		{
-			if (m_data)
-			{
-				free(m_data);
-			}
-
-			m_data = malloc(reserve);
+			m_data = new byte[reserve];
 			m_size = reserve;
 		}
 
 		MemoryBuffer(const void* data, size_t size) :
 			m_size(size)
 		{
-			if (m_data = malloc(m_size)) {}
-			else
-				throw std::exception("malloc failed to allocate enough memory");
-			
+			m_data = new byte[m_size];
 			memcpy_s(m_data, m_size, data, size);
 		}
 
 		explicit MemoryBuffer(const MemoryBuffer& copy)
 		{
-			if (m_data) free(m_data);
+			if (m_data)
+				delete[] m_data;
 
 			m_size = copy.m_size;
 
-			if (m_data = malloc(m_size)) {}
+			if (m_data = new byte[m_size]) {}
 			else
 				throw std::exception("malloc failed to allocate enough memory");
 
@@ -118,11 +111,12 @@ namespace ts
 
 		MemoryBuffer& operator=(const MemoryBuffer& copy)
 		{
-			if (m_data) free(m_data);
+			if (m_data)
+				delete[] m_data;
 
 			m_size = copy.m_size;
 
-			if (m_data = malloc(m_size)) {}
+			if (m_data = new byte[m_size]) {}
 			else
 				throw std::exception("malloc failed to allocate enough memory");
 
@@ -144,7 +138,8 @@ namespace ts
 
 		~MemoryBuffer()
 		{
-			if (m_data) free(m_data);
+			if (m_data)
+				delete[] m_data;
 		}
 	};
 
