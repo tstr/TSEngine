@@ -16,6 +16,8 @@
 #include "scene/camera.h"
 #include "scene/modelimporter.h"
 
+#include "ui/ui.h"
+
 using namespace ts;
 using namespace std;
 
@@ -161,7 +163,10 @@ void Application::onInit(CEngineSystem* system)
 	m_system->getInputModule()->addEventListener(this);
 	m_system->getWindow()->addEventListener(this);
 
-	//m_system->getInputModule()->showCursor(false);
+	m_ui.reset(new CUIModule(
+		m_system->getInputModule(),
+		m_system->getRenderModule()
+	));
 	
 	m_camera.reset(new CCamera(m_system->getInputModule()));
 	m_camera->setPosition(Vector(0, 1.0f, 0));
@@ -272,12 +277,6 @@ void Application::onInit(CEngineSystem* system)
 
 	m_model.reset(new CModel(m_system->getRenderModule(), modelfile));
 	m_sphere.reset(new CModel(m_system->getRenderModule(), spherefile));
-
-	uint8 vertexAttribs = 0;
-	for (uint x = 0; x < m_model->getMeshCount(); x++)
-	{
-		vertexAttribs |= m_model->getMesh(x).vertexAttributes;
-	}
 	
 	m_materialBuffer = CUniformBuffer(m_system->getRenderModule(), SMaterial::SParams());
 	m_sceneBuffer = CUniformBuffer(m_system->getRenderModule(), SUniforms());
@@ -438,6 +437,12 @@ void Application::onUpdate(double dt)
 	ResourceProxy defaultrendertarget;
 	api->getWindowRenderTarget(defaultrendertarget);
 
+	Viewport viewport;
+	viewport.x = 0;
+	viewport.y = 0;
+	viewport.w = rendercfg.width;
+	viewport.h = rendercfg.height;
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	//Shadow pass
 	/////////////////////////////////////////////////////////////////////////////////////////////////
@@ -529,12 +534,12 @@ void Application::onUpdate(double dt)
 	{
 		SRenderCommand command;
 
+		//Clear the depth buffer
+		m_context->clearDepthTarget(m_depthTarget, 1.0f);
+
 		command.renderTarget[0] = defaultrendertarget;
 		command.depthTarget = m_depthTarget;
-		command.viewport.w = rendercfg.width;
-		command.viewport.h = rendercfg.height;
-		command.viewport.x = 0;
-		command.viewport.y = 0;
+		command.viewport = viewport;
 
 		command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
 		command.shaders.stageVertex = m_skyboxVertexShader.getShader();
@@ -561,10 +566,7 @@ void Application::onUpdate(double dt)
 		//Fill out render command
 		command.renderTarget[0] = defaultrendertarget;
 		command.depthTarget = m_depthTarget;
-		command.viewport.w = rendercfg.width;
-		command.viewport.h = rendercfg.height;
-		command.viewport.x = 0;
-		command.viewport.y = 0;
+		command.viewport = viewport;
 
 		command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
 		command.uniformBuffers[1] = m_materialBuffer.getBuffer();
@@ -638,10 +640,7 @@ void Application::onUpdate(double dt)
 
 		command.renderTarget[0] = defaultrendertarget;
 		command.depthTarget = m_depthTarget;
-		command.viewport.w = rendercfg.width;
-		command.viewport.h = rendercfg.height;
-		command.viewport.x = 0;
-		command.viewport.y = 0;
+		command.viewport = viewport;
 
 		//Sphere
 		const SMesh& mesh = m_sphere->getMesh(0);
@@ -674,6 +673,32 @@ void Application::onUpdate(double dt)
 
 		m_context->execute(command);
 	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	//Draw user interfaec
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+
+	m_ui->setDisplaySize(rendercfg.width, rendercfg.height);
+
+	m_ui->begin(m_context, dt);
+
+	{
+		Vector lightcolour;
+		Vector ambientcolour;
+
+		table->getVarVector3D("lightcolour", lightcolour);
+		table->getVarVector3D("ambientcolour", ambientcolour);
+
+		ImGui::Text("Scene Variables");
+		ImGui::ColorEdit3("light colour", (float*)&lightcolour);
+		ImGui::ColorEdit3("ambient colour", (float*)&ambientcolour);
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+		table->setVar("lightcolour", lightcolour);
+		table->setVar("ambientcolour", ambientcolour);
+	}
+
+	m_ui->end(defaultrendertarget);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -14,6 +14,7 @@ namespace ts
 {
 	class CCamera;
 	class CModel;
+	class CUIModule;
 
 	class Application :
 		public IApplication,
@@ -27,6 +28,7 @@ namespace ts
 		UniquePtr<CCamera> m_camera;
 		UniquePtr<CModel> m_model;
 		UniquePtr<CModel> m_sphere;
+		UniquePtr<CUIModule> m_ui;
 
 		IRenderContext* m_context = nullptr;
 

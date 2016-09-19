@@ -137,12 +137,55 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	setWindowDimensions(cfg.resolutionWidth, cfg.resolutionHeight);
 
+	//////////////////////////////////////////////////////////////////////////////////////////////
+
 	//Create the new render target view
 	ComPtr<ID3D11Texture2D> backbuffer;
 	hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());
 	tsassert(SUCCEEDED(hr));
 	hr = m_device->CreateRenderTargetView(backbuffer.Get(), nullptr, m_swapChainRenderTarget.GetAddressOf());
 	tsassert(SUCCEEDED(hr));
+
+	//States
+	{
+		D3D11_BLEND_DESC desc;
+		ZeroMemory(&desc, sizeof(desc));
+		desc.AlphaToCoverageEnable = false;
+		desc.RenderTarget[0].BlendEnable = true;
+		desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+		desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		m_device->CreateBlendState(&desc, m_blendState.GetAddressOf());
+	}
+
+	{
+		D3D11_DEPTH_STENCIL_DESC desc;
+		ZeroMemory(&desc, sizeof(desc));
+		desc.DepthEnable = false;
+		desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+		desc.StencilEnable = false;
+		desc.FrontFace.StencilFailOp = desc.FrontFace.StencilDepthFailOp = desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		desc.BackFace = desc.FrontFace;
+		m_device->CreateDepthStencilState(&desc, m_depthStencilState.GetAddressOf());
+	}
+
+	{
+		D3D11_RASTERIZER_DESC desc;
+		ZeroMemory(&desc, sizeof(desc));
+		desc.FillMode = D3D11_FILL_SOLID;
+		desc.CullMode = D3D11_CULL_NONE;
+		desc.ScissorEnable = true;
+		desc.DepthClipEnable = true;
+		m_device->CreateRasterizerState(&desc, m_rasterizerState.GetAddressOf());
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 DX11RenderApi::~DX11RenderApi()
@@ -973,6 +1016,8 @@ ERenderStatus DX11RenderApi::createShaderInputDescriptor(ResourceProxy& rsc, con
 			case eShaderInputFloat4: { desc[i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break; }
 			case eShaderInputInt32: { desc[i].Format = DXGI_FORMAT_R32_SINT; break; }
 			case eShaderInputUint32: { desc[i].Format = DXGI_FORMAT_R32_UINT; break; }
+			case eShaderInputRGB: {}
+			case eShaderInputRGBA: { desc[i].Format = DXGI_FORMAT_R8G8B8A8_UNORM; break; }
 			default: { desc[i].Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN; }
 		}
 

@@ -48,7 +48,7 @@ public:
 
 DX11ShaderCompiler::DX11ShaderCompiler()
 {
-	char lib[] = "d3dcompiler_47.dll";
+	char lib[] = D3DCOMPILER_DLL_A;
 	m_d3dcompiler = LoadLibraryA(lib);
 
 	if (!m_d3dcompiler)

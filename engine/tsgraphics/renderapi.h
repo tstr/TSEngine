@@ -258,6 +258,8 @@ namespace ts
 		eShaderInputMatrix,
 		eShaderInputInt32,
 		eShaderInputUint32,
+		eShaderInputRGBA,
+		eShaderInputRGB
 	};
 
 	enum EShaderInputChannel
@@ -371,6 +373,7 @@ namespace ts
 		ResourceProxy renderTarget[EResourceLimits::eMaxRenderTargets];
 		
 		Viewport viewport;
+		Viewport scissor;
 
 		SShaderProgram shaders;
 		ResourceProxy textures[EResourceLimits::eMaxTextureSlots];

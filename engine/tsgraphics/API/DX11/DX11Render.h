@@ -32,6 +32,10 @@ namespace ts
 			ComPtr<ID3D11Device> m_device;
 			ComPtr<ID3D11DeviceContext> m_immediateContext;
 
+			ComPtr<ID3D11BlendState> m_blendState;
+			ComPtr<ID3D11RasterizerState> m_rasterizerState;
+			ComPtr<ID3D11DepthStencilState> m_depthStencilState;
+
 			ComPtr<ID3D11RenderTargetView> m_swapChainRenderTarget;
 
 			std::atomic<uint32> m_cachedRes;
@@ -44,6 +48,10 @@ namespace ts
 			~DX11RenderApi();
 
 			ComPtr<ID3D11Device> getDevice() const { return m_device; }
+
+			ComPtr<ID3D11BlendState> getBlendState() const { return m_blendState; }
+			ComPtr<ID3D11RasterizerState> getRasterizerState() const { return m_rasterizerState; }
+			ComPtr<ID3D11DepthStencilState> getDepthStencilState() const { return m_depthStencilState; }
 
 			//Resource creation methods
 

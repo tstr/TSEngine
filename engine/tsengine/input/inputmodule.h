@@ -45,6 +45,8 @@ namespace ts
 		CInputModule(CWindow* window);
 		~CInputModule();
 
+		CWindow* getWindow() const { return m_window; }
+
 		void showCursor(bool show);
 		void getCursorPos(int16& x, int16& y);
 		void setCursorPos(int16 x, int16 y);

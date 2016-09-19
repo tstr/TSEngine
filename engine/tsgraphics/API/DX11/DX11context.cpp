@@ -73,6 +73,31 @@ void DX11RenderContext::execute(const SRenderCommand& command)
 	viewport.Height = (FLOAT)command.viewport.h;
 	m_context->RSSetViewports(1, &viewport);
 
+	if (command.scissor.x || command.scissor.y || command.scissor.w || command.scissor.h)
+	{
+		D3D11_RECT scissorrect;
+		scissorrect.top = command.scissor.y;
+		scissorrect.left = command.scissor.x;
+		scissorrect.bottom = command.scissor.h;
+		scissorrect.right = command.scissor.w;
+		m_context->RSSetScissorRects(1, &scissorrect);
+	}
+	else
+	{
+		D3D11_RECT scissorrect;
+		scissorrect.top = 0;
+		scissorrect.left = 0;
+		scissorrect.bottom = command.viewport.h;
+		scissorrect.right = command.viewport.w;
+		m_context->RSSetScissorRects(1, &scissorrect);
+	}
+
+	//Bind states
+	const float blendfactor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	m_context->OMSetBlendState(m_api->getBlendState().Get(), blendfactor, UINT_MAX);
+	//m_context->OMSetDepthStencilState(m_api->getDepthStencilState().Get(), 0);
+	//m_context->RSSetState(m_api->getRasterizerState().Get());
+	
 	//Bind shaders
 	auto vshader = DX11Shader::upcast(command.shaders.stageVertex.get());
 	auto pshader = DX11Shader::upcast(command.shaders.stagePixel.get());
@@ -214,6 +239,10 @@ void DX11RenderContext::resourceBufferUpdate(const ResourceProxy& rsc, const voi
 	{
 		m_context->UpdateSubresource(buffer->get(), 0, nullptr, memory, 0, 0);
 	}
+	else
+	{
+		tswarn("unable to update buffer");
+	}
 }
 
 void DX11RenderContext::resourceBufferCopy(const ResourceProxy& src, ResourceProxy& dest)
@@ -225,6 +254,10 @@ void DX11RenderContext::resourceBufferCopy(const ResourceProxy& src, ResourcePro
 	{
 		m_context->CopyResource(bufferdest->get(), buffersrc->get());
 	}
+	else
+	{
+		tswarn("unable to copy buffers");
+	}
 }
 
 void DX11RenderContext::resourceTextureUpdate(uint32 index, ResourceProxy& rsc, const void* memory)
@@ -234,6 +267,10 @@ void DX11RenderContext::resourceTextureUpdate(uint32 index, ResourceProxy& rsc, 
 	if (texture)
 	{
 		m_context->UpdateSubresource(texture->get(), index, nullptr, memory, 0, 0);
+	}
+	else
+	{
+		tswarn("unable to update texture");
 	}
 }
 
@@ -246,6 +283,10 @@ void DX11RenderContext::resourceTextureCopy(const ResourceProxy& src, ResourcePr
 	{
 		m_context->CopyResource(texdest->get(), texsrc->get());
 	}
+	else
+	{
+		tswarn("unable to copy textures");
+	}
 }
 
 void DX11RenderContext::resourceTextureResolve(const ResourceProxy& src, ResourceProxy& dest)
@@ -256,6 +297,10 @@ void DX11RenderContext::resourceTextureResolve(const ResourceProxy& src, Resourc
 	if (texsrc && texdest)
 	{
 		m_context->ResolveSubresource(texdest->get(), 0, texsrc->get(), 0, DXGI_FORMAT_UNKNOWN);
+	}
+	else
+	{
+		tswarn("unable to resolve textures");
 	}
 }
 

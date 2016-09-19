@@ -15,6 +15,15 @@ SET(src_list
 	helpers/geometry.h
 	helpers/appinfo.h
 	helpers/appinfo.cpp
+
+	ui/ui.h
+	ui/ui.cpp
+	ui/ui_draw.cpp
+	ui/imgui/imconfig.h
+	ui/imgui/imgui.h
+	ui/imgui/imgui.cpp
+	ui/imgui/imgui_draw.cpp
+	ui/imgui/imgui_internal.h
 )
 
 ADD_EXECUTABLE(
