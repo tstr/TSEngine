@@ -14,6 +14,7 @@
 #include "Window.h"
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
+#include <tscore/system/thread.h>
 
 #define USE_VISUAL_STYLES
 
@@ -90,6 +91,7 @@ public:
 		m_windowEvents[EWindowEvent::eEventDraw] = WM_PAINT;
 		m_windowEvents[EWindowEvent::eEventSetfocus] = WM_SETFOCUS;
 		m_windowEvents[EWindowEvent::eEventKillfocus] = WM_KILLFOCUS;
+		m_windowEvents[EWindowEvent::eEventChar] = WM_CHAR;
 		m_windowEvents[EWindowEvent::eEventKeydown] = WM_KEYDOWN;
 		m_windowEvents[EWindowEvent::eEventKeyup] = WM_KEYUP;
 		m_windowEvents[EWindowEvent::eEventScroll] = WM_MOUSEWHEEL;
@@ -135,6 +137,8 @@ struct CWindow::Impl
 	string windowTitle;
 
 	SWindowRect size;
+
+	mutex m_eventMutex;
 
 	vector<CWindow::IEventListener*> windowEventListeners;
 
@@ -204,7 +208,7 @@ struct CWindow::Impl
 			}
 
 			EWindowEvent code = EventCodes.GetWindowEventEnum(msg);
-			
+
 			//Only call the event listener for WM_* messages which have a corresponding EWindowEvent enum
 			if (code != EWindowEvent::eEventNull)
 			{
@@ -214,7 +218,11 @@ struct CWindow::Impl
 				args.a = lparam;
 				args.b = wparam;
 
-				for (CWindow::IEventListener* listener : wnd->windowEventListeners)
+				unique_lock<mutex> lk(wnd->m_eventMutex);
+				auto ls = wnd->windowEventListeners;
+				lk.unlock();
+
+				for (CWindow::IEventListener* listener : ls)
 				{
 					if (listener != nullptr)
 					{
@@ -310,14 +318,17 @@ CWindow::~CWindow()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//todo: actually make thread safe
 void CWindow::addEventListener(IEventListener* listener)
 {
+	lock_guard<mutex>lk(pImpl->m_eventMutex);
+
 	pImpl->windowEventListeners.push_back(listener);
 }
 
 void CWindow::removeEventListener(IEventListener* listener)
 {
+	lock_guard<mutex>lk(pImpl->m_eventMutex);
+
 	auto& listeners = pImpl->windowEventListeners;
 	auto it = find(listeners.begin(), listeners.end(), listener);
 

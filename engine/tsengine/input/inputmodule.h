@@ -19,12 +19,14 @@ namespace ts
 		virtual int onMouseUp(const SInputMouseEvent&) { return 0; }
 		virtual int onMouseScroll(const SInputMouseEvent&) { return 0; }
 
+		virtual int onChar(wchar c) { return 0; };
+
 		//virtual int onKeyPress(const SInputKeyEvent&) { return 0; }
 		virtual int onKeyDown(EKeyCode code) { return 0; }
 		virtual int onKeyUp(EKeyCode code) { return 0; }
 	};
 
-	class CInputModule
+	class CInputModule : public CWindow::IEventListener
 	{
 	private:
 
@@ -40,6 +42,8 @@ namespace ts
 		int m_mouseX = 0;
 		int m_mouseY = 0;
 
+		int onWindowEvent(const SWindowEventArgs& args) override;
+
 	public:
 		
 		CInputModule(CWindow* window);
@@ -50,8 +54,6 @@ namespace ts
 		void showCursor(bool show);
 		void getCursorPos(int16& x, int16& y);
 		void setCursorPos(int16 x, int16 y);
-
-		bool onWindowInputEvent(const SWindowEventArgs& args) { return m_device.onWindowInputEvent(args); }
 
 		bool addEventListener(IInputEventListener* listener);
 		bool removeEventListener(IInputEventListener* listener);

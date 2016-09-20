@@ -44,10 +44,10 @@ CInputDevice::CInputDevice(CWindow* window) :
 	//Raw input keyboard device
 	devices[1].usUsagePage = 0x01;
 	devices[1].usUsage = RAW_INPUT_DEVICE_ID_KEYBOARD;
-	devices[1].dwFlags = RIDEV_DEVNOTIFY | RIDEV_NOLEGACY; //Ignores WM_KEYDOWN/WM_KEYUP messages
+	devices[1].dwFlags = RIDEV_DEVNOTIFY;// | RIDEV_NOLEGACY; //Ignores WM_KEYDOWN/WM_KEYUP messages
 	devices[1].hwndTarget = hwnd;
 
-	if (!RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE)))
+	if (!RegisterRawInputDevices(devices, ARRAYSIZE(devices), sizeof(RAWINPUTDEVICE)))
 	{
 		tswarn("A raw input device could not be registered.");
 		return;

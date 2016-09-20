@@ -374,7 +374,8 @@ void Application::onUpdate(double dt)
 	Matrix view = m_camera->getViewMatrix();
 	Vector position = m_camera->getPosition();
 
-	if (m_mouseHeld)
+	//Check if mouse held and ui isn't capturing input
+	if (m_mouseHeld && !ImGui::GetIO().WantCaptureMouse)
 	{
 		int16 mousePosX = 0;
 		int16 mousePosY = 0;
@@ -675,7 +676,7 @@ void Application::onUpdate(double dt)
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
-	//Draw user interfaec
+	//Draw user interface
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
 	m_ui->setDisplaySize(rendercfg.width, rendercfg.height);
@@ -685,17 +686,58 @@ void Application::onUpdate(double dt)
 	{
 		Vector lightcolour;
 		Vector ambientcolour;
+		bool useDiffMap = false;
+		bool useNormMap = false;
+		bool useSpecMap = false;
+		bool useDispMap = false;
+
+		float attenConst = 0.0f;
+		float attenLinear = 0.0f;
+		float attenQuad = 0.0f;
 
 		table->getVarVector3D("lightcolour", lightcolour);
 		table->getVarVector3D("ambientcolour", ambientcolour);
 
-		ImGui::Text("Scene Variables");
-		ImGui::ColorEdit3("light colour", (float*)&lightcolour);
-		ImGui::ColorEdit3("ambient colour", (float*)&ambientcolour);
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		table->getVarBool("useDiffMap", useDiffMap);
+		table->getVarBool("useNormMap", useNormMap);
+		table->getVarBool("useSpecMap", useSpecMap);
+		table->getVarBool("useDispMap", useDispMap);
+
+		table->getVarFloat("attenConst", attenConst);
+		table->getVarFloat("attenLinear", attenLinear);
+		table->getVarFloat("attenQuad", attenQuad);
+
+		//Create dialog
+		ImGui::Begin("Debug");
+		{
+			ImGui::Text("Scene Variables");
+			ImGui::ColorEdit3("light colour", (float*)&lightcolour);
+			ImGui::ColorEdit3("ambient colour", (float*)&ambientcolour);
+
+			ImGui::Checkbox("enable diffuse mapping", &useDiffMap);
+			ImGui::Checkbox("enable normal mapping", &useNormMap);
+			ImGui::Checkbox("enable specular mapping", &useSpecMap);
+			ImGui::Checkbox("enable parallax occlusion mapping", &useDispMap);
+
+			ImGui::InputFloat("constant attenuation", &attenConst);
+			ImGui::InputFloat("linear attenuation", &attenLinear);
+			ImGui::InputFloat("quadratic attenuation", &attenQuad);
+
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		}
+		ImGui::End();
 
 		table->setVar("lightcolour", lightcolour);
 		table->setVar("ambientcolour", ambientcolour);
+
+		table->setVar("useDiffMap", useDiffMap);
+		table->setVar("useNormMap", useNormMap);
+		table->setVar("useSpecMap", useSpecMap);
+		table->setVar("useDispMap", useDispMap);
+
+		table->setVar("attenConst", attenConst);
+		table->setVar("attenLinear", attenLinear);
+		table->setVar("attenQuad", attenQuad);
 	}
 
 	m_ui->end(defaultrendertarget);
@@ -712,6 +754,8 @@ void Application::onUpdate(double dt)
 void Application::onExit()
 {
 	m_system->getRenderModule()->getApi()->destroyContext(m_context);
+	m_system->getWindow()->removeEventListener(this);
+	m_system->getInputModule()->removeEventListener(this);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

@@ -69,11 +69,6 @@ private:
 				}
 			}
 
-			if (auto input = m_wnd->m_pSystem->getInputModule())
-			{
-				input->onWindowInputEvent(args);
-			}
-
 			return 0;
 		}
 	} m_eventListener;

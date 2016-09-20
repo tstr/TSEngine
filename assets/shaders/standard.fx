@@ -193,7 +193,7 @@ PSoutput PS(PSinput input)
 		normal = normalize(mul(tangentNormal ,tbn));
 	}
 	
-	float4 colour = float4(texDiffuse.Sample(texSampler, texcoord).rgb, 1.0f);
+	float4 colour = ((1 - material.useDiffuseMap) * material.diffuseColour) + ((material.useDiffuseMap) * float4(texDiffuse.Sample(texSampler, texcoord).rgb, 1.0f));
 
 	float3 ldir = normalize(scene.lightPos - input.posw);
 	//float3 ldir = float3(0.1f, 0.4f, -0.4f);
@@ -208,20 +208,23 @@ PSoutput PS(PSinput input)
 	float3 ambient = scene.globalAmbientColour;
 	float3 diffuse = scene.lightColour * diffuseIntensity * attenuation * factor;
 
-	//Specular lighting
-	float3 reflection = normalize(2 * diffuseIntensity * normal - ldir); //Reflection Vector
-	
-	//Specular power value lies between 1 and 8192
-	float specularPower = ((1 - material.useSpecularMap) * material.specularPower) + ((material.useSpecularMap) * pow(2, 13.0f * min(texSpecular.Sample(texSampler, texcoord).r, 1.0f)));
-	//float specularPower = 128;
+	if (diffuseIntensity > 0.0f)
+	{
+		//Specular lighting
+		float3 reflection = normalize(2 * diffuseIntensity * normal - ldir); //Reflection Vector
+		
+		//Specular power value lies between 1 and 8192
+		float specularPower = ((1 - material.useSpecularMap) * material.specularPower) + ((material.useSpecularMap) * pow(2, 13.0f * min(texSpecular.Sample(texSampler, texcoord).r, 1.0f)));
+		//float specularPower = 128;
 
-	//Calculate specular factor, using Phong shading algorithm
-	float specularIntensity = pow(saturate(dot(reflection, -vdir)), specularPower) * attenuation * factor;
+		//Calculate specular factor, using Phong shading algorithm
+		float specularIntensity = pow(saturate(dot(reflection, -vdir)), specularPower) * attenuation * factor;
+		
+		specular = specularIntensity.xxx;
+	}
 	
-	specular = specularIntensity.xxx;
-
 	PSoutput output = (PSoutput)0;
-	output.colour = (colour * float4((ambient + diffuse + specular).rgb, 1.0f));
+	output.colour = (colour * float4((ambient + diffuse + specular), 1.0f));
 	return output;
 }
 

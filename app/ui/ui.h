@@ -26,6 +26,7 @@ namespace ts
 		int onMouseScroll(const SInputMouseEvent&) override;
 		int onKeyDown(EKeyCode code) override;
 		int onKeyUp(EKeyCode code) override;
+		int onChar(wchar ch) override;
 
 		//Graphics resources
 		ResourceProxy m_textureAtlasRsc;

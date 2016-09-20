@@ -20,11 +20,12 @@ CInputModule::CInputModule(CWindow* window) :
 	m_device(window)
 {
 	m_device.setInputCallback(CInputDevice::Callback::fromMethod<CInputModule, &CInputModule::inputLayerCallback>(this));
+	m_window->addEventListener(this);
 }
 
 CInputModule::~CInputModule()
 {
-
+	m_window->removeEventListener(this);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +55,26 @@ bool CInputModule::removeEventListener(IInputEventListener* listener)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Window event handler
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+int CInputModule::onWindowEvent(const SWindowEventArgs& args)
+{
+	if (args.eventcode == EWindowEvent::eEventChar)
+	{
+		if (args.b > 0 && args.b < 0x10000)
+			for (auto& l : m_eventListeners)
+				l->onChar((unsigned short)args.b);
+	}
+	else if (args.eventcode == EWindowEvent::eEventInput)
+	{
+		m_device.onWindowInputEvent(args);
+	}
+
+	return 0;
+}
+
+//Input device callback
 void CInputModule::inputLayerCallback(const SInputEvent& event)
 {
 	if (event.type == EInputEventType::eInputEventMouse)

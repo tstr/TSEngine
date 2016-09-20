@@ -253,7 +253,7 @@ CKeyTable::CKeyTable()
 
 	//Arrow keys
 	m_keys[EKeyCode::eKeyArrowUp] = vk_Up;
-	m_keys[EKeyCode::eKeyArrorDown] = vk_Down;
+	m_keys[EKeyCode::eKeyArrowDown] = vk_Down;
 	m_keys[EKeyCode::eKeyArrowLeft] = vk_Left;
 	m_keys[EKeyCode::eKeyArrowRight] = vk_Right;
 
@@ -376,7 +376,7 @@ CKeyTable::CKeyTable()
 
 	//Arrow keys
 	m_keyStrings[EKeyCode::eKeyArrowUp] = "UP";
-	m_keyStrings[EKeyCode::eKeyArrorDown] = "DOWN";
+	m_keyStrings[EKeyCode::eKeyArrowDown] = "DOWN";
 	m_keyStrings[EKeyCode::eKeyArrowLeft] = "LEFT";
 	m_keyStrings[EKeyCode::eKeyArrowRight] = "RIGHT";
 
@@ -402,7 +402,7 @@ CKeyTable::CKeyTable()
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-bool CKeyTable::getKeyName(EKeyCode code, KeyName& name)
+bool CKeyTable::getKeyName(EKeyCode code, KeyName& name) const
 {
 	if (code > EKeyCode::KeyEnumMax)
 		return false;
@@ -412,7 +412,7 @@ bool CKeyTable::getKeyName(EKeyCode code, KeyName& name)
 	return true;
 }
 
-EKeyCode CKeyTable::mapFromVirtualKey(uint32 code)
+EKeyCode CKeyTable::mapFromVirtualKey(uint32 code) const
 {
 	for (int i = 0; i < EKeyCode::KeyEnumMax; i++)
 	{
@@ -425,7 +425,7 @@ EKeyCode CKeyTable::mapFromVirtualKey(uint32 code)
 	return EKeyCode::eKeyUnknown;
 }
 
-uint32 CKeyTable::mapToVirtualKey(EKeyCode code)
+uint32 CKeyTable::mapToVirtualKey(EKeyCode code) const
 {
 	if (code > EKeyCode::KeyEnumMax)
 		return 0;

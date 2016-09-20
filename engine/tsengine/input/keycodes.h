@@ -113,7 +113,7 @@ namespace ts
 		eKeyPageDown,
 
 		eKeyArrowUp,
-		eKeyArrorDown,
+		eKeyArrowDown,
 		eKeyArrowLeft,
 		eKeyArrowRight,
 
@@ -148,9 +148,9 @@ namespace ts
 		CKeyTable();
 		~CKeyTable() {}
 
-		bool getKeyName(EKeyCode code, KeyName& name);
-		EKeyCode mapFromVirtualKey(uint32 vk);
-		uint32 mapToVirtualKey(EKeyCode code);
+		bool getKeyName(EKeyCode code, KeyName& name) const;
+		EKeyCode mapFromVirtualKey(uint32 vk) const;
+		uint32 mapToVirtualKey(EKeyCode code) const;
 
 	private:
 

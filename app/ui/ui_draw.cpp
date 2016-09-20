@@ -212,6 +212,8 @@ void CUIModule::draw(IRenderContext* context, ResourceProxy rendertarget, Viewpo
 	command.textureSamplers[0] = m_textureAtlasSampler;
 	command.uniformBuffers[0] = m_uniformBuffer.getBuffer();
 
+	command.alphaBlending = true;
+
 	// Render command lists
 	int vtx_offset = 0;
 	int idx_offset = 0;

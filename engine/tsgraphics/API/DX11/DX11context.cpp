@@ -93,8 +93,17 @@ void DX11RenderContext::execute(const SRenderCommand& command)
 	}
 
 	//Bind states
-	const float blendfactor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	m_context->OMSetBlendState(m_api->getBlendState().Get(), blendfactor, UINT_MAX);
+	if (command.alphaBlending)
+	{
+		const float blendfactor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		m_context->OMSetBlendState(m_api->getBlendState().Get(), blendfactor, UINT_MAX);
+	}
+	else
+	{
+		const float blendfactor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		m_context->OMSetBlendState(nullptr, nullptr, UINT_MAX);
+	}
+	
 	//m_context->OMSetDepthStencilState(m_api->getDepthStencilState().Get(), 0);
 	//m_context->RSSetState(m_api->getRasterizerState().Get());
 	

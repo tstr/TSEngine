@@ -23,6 +23,7 @@ namespace ts
 		eEventDraw,
 		eEventSetfocus,
 		eEventKillfocus,
+		eEventChar,
 		eEventKeydown,
 		eEventKeyup,
 		eEventScroll,

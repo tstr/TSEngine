@@ -396,6 +396,8 @@ namespace ts
 		EVertexTopology vertexTopology = EVertexTopology::eTopologyUnknown;
 		ResourceProxy vertexInputDescriptor;
 
+		bool alphaBlending = false;
+
 		ERenderCommandFlag flags;
 	};
 

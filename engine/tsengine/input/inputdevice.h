@@ -83,5 +83,6 @@ namespace ts
 		
 		bool onWindowInputEvent(const SWindowEventArgs& args);
 
+		const CKeyTable& getKeyTable() const { return m_keyTable; }
 	};
 }
