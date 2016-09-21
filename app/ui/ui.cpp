@@ -31,7 +31,7 @@ CUIModule::CUIModule(CInputModule* inputmodule, CRenderModule* rendermodule) :
 	//Load font
 	ImGuiIO& io = ImGui::GetIO();
 	io.ImeWindowHandle = (void*)m_inputmodule->getWindow()->handle();
-	io.Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\verdana.ttf", 13.0f);
+	io.Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\verdana.ttf", 14.0f);
 	//io.Fonts->AddFontDefault();
 
 	//Imgui key map

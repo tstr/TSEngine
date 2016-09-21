@@ -203,7 +203,7 @@ PSoutput PS(PSinput input)
 	float attenuation = ComputeAttenuation(scene.lightConstantAttenuation, scene.lightLinearAttenuation, scene.lightQuadraticAttenuation, distance);
 	
 	//Diffuse lighting
-	float diffuseIntensity = dot(normalize(normal), ldir);
+	float diffuseIntensity = saturate(dot(normalize(normal), ldir));
 	float3 specular = float3(0, 0, 0);
 	float3 ambient = scene.globalAmbientColour;
 	float3 diffuse = scene.lightColour * diffuseIntensity * attenuation * factor;

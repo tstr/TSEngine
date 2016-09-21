@@ -90,15 +90,17 @@ void CUIModule::init()
 
 	tsassert(!m_rendermodule->getApi()->createShaderInputDescriptor(m_vertexInput, m_vertexShader.getShader(), inputdesc, 3));
 
-	//Create uniform buffer;
+	//Create buffers
 	Matrix matrix;
 	m_uniformBuffer = CUniformBuffer(m_rendermodule, matrix);
 
-	ImDrawIdx ibuf[10000] = {};
-	ImDrawVert vbuf[5000] = {};
+	m_vertexBufferSize = 10000;
+	m_indexBufferSize = 5000;
+	m_cpuIndexBuffer = new ImDrawIdx[m_indexBufferSize];
+	m_cpuVertexBuffer = new ImDrawVert[m_vertexBufferSize];
 
-	m_vertexBuffer = CVertexBuffer(m_rendermodule, vbuf, ARRAYSIZE(vbuf));
-	m_indexBuffer = CIndexBuffer(m_rendermodule, ibuf, ARRAYSIZE(ibuf));
+	m_vertexBuffer = CVertexBuffer(m_rendermodule, m_cpuVertexBuffer, m_vertexBufferSize);
+	m_indexBuffer = CIndexBuffer(m_rendermodule, m_cpuIndexBuffer, m_indexBufferSize);
 
 	auto api = m_rendermodule->getApi();
 
@@ -154,11 +156,23 @@ void CUIModule::draw(IRenderContext* context, ResourceProxy rendertarget, Viewpo
 {
 	ImDrawData* drawData = ImGui::GetDrawData();
 
-	ImDrawIdx ibuf[10000] = {};
-	ImDrawVert vbuf[5000] = {};
+	if ((uint32)drawData->TotalIdxCount > m_indexBufferSize)
+	{
+		m_indexBufferSize = drawData->TotalIdxCount;
+		delete[] m_cpuIndexBuffer;
+		m_cpuIndexBuffer = new ImDrawIdx[m_indexBufferSize];
+		m_indexBuffer = CIndexBuffer(m_rendermodule, m_cpuIndexBuffer, m_indexBufferSize);
+	}
+	if ((uint32)drawData->TotalVtxCount > m_vertexBufferSize)
+	{
+		m_vertexBufferSize = drawData->TotalVtxCount;
+		delete[] m_cpuVertexBuffer;
+		m_cpuVertexBuffer = new ImDrawVert[m_vertexBufferSize];
+		m_vertexBuffer = CVertexBuffer(m_rendermodule, m_cpuVertexBuffer, m_vertexBufferSize);
+	}
 
-	ImDrawVert* vbuf_ptr = vbuf;
-	ImDrawIdx* ibuf_ptr = ibuf;
+	ImDrawVert* vbuf_ptr = m_cpuVertexBuffer;
+	ImDrawIdx* ibuf_ptr = m_cpuIndexBuffer;
 	for (int n = 0; n < drawData->CmdListsCount; n++)
 	{
 		const ImDrawList* cmd_list = drawData->CmdLists[n];
@@ -168,8 +182,8 @@ void CUIModule::draw(IRenderContext* context, ResourceProxy rendertarget, Viewpo
 		ibuf_ptr += cmd_list->IdxBuffer.Size;
 	}
 	//Update vertex/index buffers
-	context->resourceBufferUpdate(m_vertexBuffer.getBuffer(), vbuf);
-	context->resourceBufferUpdate(m_indexBuffer.getBuffer(), ibuf);
+	context->resourceBufferUpdate(m_vertexBuffer.getBuffer(), m_cpuVertexBuffer);
+	context->resourceBufferUpdate(m_indexBuffer.getBuffer(), m_cpuIndexBuffer);
 
 	//Update orthographics projection matrix
 	float L = 0.0f;
@@ -259,6 +273,12 @@ void CUIModule::destroy()
 	m_uniformBuffer = CUniformBuffer();
 	m_vertexBuffer = CVertexBuffer();
 	m_indexBuffer = CIndexBuffer();
+
+	if (m_cpuVertexBuffer) delete[] m_cpuVertexBuffer;
+	if (m_cpuIndexBuffer) delete[] m_cpuIndexBuffer;
+
+	m_cpuVertexBuffer = nullptr;
+	m_cpuIndexBuffer = nullptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

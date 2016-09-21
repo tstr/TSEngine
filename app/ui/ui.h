@@ -4,10 +4,7 @@
 
 #pragma once
 
-#include <tsengine/platform/window.h>
-#include <tsengine/input/inputmodule.h>
-#include <tsgraphics/rendermodule.h>
-
+#include "../application.h"
 #include "imgui/imgui.h"
 
 namespace ts
@@ -40,6 +37,11 @@ namespace ts
 		CUniformBuffer m_uniformBuffer;
 		CVertexBuffer m_vertexBuffer;
 		CIndexBuffer m_indexBuffer;
+
+		uint32 m_vertexBufferSize = 0;
+		uint32 m_indexBufferSize = 0;
+		ImDrawIdx* m_cpuIndexBuffer = nullptr;
+		ImDrawVert* m_cpuVertexBuffer = nullptr;
 
 		uint32 m_height = 0;
 		uint32 m_width = 0;

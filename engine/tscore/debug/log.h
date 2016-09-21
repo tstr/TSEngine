@@ -53,6 +53,7 @@ namespace ts
 	public:
 
 		CLog() {}
+		~CLog() {}
 
 		void operator()(
 			const SLogMessage& msg

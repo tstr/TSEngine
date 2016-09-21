@@ -24,6 +24,11 @@ SET(src_list
 	ui/imgui/imgui.cpp
 	ui/imgui/imgui_draw.cpp
 	ui/imgui/imgui_internal.h
+
+	ui/debugmenu.h
+	ui/debugmenu.cpp
+	ui/commandconsole.h
+	ui/commandconsole.cpp
 )
 
 ADD_EXECUTABLE(

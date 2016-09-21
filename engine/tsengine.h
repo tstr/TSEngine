@@ -69,9 +69,8 @@ namespace ts
 		void onInit();
 
 		int run();
-		void consoleCommands();
 
-		mutex m_exitMutex;
+		std::recursive_mutex m_exitMutex;
 
 	public:
 	

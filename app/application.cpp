@@ -17,6 +17,10 @@
 #include "scene/modelimporter.h"
 
 #include "ui/ui.h"
+#include "ui/commandconsole.h"
+#include "ui/debugmenu.h"
+
+#include <tscore/system/info.h>
 
 using namespace ts;
 using namespace std;
@@ -52,10 +56,21 @@ int Application::onWindowEvent(const SWindowEventArgs& args)
 
 int Application::onKeyDown(EKeyCode code)
 {
-	if (code == EKeyCode::eKeyEsc)
+	switch (code)
+	{
+	case EKeyCode::eKeyEsc:
 		m_system->shutdown();
-	else if (code == EKeyCode::eKeyY)
+		break;
+	case EKeyCode::eKeyY:
 		m_simulation = !m_simulation;
+		break;
+	case EKeyCode::eKeyTab:
+		m_showUI = !m_showUI;
+		break;
+	case EKeyCode::eKeyGrave:
+		m_showConsole = !m_showConsole;
+		break;
+	}
 
 	return 0;
 }
@@ -154,22 +169,74 @@ struct SUniforms
 void Application::onInit(CEngineSystem* system)
 {
 	m_system = system;
-	
-	//Print basic information
-	printRepositoryInfo();
-	printSystemInfo();
 
 	//Register event listeners
 	m_system->getInputModule()->addEventListener(this);
 	m_system->getWindow()->addEventListener(this);
 
+	//Initialize UI
 	m_ui.reset(new CUIModule(
 		m_system->getInputModule(),
 		m_system->getRenderModule()
 	));
 	
+	m_consoleMenu.reset(new UICommandConsole(this));
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	//Console commands
+	m_consoleMenu->setCommand("exit", [&](const SCommandConsoleCallbackArgs& args) { m_system->shutdown(); });
+	m_consoleMenu->setCommand("listvars", [&](const SCommandConsoleCallbackArgs& args)
+	{
+		CVarTable::CVarArray array;
+		m_system->getCVarTable()->getVarArray(array);
+		for (auto& s : array)
+		{
+			tsinfo("% = %", s.name, s.value);
+		}
+	});
+
+	m_consoleMenu->setCommand("setvar", [&](const SCommandConsoleCallbackArgs& args)
+	{
+		string commandargs = trim(args.params);
+		size_t pos = commandargs.find_first_of(' ');
+
+		if (pos == string::npos)
+		{
+			tswarn("a value must be specified");
+		}
+		else
+		{
+			string cvar(commandargs.substr(0, pos));
+			string cval(commandargs.substr(pos));
+			m_system->getCVarTable()->setVar(cvar.c_str(), cval.c_str());
+		}
+	});
+
+	m_consoleMenu->setCommand("getvar", [&](const SCommandConsoleCallbackArgs& args)
+	{
+		string commandargs = trim(args.params);
+		string val;
+		if (m_system->getCVarTable()->isVar(commandargs))
+		{
+			m_system->getCVarTable()->getVarString(commandargs.c_str(), val);
+			tsinfo(val);
+		}
+		else
+		{
+			tswarn("cvar '%' does not exist", commandargs);
+		}
+	});
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+
+	//Set up scene camera
 	m_camera.reset(new CCamera(m_system->getInputModule()));
 	m_camera->setPosition(Vector(0, 1.0f, 0));
+
+
+	//Print basic information
+	printRepositoryInfo();
+	printSystemInfo();
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -355,8 +422,11 @@ void Application::onUpdate(double dt)
 	auto table = m_system->getCVarTable();
 
 	//Update camera
-	m_camera->setAspectRatio((float)rendercfg.width / rendercfg.height);
-	m_camera->update(dt);
+	if (!ImGui::GetIO().WantTextInput)
+	{
+		m_camera->setAspectRatio((float)rendercfg.width / rendercfg.height);
+		m_camera->update(dt);
+	}
 
 	float scale = 0.1f;
 
@@ -679,68 +749,110 @@ void Application::onUpdate(double dt)
 	//Draw user interface
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
-	m_ui->setDisplaySize(rendercfg.width, rendercfg.height);
-
-	m_ui->begin(m_context, dt);
-
+	if (m_showUI)
 	{
-		Vector lightcolour;
-		Vector ambientcolour;
-		bool useDiffMap = false;
-		bool useNormMap = false;
-		bool useSpecMap = false;
-		bool useDispMap = false;
+		m_ui->setDisplaySize(rendercfg.width, rendercfg.height);
 
-		float attenConst = 0.0f;
-		float attenLinear = 0.0f;
-		float attenQuad = 0.0f;
+		m_ui->begin(m_context, dt);
 
-		table->getVarVector3D("lightcolour", lightcolour);
-		table->getVarVector3D("ambientcolour", ambientcolour);
-
-		table->getVarBool("useDiffMap", useDiffMap);
-		table->getVarBool("useNormMap", useNormMap);
-		table->getVarBool("useSpecMap", useSpecMap);
-		table->getVarBool("useDispMap", useDispMap);
-
-		table->getVarFloat("attenConst", attenConst);
-		table->getVarFloat("attenLinear", attenLinear);
-		table->getVarFloat("attenQuad", attenQuad);
-
-		//Create dialog
-		ImGui::Begin("Debug");
+		if (m_showConsole)
 		{
-			ImGui::Text("Scene Variables");
-			ImGui::ColorEdit3("light colour", (float*)&lightcolour);
-			ImGui::ColorEdit3("ambient colour", (float*)&ambientcolour);
-
-			ImGui::Checkbox("enable diffuse mapping", &useDiffMap);
-			ImGui::Checkbox("enable normal mapping", &useNormMap);
-			ImGui::Checkbox("enable specular mapping", &useSpecMap);
-			ImGui::Checkbox("enable parallax occlusion mapping", &useDispMap);
-
-			ImGui::InputFloat("constant attenuation", &attenConst);
-			ImGui::InputFloat("linear attenuation", &attenLinear);
-			ImGui::InputFloat("quadratic attenuation", &attenQuad);
-
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			m_consoleMenu->show();
 		}
-		ImGui::End();
 
-		table->setVar("lightcolour", lightcolour);
-		table->setVar("ambientcolour", ambientcolour);
+		{
+			Vector lightcolour;
+			Vector ambientcolour;
+			bool useDiffMap = false;
+			bool useNormMap = false;
+			bool useSpecMap = false;
+			bool useDispMap = false;
 
-		table->setVar("useDiffMap", useDiffMap);
-		table->setVar("useNormMap", useNormMap);
-		table->setVar("useSpecMap", useSpecMap);
-		table->setVar("useDispMap", useDispMap);
+			float attenConst = 0.0f;
+			float attenLinear = 0.0f;
+			float attenQuad = 0.0f;
 
-		table->setVar("attenConst", attenConst);
-		table->setVar("attenLinear", attenLinear);
-		table->setVar("attenQuad", attenQuad);
+			table->getVarVector3D("lightcolour", lightcolour);
+			table->getVarVector3D("ambientcolour", ambientcolour);
+
+			table->getVarBool("useDiffMap", useDiffMap);
+			table->getVarBool("useNormMap", useNormMap);
+			table->getVarBool("useSpecMap", useSpecMap);
+			table->getVarBool("useDispMap", useDispMap);
+
+			table->getVarFloat("attenConst", attenConst);
+			table->getVarFloat("attenLinear", attenLinear);
+			table->getVarFloat("attenQuad", attenQuad);
+
+			//Create dialog
+			ImGui::Begin("Debug");
+			{
+				if (ImGui::CollapsingHeader("Scene Variables"))
+				{
+					ImGui::ColorEdit3("light colour", (float*)&lightcolour);
+					ImGui::ColorEdit3("ambient colour", (float*)&ambientcolour);
+
+					ImGui::Checkbox("enable diffuse mapping", &useDiffMap);
+					ImGui::Checkbox("enable normal mapping", &useNormMap);
+					ImGui::Checkbox("enable specular mapping", &useSpecMap);
+					ImGui::Checkbox("enable parallax occlusion mapping", &useDispMap);
+
+					ImGui::InputFloat("constant attenuation", &attenConst);
+					ImGui::InputFloat("linear attenuation", &attenLinear);
+					ImGui::InputFloat("quadratic attenuation", &attenQuad);
+				}
+
+				if (ImGui::CollapsingHeader("Performance"))
+				{
+					ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+					m_frametimes.push_front((float)dt);
+
+					if (m_frametimes.size() > 100)
+						m_frametimes.pop_back();
+
+					m_frameno++;
+					m_frametime += dt;
+
+					const uint64 framestep = 50;
+
+					if ((m_frameno % framestep) == 0)
+					{
+						m_framerates.push_front(framestep / m_frametime);
+						m_frametime = 0.0;
+
+						if (m_framerates.size() > 100)
+							m_framerates.pop_back();
+					}
+
+					if (m_frametimes.size() > 0) ImGui::PlotHistogram("Frametimes", [](void* data, int idx)->float { return (1000 * ((Application*)data)->m_frametimes[idx]); }, this, m_frametimes.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
+					if (m_framerates.size() > 0) ImGui::PlotHistogram("FPS", [](void* data, int idx)->float { return (((Application*)data)->m_framerates[idx]); }, this, m_framerates.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
+
+					SSystemMemoryInfo meminfo;
+					getSystemMemoryInformation(meminfo);
+
+					ImGui::Text(format("Memory usage: %B", meminfo.mUsed).c_str());
+					ImGui::Text(format("Memory capacity: %B", meminfo.mCapacity).c_str());
+					ImGui::Text(format("Memory usage: %", (float)meminfo.mUsed / meminfo.mCapacity).c_str());
+				}
+			}
+			ImGui::End();
+
+			table->setVar("lightcolour", lightcolour);
+			table->setVar("ambientcolour", ambientcolour);
+
+			table->setVar("useDiffMap", useDiffMap);
+			table->setVar("useNormMap", useNormMap);
+			table->setVar("useSpecMap", useSpecMap);
+			table->setVar("useDispMap", useDispMap);
+
+			table->setVar("attenConst", attenConst);
+			table->setVar("attenLinear", attenLinear);
+			table->setVar("attenQuad", attenQuad);
+		}
+
+		m_ui->end(defaultrendertarget);
 	}
-
-	m_ui->end(defaultrendertarget);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -15,6 +15,8 @@ namespace ts
 	class CCamera;
 	class CModel;
 	class CUIModule;
+	class UICommandConsole;
+	class UIDebugMenu;
 
 	class Application :
 		public IApplication,
@@ -29,13 +31,22 @@ namespace ts
 		UniquePtr<CModel> m_model;
 		UniquePtr<CModel> m_sphere;
 		UniquePtr<CUIModule> m_ui;
+		UniquePtr<UICommandConsole> m_consoleMenu;
+		UniquePtr<UIDebugMenu> m_debugMenu;
 
 		IRenderContext* m_context = nullptr;
 
 		float m_pulsatance = 0.0f;
+		atomic<bool> m_showConsole = false;
+		atomic<bool> m_showUI = true;
 		atomic<bool> m_simulation = true;
 		atomic<bool> m_mouseHeld = false;
 		atomic<float> m_scrollDepth;
+
+		std::deque<float> m_frametimes;
+		std::deque<float> m_framerates;
+		uint64 m_frameno = 0;
+		double m_frametime = 0.0;
 		
 		CTextureCube m_skybox;
 
@@ -76,6 +87,8 @@ namespace ts
 
 		Application();
 		~Application();
+
+		CEngineSystem* getSystem() const { return m_system; }
 		
 		void onInit(CEngineSystem* system) override;
 		void onExit() override;

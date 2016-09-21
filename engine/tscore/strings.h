@@ -283,6 +283,11 @@ namespace ts
 			return m_chars;
 		}
 
+		char* str()
+		{
+			return m_chars;
+		}
+
 		inline void get(std::string& str) const
 		{
 			str = std::string(m_chars);
