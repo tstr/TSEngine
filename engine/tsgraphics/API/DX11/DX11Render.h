@@ -28,6 +28,7 @@ namespace ts
 			HWND m_hwnd;
 			SRenderApiConfiguration m_config;
 
+			ComPtr<IDXGIFactory> m_dxgiFactory;
 			ComPtr<IDXGISwapChain> m_dxgiSwapchain;
 			ComPtr<ID3D11Device> m_device;
 			ComPtr<ID3D11DeviceContext> m_immediateContext;
@@ -39,6 +40,7 @@ namespace ts
 			ComPtr<ID3D11RenderTargetView> m_swapChainRenderTarget;
 
 			std::atomic<uint32> m_cachedRes;
+			std::atomic<uint32> m_cachedSampling;
 			std::vector<DX11RenderContext*> m_renderContexts;
 
 		public:
@@ -73,8 +75,7 @@ namespace ts
 			void destroyContext(IRenderContext* context) override;
 			void executeContext(IRenderContext* context) override;
 
-			void setWindowMode(EWindowMode mode) override;
-			void setWindowDimensions(uint32 w, uint32 h) override;
+			void setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling) override;
 			void getWindowRenderTarget(ResourceProxy& target) override;
 
 			void drawBegin(const Vector& vec) override;

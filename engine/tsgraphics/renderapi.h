@@ -339,8 +339,7 @@ namespace ts
 		virtual void executeContext(IRenderContext* context) = 0;
 
 		//Window/swapchain methods
-		virtual void setWindowMode(EWindowMode mode) = 0;
-		virtual void setWindowDimensions(uint32 w, uint32 h) = 0;
+		virtual void setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling) = 0;
 		virtual void getWindowRenderTarget(ResourceProxy& target) = 0;
 
 		virtual void drawBegin(const Vector& vec) = 0;

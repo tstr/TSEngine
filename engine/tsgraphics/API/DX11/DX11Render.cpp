@@ -72,12 +72,6 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-	//VSync
-	{
-		scd.BufferDesc.RefreshRate.Numerator = GetDeviceCaps(GetDC(m_hwnd), VREFRESH);
-		scd.BufferDesc.RefreshRate.Denominator = 1;
-	}
-
 	//////////////////////////////////////////////////////////////////////////////////////////////
 
 	UINT flags = 0;
@@ -100,7 +94,16 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	try
 	{
-		hr = D3D11CreateDeviceAndSwapChain(
+		//Create DXGI Factory
+		hr = CreateDXGIFactory(IID_OF(IDXGIFactory), (void**)m_dxgiFactory.GetAddressOf());
+
+		if (FAILED(hr))
+		{
+			throw _com_error(hr);
+		}
+
+		//Create D3D11 Device and Device Context
+		hr = D3D11CreateDevice(
 			dxgiAdapter.Get(),
 			D3D_DRIVER_TYPE_UNKNOWN,//D3D_DRIVER_TYPE_HARDWARE,
 			NULL,
@@ -108,8 +111,6 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 			featureLevels,
 			ARRAYSIZE(featureLevels),
 			D3D11_SDK_VERSION,
-			&scd,
-			m_dxgiSwapchain.GetAddressOf(),
 			m_device.GetAddressOf(),
 			&featureLevel,
 			m_immediateContext.GetAddressOf()
@@ -120,6 +121,17 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 			throw _com_error(hr);
 		}
 
+		//Create DXGI Swap Chain
+		m_dxgiFactory->CreateSwapChain(
+			(IUnknown*)m_device.Get(),
+			&scd,
+			m_dxgiSwapchain.GetAddressOf()
+		);
+
+		if (FAILED(hr))
+		{
+			throw _com_error(hr);
+		}
 	}
 	catch (_com_error& e)
 	{
@@ -130,12 +142,8 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 		return;
 	}
 
-	setWindowMode(cfg.windowMode);
-
 	//Save a copy of the configuration
 	m_config = cfg;
-
-	setWindowDimensions(cfg.resolutionWidth, cfg.resolutionHeight);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -200,88 +208,90 @@ DX11RenderApi::~DX11RenderApi()
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DX11RenderApi::setWindowMode(EWindowMode mode)
+void DX11RenderApi::setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling)
 {
-	if (mode == m_config.windowMode)
-		return;
+	if (sampling.count)
+		m_cachedSampling = sampling.count;
 
-	switch (mode)
+	if (w && h)
+		m_cachedRes = MAKELPARAM((uint16)w, (uint16)h);
+
+	if (mode && mode != m_config.windowMode)
 	{
-	case (EWindowMode::eWindowDefault):
-
-		if (m_config.windowMode == eWindowFullscreen)
+		switch (mode)
 		{
-			//Exit windowed mode
-			HRESULT hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr);
+		case (EWindowMode::eWindowDefault):
+
+			if (m_config.windowMode == eWindowFullscreen)
+			{
+				//Exit windowed mode
+				HRESULT hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr);
+				if (FAILED(hr))
+					tswarn("failed to exit fullscreen mode");
+			}
+			else
+			{
+				//Exit borderless mode
+				SetWindowLongPtr(m_hwnd, GWL_EXSTYLE, WS_EX_LEFT);
+				SetWindowLongPtr(m_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+
+				SetWindowPos(m_hwnd, HWND_NOTOPMOST, 0, 0, m_config.resolutionWidth, m_config.resolutionHeight, SWP_SHOWWINDOW);
+				ShowWindow(m_hwnd, SW_RESTORE);
+			}
+
+			break;
+
+		case (EWindowMode::eWindowBorderless):
+
+			if (m_config.windowMode == eWindowFullscreen)
+			{
+				HRESULT hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr);
+				if (FAILED(hr))
+					tswarn("failed to exit fullscreen mode");
+			}
+			{
+				//Set borderless mode
+				DEVMODE dev;
+				ZeroMemory(&dev, sizeof(DEVMODE));
+
+				int width = GetSystemMetrics(SM_CXSCREEN),
+					height = GetSystemMetrics(SM_CYSCREEN);
+
+				EnumDisplaySettings(NULL, 0, &dev);
+
+				HDC context = GetWindowDC(m_hwnd);
+				int colourBits = GetDeviceCaps(context, BITSPIXEL);
+				int refreshRate = GetDeviceCaps(context, VREFRESH);
+
+				dev.dmPelsWidth = width;
+				dev.dmPelsHeight = height;
+				dev.dmBitsPerPel = colourBits;
+				dev.dmDisplayFrequency = refreshRate;
+				dev.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
+
+				//todo: fix
+				LONG result = ChangeDisplaySettingsA(&dev, CDS_FULLSCREEN);// == DISP_CHANGE_SUCCESSFUL);
+				//tserror("ChangeDisplaySettings returned %", result);
+
+				SetWindowLongPtr(m_hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+				SetWindowPos(m_hwnd, HWND_TOP, 0, 0, width, height, 0);
+				BringWindowToTop(m_hwnd);
+			}
+
+			break;
+
+		case (EWindowMode::eWindowFullscreen):
+
+			HRESULT hr = m_dxgiSwapchain->SetFullscreenState(true, nullptr);
 			if (FAILED(hr))
-				tswarn("failed to exit fullscreen mode");
-		}
-		else
-		{
-			//Exit borderless mode
-			SetWindowLongPtr(m_hwnd, GWL_EXSTYLE, WS_EX_LEFT);
-			SetWindowLongPtr(m_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+				tswarn("failed to enter fullscreen mode");
 
-			SetWindowPos(m_hwnd, HWND_NOTOPMOST, 0, 0, m_config.resolutionWidth, m_config.resolutionHeight, SWP_SHOWWINDOW);
-			ShowWindow(m_hwnd, SW_RESTORE);
+			break;
 		}
 
-		break;
+		m_config.windowMode = mode;
 
-	case (EWindowMode::eWindowBorderless):
-
-		if (m_config.windowMode == eWindowFullscreen)
-		{
-			HRESULT hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr);
-			if (FAILED(hr))
-				tswarn("failed to exit fullscreen mode");
-		}
-		{
-			//Set borderless mode
-			DEVMODE dev;
-			ZeroMemory(&dev, sizeof(DEVMODE));
-
-			int width = GetSystemMetrics(SM_CXSCREEN),
-				height = GetSystemMetrics(SM_CYSCREEN);
-
-			EnumDisplaySettings(NULL, 0, &dev);
-
-			HDC context = GetWindowDC(m_hwnd);
-			int colourBits = GetDeviceCaps(context, BITSPIXEL);
-			int refreshRate = GetDeviceCaps(context, VREFRESH);
-
-			dev.dmPelsWidth = width;
-			dev.dmPelsHeight = height;
-			dev.dmBitsPerPel = colourBits;
-			dev.dmDisplayFrequency = refreshRate;
-			dev.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
-
-			//todo: fix
-			LONG result = ChangeDisplaySettingsA(&dev, CDS_FULLSCREEN);// == DISP_CHANGE_SUCCESSFUL);
-			//tserror("ChangeDisplaySettings returned %", result);
-
-			SetWindowLongPtr(m_hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-			SetWindowPos(m_hwnd, HWND_TOP, 0, 0, width, height, 0);
-			BringWindowToTop(m_hwnd);
-		}
-
-		break;
-
-	case (EWindowMode::eWindowFullscreen):
-
-		HRESULT hr = m_dxgiSwapchain->SetFullscreenState(true, nullptr);
-		if (FAILED(hr))
-			tswarn("failed to enter fullscreen mode");
-
-		break;
 	}
-
-	m_config.windowMode = mode;
-}
-
-void DX11RenderApi::setWindowDimensions(uint32 w, uint32 h)
-{
-	m_cachedRes = MAKELPARAM((uint16)w, (uint16)h);
 }
 
 void DX11RenderApi::getWindowRenderTarget(ResourceProxy& target)
@@ -294,10 +304,14 @@ void DX11RenderApi::getWindowRenderTarget(ResourceProxy& target)
 void DX11RenderApi::drawBegin(const Vector& vec)
 {
 	auto res = m_cachedRes.load();
+	auto sample = m_cachedSampling.load(); //Multisample count
 	uint32 w = LOWORD(res);
 	uint32 h = HIWORD(res);
 
-	if (w != m_config.resolutionWidth || h != m_config.resolutionHeight)
+	bool res_changed = (w != m_config.resolutionWidth) || (h != m_config.resolutionHeight);
+	bool sample_changed = (sample != m_config.multisampling.count);
+
+	if (res_changed || sample_changed)
 	{
 		//Reset deferred contexts
 		for (auto& rc : m_renderContexts)
@@ -307,6 +321,22 @@ void DX11RenderApi::drawBegin(const Vector& vec)
 
 		//Destroy the old render target view
 		m_swapChainRenderTarget.Reset();
+
+		//If the multisampling count value has changed then rebuild the swap chain
+		if (sample_changed)
+		{
+			DXGI_SWAP_CHAIN_DESC desc;
+			m_dxgiSwapchain->GetDesc(&desc);
+
+			desc.SampleDesc.Count = sample;
+			desc.SampleDesc.Quality = (sample > 1) ? D3D11_STANDARD_MULTISAMPLE_PATTERN : 0;
+
+			m_dxgiSwapchain.Reset();
+
+			tsassert(SUCCEEDED(m_dxgiFactory->CreateSwapChain((IUnknown*)m_device.Get(), &desc, m_dxgiSwapchain.GetAddressOf())));
+
+			m_config.multisampling.count = sample;
+		}
 
 		w = max(1u, w);
 		h = max(1u, h);

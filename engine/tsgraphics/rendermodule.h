@@ -72,8 +72,7 @@ namespace ts
 		CShaderManager& getShaderManager() { return m_shaderManager; }
 		IRenderApi* const getApi() const { return m_api.get(); }
 
-		void setWindowMode(EWindowMode mode);
-		void setWindowDimensions(uint32 w, uint32 h);
+		void setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling);
 		void getConfiguration(SRenderModuleConfiguration& cfg) { cfg = m_config; }
 
 		void drawBegin(const Vector& vec);

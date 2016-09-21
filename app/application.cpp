@@ -818,15 +818,15 @@ void Application::onUpdate(double dt)
 
 					if ((m_frameno % framestep) == 0)
 					{
-						m_framerates.push_front(framestep / m_frametime);
+						m_framerates.push_front((float)framestep / m_frametime);
 						m_frametime = 0.0;
 
 						if (m_framerates.size() > 100)
 							m_framerates.pop_back();
 					}
 
-					if (m_frametimes.size() > 0) ImGui::PlotHistogram("Frametimes", [](void* data, int idx)->float { return (1000 * ((Application*)data)->m_frametimes[idx]); }, this, m_frametimes.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
-					if (m_framerates.size() > 0) ImGui::PlotHistogram("FPS", [](void* data, int idx)->float { return (((Application*)data)->m_framerates[idx]); }, this, m_framerates.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
+					if ((uint32)m_frametimes.size() > 0u) ImGui::PlotHistogram("Frametimes", [](void* data, int idx)->float { return (1000 * ((Application*)data)->m_frametimes[idx]); }, this, m_frametimes.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
+					if ((uint32)m_framerates.size() > 0u) ImGui::PlotHistogram("FPS", [](void* data, int idx)->float { return (((Application*)data)->m_framerates[idx]); }, this, m_framerates.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
 
 					SSystemMemoryInfo meminfo;
 					getSystemMemoryInformation(meminfo);
@@ -834,6 +834,19 @@ void Application::onUpdate(double dt)
 					ImGui::Text(format("Memory usage: %B", meminfo.mUsed).c_str());
 					ImGui::Text(format("Memory capacity: %B", meminfo.mCapacity).c_str());
 					ImGui::Text(format("Memory usage: %", (float)meminfo.mUsed / meminfo.mCapacity).c_str());
+				}
+
+				if (ImGui::CollapsingHeader("Settings"))
+				{
+					static int s = (int)log2(rendercfg.multisampling.count);
+					const char* items[] = { "x1", "x2", "x4", "x8" };
+					if (ImGui::Combo("MSAA", &s, items, ARRAYSIZE(items)))
+					{
+						//Map the combo box index to the multisample level
+						uint32 level = (1 << s);
+						m_system->getRenderModule()->setWindowSettings(eWindowUnknown, 0, 0, SMultisampling(level));
+						buildDepthTarget();
+					}
 				}
 			}
 			ImGui::End();

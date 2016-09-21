@@ -24,7 +24,7 @@ CRenderModule::CRenderModule(const SRenderModuleConfiguration& cfg) :
 	sourcepath.addDirectories("shaders");
 	m_shaderManager.setSourcepath(sourcepath);
 
-	setWindowDimensions(cfg.width, cfg.height);
+	setWindowSettings(cfg.windowMode, cfg.width, cfg.height, cfg.multisampling);
 }
 
 CRenderModule::~CRenderModule()
@@ -33,19 +33,15 @@ CRenderModule::~CRenderModule()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
-//todo: make these methods threadsafe
 
-void CRenderModule::setWindowMode(EWindowMode mode)
+void CRenderModule::setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling)
 {
-	m_api->setWindowMode(mode);
-	m_config.windowMode = mode;
-}
+	m_api->setWindowSettings(mode, w, h, sampling);
 
-void CRenderModule::setWindowDimensions(uint32 w, uint32 h)
-{
-	m_api->setWindowDimensions(w, h);
-	m_config.width = w;
-	m_config.height = h;
+	if (sampling.count) m_config.multisampling = sampling;
+	if (mode) m_config.windowMode = mode;
+	if (w) m_config.width = w;
+	if (h) m_config.height = h;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

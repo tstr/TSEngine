@@ -65,7 +65,7 @@ private:
 				getWindowResizeEventArgs(args, w, h);
 				if (auto render = m_wnd->getSystem()->getRenderModule())
 				{
-					render->setWindowDimensions(w, h);
+					render->setWindowSettings(eWindowUnknown, w, h, SMultisampling(0));
 				}
 			}
 
@@ -175,7 +175,7 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	rendercfg.width = width;
 	rendercfg.height = height;
 	rendercfg.apiEnum = ERenderApiID::eRenderApiD3D11;
-	rendercfg.windowMode = (EWindowMode)fullscreenmode;
+	rendercfg.windowMode = (EWindowMode)(fullscreenmode + 1);
 	rendercfg.rootpath = assetpath;
 	rendercfg.multisampling.count = samplecount;
 	m_renderModule.reset(new CRenderModule(rendercfg));

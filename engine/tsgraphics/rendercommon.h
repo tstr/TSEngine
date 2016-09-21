@@ -21,9 +21,10 @@ namespace ts
 
 	enum EWindowMode
 	{
-		eWindowDefault = 0,
-		eWindowBorderless = 1,
-		eWindowFullscreen = 2
+		eWindowUnknown    = 0,
+		eWindowDefault    = 1,
+		eWindowBorderless = 2,
+		eWindowFullscreen = 3
 	};
 	
 	struct SRenderAdapterDesc
@@ -37,6 +38,9 @@ namespace ts
 	struct SMultisampling
 	{
 		uint32 count = 1;
+
+		SMultisampling() {}
+		SMultisampling(uint32 c) : count(c) {}
 	};
 	
 	enum EVertexTopology
