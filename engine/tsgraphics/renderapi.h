@@ -313,6 +313,11 @@ namespace ts
 	class IRenderContext;
 	class IRenderAdapterFactory;
 	class IShaderCompiler;
+
+	struct SRenderStatistics
+	{
+		uint32 drawcalls = 0;
+	};
 	
 	class IRenderApi
 	{
@@ -341,6 +346,7 @@ namespace ts
 		//Window/swapchain methods
 		virtual void setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling) = 0;
 		virtual void getWindowRenderTarget(ResourceProxy& target) = 0;
+		virtual void getDrawStatistics(SRenderStatistics& stats) = 0;
 
 		virtual void drawBegin(const Vector& vec) = 0;
 		virtual void drawEnd() = 0;

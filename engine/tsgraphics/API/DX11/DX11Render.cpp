@@ -29,26 +29,8 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	HRESULT hr = S_OK;
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
-	//DXGI
-	//////////////////////////////////////////////////////////////////////////////////////////////
-
-	ComPtr<IDXGIFactory> dxgiFactory;
-	ComPtr<IDXGIAdapter> dxgiAdapter;
-
-	hr = CreateDXGIFactory(IID_OF(IDXGIFactory), (void**)dxgiFactory.GetAddressOf());
-	tsassert(SUCCEEDED(hr));
-
-	hr = dxgiFactory->EnumAdapters(cfg.adapterIndex, dxgiAdapter.GetAddressOf());
-	
-	//dxgiFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
-
-	//////////////////////////////////////////////////////////////////////////////////////////////
 	//initialize direct3D
 	//////////////////////////////////////////////////////////////////////////////////////////////
-
-	UINT msaaCount = cfg.multisampling.count;
-	UINT msaaQuality = 0;
-	msaaQuality = (msaaCount > 1) ? D3D11_STANDARD_MULTISAMPLE_PATTERN : 0;
 
 	//Create swap chain
 	DXGI_SWAP_CHAIN_DESC scd;
@@ -60,8 +42,8 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = m_hwnd;
 
-	scd.SampleDesc.Count = msaaCount;
-	scd.SampleDesc.Quality = msaaQuality;
+	scd.SampleDesc.Count = cfg.multisampling.count;
+	scd.SampleDesc.Quality = 0;
 	scd.Windowed = cfg.windowMode != EWindowMode::eWindowFullscreen;
 	scd.BufferDesc.Width = cfg.resolutionWidth;
 	scd.BufferDesc.Height = cfg.resolutionHeight;
@@ -71,8 +53,6 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	//scd.SwapEffect = DXGI_SWAP_EFFECT::DXGI_SWAP_EFFECT_DISCARD;
 
 	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-
-	//////////////////////////////////////////////////////////////////////////////////////////////
 
 	UINT flags = 0;
 	//UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT; //for D2D and D3D interop
@@ -94,8 +74,17 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	try
 	{
+		ComPtr<IDXGIAdapter> dxgiAdapter;
+
 		//Create DXGI Factory
 		hr = CreateDXGIFactory(IID_OF(IDXGIFactory), (void**)m_dxgiFactory.GetAddressOf());
+
+		if (FAILED(hr))
+		{
+			throw _com_error(hr);
+		}
+
+		hr = m_dxgiFactory->EnumAdapters(cfg.adapterIndex, dxgiAdapter.GetAddressOf());
 
 		if (FAILED(hr))
 		{
@@ -120,6 +109,8 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 		{
 			throw _com_error(hr);
 		}
+
+		getMultisampleQuality(scd.SampleDesc);
 
 		//Create DXGI Swap Chain
 		m_dxgiFactory->CreateSwapChain(
@@ -204,6 +195,17 @@ DX11RenderApi::~DX11RenderApi()
 		m_device.As(&debug);
 		debug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY | D3D11_RLDO_DETAIL);
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool DX11RenderApi::getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc)
+{
+	tsassert(m_device.Get());
+	tsassert(SUCCEEDED(m_device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, sampledesc.Count, &sampledesc.Quality)));
+	sampledesc.Quality--;
+
+	return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -299,6 +301,11 @@ void DX11RenderApi::getWindowRenderTarget(ResourceProxy& target)
 	target.reset(new DX11View(this, this->m_swapChainRenderTarget.Get(), STextureViewDescriptor()));
 }
 
+void DX11RenderApi::getDrawStatistics(SRenderStatistics& stats)
+{
+	stats.drawcalls = m_drawCallCounter.load();
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void DX11RenderApi::drawBegin(const Vector& vec)
@@ -329,7 +336,7 @@ void DX11RenderApi::drawBegin(const Vector& vec)
 			m_dxgiSwapchain->GetDesc(&desc);
 
 			desc.SampleDesc.Count = sample;
-			desc.SampleDesc.Quality = (sample > 1) ? D3D11_STANDARD_MULTISAMPLE_PATTERN : 0;
+			getMultisampleQuality(desc.SampleDesc);
 
 			m_dxgiSwapchain.Reset();
 
@@ -376,6 +383,9 @@ void DX11RenderApi::drawBegin(const Vector& vec)
 void DX11RenderApi::drawEnd()
 {
 	m_dxgiSwapchain->Present(0, 0);
+
+	//reset the counter
+	m_drawCallCounter = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -571,7 +581,7 @@ ERenderStatus DX11RenderApi::createResourceTexture(ResourceProxy& rsc, const STe
 		dtd.CPUAccessFlags = access;
 		dtd.MipLevels = miplevels;
 		dtd.SampleDesc.Count = desc.multisampling.count;
-		dtd.SampleDesc.Quality = (desc.multisampling.count > 1) ? D3D11_STANDARD_MULTISAMPLE_PATTERN : 0;
+		getMultisampleQuality(dtd.SampleDesc);
 
 		if (desc.useMips)
 		{

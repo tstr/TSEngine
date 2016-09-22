@@ -43,17 +43,24 @@ namespace ts
 			std::atomic<uint32> m_cachedSampling;
 			std::vector<DX11RenderContext*> m_renderContexts;
 
+			std::atomic<uint32> m_drawCallCounter;
+
+			bool getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc);
+
 		public:
 
 			//Constructor
 			DX11RenderApi(const SRenderApiConfiguration& cfg);
 			~DX11RenderApi();
 
+			//Internal methods
 			ComPtr<ID3D11Device> getDevice() const { return m_device; }
 
 			ComPtr<ID3D11BlendState> getBlendState() const { return m_blendState; }
 			ComPtr<ID3D11RasterizerState> getRasterizerState() const { return m_rasterizerState; }
 			ComPtr<ID3D11DepthStencilState> getDepthStencilState() const { return m_depthStencilState; }
+
+			void incrementDrawCallCounter() { m_drawCallCounter++; }
 
 			//Resource creation methods
 
@@ -77,6 +84,7 @@ namespace ts
 
 			void setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling) override;
 			void getWindowRenderTarget(ResourceProxy& target) override;
+			void getDrawStatistics(SRenderStatistics& stats) override;
 
 			void drawBegin(const Vector& vec) override;
 			void drawEnd() override;

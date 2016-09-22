@@ -32,6 +32,8 @@ namespace ts
 		{
 			ImColor colour;
 			std::string text;
+
+			SLogMessage logmeta;
 		};
 
 		std::map<std::string, CommandConsoleCallback> m_commandTable;

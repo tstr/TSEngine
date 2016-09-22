@@ -22,12 +22,16 @@ namespace ts
 	//A log message
 	struct SLogMessage
 	{
+		typedef time_t TimeStamp;
+
 		StaticString<2048> message;
 		StaticString<256> file;
 		StaticString<256> function;
 		size_t line = 0;
 		ELogLevel level;
-		time_t timestamp;
+		TimeStamp timestamp;
+
+		SLogMessage() {}
 
 		SLogMessage(
 			const char* _msg,

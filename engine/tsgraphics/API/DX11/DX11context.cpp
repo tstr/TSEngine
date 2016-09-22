@@ -212,6 +212,9 @@ void DX11RenderContext::execute(const SRenderCommand& command)
 			m_context->Draw(command.vertexCount, command.vertexStart);
 		}
 	}
+
+	//For debugging purposes
+	m_api->incrementDrawCallCounter();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -46,6 +46,16 @@ void UICommandConsole::show()
 			ImGui::PushStyleColor(ImGuiCol_Text, line.colour);
 			ImGui::TextUnformatted(line.text.c_str());
 			ImGui::PopStyleColor();
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip(format(
+					"Function: %\nFile: %\nLine: %",
+					line.logmeta.function.str(),
+					line.logmeta.file.str(),
+					line.logmeta.line
+				).c_str(), i);
+			}
 		}
 	}
 
@@ -89,14 +99,25 @@ int UICommandConsole::textCallback(ImGuiTextEditCallbackData* data)
 
 void UICommandConsole::write(const SLogMessage& msg)
 {
+	//Convert timestamp into hours/minutes/seconds
+	tm t;
+	localtime_s(&t, &msg.timestamp);
+	char timestr[200];
+	strftime(timestr, sizeof(timestr), "%H:%M:%S", &t);
+
+	//Fill line struct
 	SLine line;
 	line.colour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-	line.text = format("[%] %", msg.function.str(), msg.message.str());
+	line.text = format("[%] %", timestr, msg.message.str());
+	line.logmeta = msg;
 
+	//Set text colour depending on log level
 	if (msg.level == ELogLevel::eLevelError)
 		line.colour = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
 	else if (msg.level == ELogLevel::eLevelWarn)
 		line.colour = ImVec4(1.0f, 1.0f, 0.4f, 1.0f);
+	if (msg.level == ELogLevel::eLevelProfile)
+		line.colour = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
 
 	lock_guard<recursive_mutex>lk(m_lineBufferMutex);
 	m_lineBuffer.push_back(line);

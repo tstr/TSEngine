@@ -806,10 +806,10 @@ void Application::onUpdate(double dt)
 				{
 					ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-					m_frametimes.push_front((float)dt);
+					m_frametimes.push_back((float)dt);
 
 					if (m_frametimes.size() > 100)
-						m_frametimes.pop_back();
+						m_frametimes.pop_front();
 
 					m_frameno++;
 					m_frametime += dt;
@@ -818,15 +818,19 @@ void Application::onUpdate(double dt)
 
 					if ((m_frameno % framestep) == 0)
 					{
-						m_framerates.push_front((float)framestep / m_frametime);
+						m_framerates.push_back((float)framestep / m_frametime);
 						m_frametime = 0.0;
 
 						if (m_framerates.size() > 100)
-							m_framerates.pop_back();
+							m_framerates.pop_front();
 					}
 
 					if ((uint32)m_frametimes.size() > 0u) ImGui::PlotHistogram("Frametimes", [](void* data, int idx)->float { return (1000 * ((Application*)data)->m_frametimes[idx]); }, this, m_frametimes.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
 					if ((uint32)m_framerates.size() > 0u) ImGui::PlotHistogram("FPS", [](void* data, int idx)->float { return (((Application*)data)->m_framerates[idx]); }, this, m_framerates.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
+
+					SRenderStatistics stats;
+					api->getDrawStatistics(stats);
+					ImGui::Text(format("Draw calls : %", stats.drawcalls).c_str());
 
 					SSystemMemoryInfo meminfo;
 					getSystemMemoryInformation(meminfo);
@@ -838,7 +842,8 @@ void Application::onUpdate(double dt)
 
 				if (ImGui::CollapsingHeader("Settings"))
 				{
-					static int s = (int)log2(rendercfg.multisampling.count);
+					//Update MSAA
+					int s = (int)log2(rendercfg.multisampling.count);
 					const char* items[] = { "x1", "x2", "x4", "x8" };
 					if (ImGui::Combo("MSAA", &s, items, ARRAYSIZE(items)))
 					{
@@ -846,6 +851,20 @@ void Application::onUpdate(double dt)
 						uint32 level = (1 << s);
 						m_system->getRenderModule()->setWindowSettings(eWindowUnknown, 0, 0, SMultisampling(level));
 						buildDepthTarget();
+					}
+
+					//Update resolution
+					int res[2] = { (int)rendercfg.width, (int)rendercfg.height };
+					if (ImGui::InputInt2("resolution", res, ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						m_system->getRenderModule()->setWindowSettings(eWindowUnknown, res[0], res[1], SMultisampling(0));
+					}
+
+					//Update to borderless mode
+					bool b = rendercfg.windowMode == eWindowBorderless;
+					if (ImGui::Checkbox("Borderless", &b))
+					{
+						m_system->getRenderModule()->setWindowSettings((b) ? eWindowBorderless : eWindowDefault, 0, 0, SMultisampling(0));
 					}
 				}
 			}
