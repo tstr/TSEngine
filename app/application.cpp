@@ -806,27 +806,44 @@ void Application::onUpdate(double dt)
 				{
 					ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
+					const uint64 framestep = 50;
+					const uint64 n = 100;
+
 					m_frametimes.push_back((float)dt);
 
-					if (m_frametimes.size() > 100)
+					if (m_frametimes.size() > n)
 						m_frametimes.pop_front();
 
 					m_frameno++;
 					m_frametime += dt;
-
-					const uint64 framestep = 50;
 
 					if ((m_frameno % framestep) == 0)
 					{
 						m_framerates.push_back((float)framestep / m_frametime);
 						m_frametime = 0.0;
 
-						if (m_framerates.size() > 100)
+						if (m_framerates.size() > n)
 							m_framerates.pop_front();
 					}
 
 					if ((uint32)m_frametimes.size() > 0u) ImGui::PlotHistogram("Frametimes", [](void* data, int idx)->float { return (1000 * ((Application*)data)->m_frametimes[idx]); }, this, m_frametimes.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
 					if ((uint32)m_framerates.size() > 0u) ImGui::PlotHistogram("FPS", [](void* data, int idx)->float { return (((Application*)data)->m_framerates[idx]); }, this, m_framerates.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
+
+					double frametime_sum = 0.0;
+					double frametime_sum_squared = 0.0f;
+
+					for (uint64 i = 0; i < m_frametimes.size(); i++)
+					{
+						frametime_sum += (1000 * m_frametimes[i]);
+						frametime_sum_squared += ((1000 * m_frametimes[i]) * (1000 * m_frametimes[i]));
+					}
+
+					double frame_average = frametime_sum / n;
+					ImGui::Text(format("Frametime average : %ms", frame_average).c_str());
+
+					double frame_variance = ((frametime_sum_squared - ((double)n * (frame_average * frame_average))) / ((double)n - 1));
+					ImGui::Text(format("Frametime variance : %ms", frame_variance).c_str());
+					ImGui::Text(format("Frametime deviation : %ms", sqrt(frame_variance)).c_str());
 
 					SRenderStatistics stats;
 					api->getDrawStatistics(stats);
