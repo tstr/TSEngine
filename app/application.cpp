@@ -181,7 +181,7 @@ void Application::onInit(CEngineSystem* system)
 	));
 	
 	m_consoleMenu.reset(new UICommandConsole(this));
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	//Console commands
 	m_consoleMenu->setCommand("exit", [&](const SCommandConsoleCallbackArgs& args) { m_system->shutdown(); });
@@ -255,79 +255,47 @@ void Application::onInit(CEngineSystem* system)
 
 	bool shader_debug = true;
 	
+	CShaderManager& shaderMng = m_system->getRenderModule()->getShaderManager();
+
 	//Standard shader
 	{
-		SShaderCompileConfig vsconfig;
-		vsconfig.debuginfo = shader_debug;
-		vsconfig.entrypoint = "VS";
-		vsconfig.stage = EShaderStage::eShaderStageVertex;
-		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_standardVertexshader, "standard", vsconfig)));
-
-		SShaderCompileConfig psconfig;
-		psconfig.debuginfo = shader_debug;
-		psconfig.entrypoint = "PS";
-		psconfig.stage = EShaderStage::eShaderStagePixel;
-		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_standardPixelshader, "standard", psconfig)));
+		tsassert((shaderMng.createShaderFromFile(m_standardVertexshader, "standard", "VS", EShaderStage::eShaderStageVertex)));
+		tsassert((shaderMng.createShaderFromFile(m_standardPixelshader, "standard", "PS", EShaderStage::eShaderStagePixel)));
 
 		//Shader input desc
 		vector<SShaderInputDescriptor> inputdescriptor;
 		buildVertexInputDescriptor(inputdescriptor, 0xffffffff);
-		tsassert(!api->createShaderInputDescriptor(m_vertexInput, m_standardVertexshader.getShader(), &inputdescriptor[0], (uint32)inputdescriptor.size()));
+		tsassert(!api->createShaderInputDescriptor(m_vertexInput, shaderMng.getShaderProxy(m_standardVertexshader), &inputdescriptor[0], (uint32)inputdescriptor.size()));
 	}
-
+	
 	//Light source shader
 	{
-		SShaderCompileConfig vsconfig;
-		vsconfig.debuginfo = shader_debug;
-		vsconfig.entrypoint = "VS";
-		vsconfig.stage = EShaderStage::eShaderStageVertex;
-		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_lightVertexShader, "lightsource", vsconfig)));
-
-		SShaderCompileConfig psconfig;
-		psconfig.debuginfo = shader_debug;
-		psconfig.entrypoint = "PS";
-		psconfig.stage = EShaderStage::eShaderStagePixel;
-		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_lightPixelShader, "lightsource", psconfig)));
+		tsassert((shaderMng.createShaderFromFile(m_lightVertexShader, "lightsource", "VS", EShaderStage::eShaderStageVertex)));
+		tsassert((shaderMng.createShaderFromFile(m_lightPixelShader, "lightsource", "PS", EShaderStage::eShaderStagePixel)));
 		
 		//Shader input desc
 		vector<SShaderInputDescriptor> inputdescriptor;
 		buildVertexInputDescriptor(inputdescriptor, eModelVertexAttributePosition | eModelVertexAttributeColour);
-		tsassert(!api->createShaderInputDescriptor(m_vertexInputLight, m_lightVertexShader.getShader(), &inputdescriptor[0], (uint32)inputdescriptor.size()));
+		tsassert(!api->createShaderInputDescriptor(m_vertexInputLight, shaderMng.getShaderProxy(m_lightVertexShader), &inputdescriptor[0], (uint32)inputdescriptor.size()));
 	}
 
 	//Shadow mapping shader
 	{
-		SShaderCompileConfig vsconfig;
-		vsconfig.debuginfo = shader_debug;
-		vsconfig.entrypoint = "VS";
-		vsconfig.stage = EShaderStage::eShaderStageVertex;
-		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_shadowVertexShader, "shadowmap", vsconfig)));
-
-		SShaderCompileConfig psconfig;
-		psconfig.debuginfo = shader_debug;
-		psconfig.entrypoint = "PS";
-		psconfig.stage = EShaderStage::eShaderStagePixel;
-		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_shadowPixelShader, "shadowmap", psconfig)));
+		tsassert((shaderMng.createShaderFromFile(m_shadowVertexShader, "shadowmap", "VS", EShaderStage::eShaderStageVertex)));
+		tsassert((shaderMng.createShaderFromFile(m_shadowPixelShader, "shadowmap", "PS", EShaderStage::eShaderStagePixel)));
 
 		//Shader input desc
 		vector<SShaderInputDescriptor> inputdescriptor;
 		buildVertexInputDescriptor(inputdescriptor, eModelVertexAttributePosition);
-		tsassert(!api->createShaderInputDescriptor(m_vertexInputShadow, m_shadowVertexShader.getShader(), &inputdescriptor[0], (uint32)inputdescriptor.size()));
+		tsassert(!api->createShaderInputDescriptor(m_vertexInputShadow, shaderMng.getShaderProxy(m_shadowVertexShader), &inputdescriptor[0], (uint32)inputdescriptor.size()));
 	}
 	
 	//Skybox shader
 	{
-		SShaderCompileConfig vsconfig;
-		vsconfig.debuginfo = shader_debug;
-		vsconfig.entrypoint = "VS";
-		vsconfig.stage = EShaderStage::eShaderStageVertex;
-		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_skyboxVertexShader, "skybox", vsconfig)));
+		tsassert((shaderMng.createShaderFromFile(m_skyboxVertexShader, "skybox", "VS", EShaderStage::eShaderStageVertex)));
+		tsassert((shaderMng.createShaderFromFile(m_skyboxPixelShader, "skybox", "PS", EShaderStage::eShaderStagePixel)));
 
-		SShaderCompileConfig psconfig;
-		psconfig.debuginfo = shader_debug;
-		psconfig.entrypoint = "PS";
-		psconfig.stage = EShaderStage::eShaderStagePixel;
-		tsassert((m_system->getRenderModule()->getShaderManager().compileAndLoadShaderFile(m_skyboxPixelShader, "skybox", psconfig)));
+		//No shader input descriptor required for the skybox
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
@@ -505,6 +473,8 @@ void Application::onUpdate(double dt)
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
 	auto api = m_system->getRenderModule()->getApi();
+	auto& shaderMng = m_system->getRenderModule()->getShaderManager();
+
 	ResourceProxy defaultrendertarget;
 	api->getWindowRenderTarget(defaultrendertarget);
 
@@ -543,8 +513,8 @@ void Application::onUpdate(double dt)
 		command.viewport.y = 0;
 
 		command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
-		command.shaders.stageVertex = m_shadowVertexShader.getShader();
-		command.shaders.stagePixel = m_shadowPixelShader.getShader();
+		command.shaders.stageVertex = shaderMng.getShaderProxy(m_shadowVertexShader);
+		command.shaders.stagePixel = shaderMng.getShaderProxy(m_shadowPixelShader);
 		command.vertexInputDescriptor = m_vertexInputShadow;
 		command.vertexTopology = EVertexTopology::eTopologyTriangleList;
 
@@ -613,8 +583,8 @@ void Application::onUpdate(double dt)
 		command.viewport = viewport;
 
 		command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
-		command.shaders.stageVertex = m_skyboxVertexShader.getShader();
-		command.shaders.stagePixel = m_skyboxPixelShader.getShader();
+		command.shaders.stageVertex = shaderMng.getShaderProxy(m_skyboxVertexShader);
+		command.shaders.stagePixel = shaderMng.getShaderProxy(m_skyboxPixelShader);
 		command.vertexTopology = EVertexTopology::eTopologyTriangleList;
 
 		command.vertexCount = 6;
@@ -641,8 +611,8 @@ void Application::onUpdate(double dt)
 
 		command.uniformBuffers[0] = m_sceneBuffer.getBuffer();
 		command.uniformBuffers[1] = m_materialBuffer.getBuffer();
-		command.shaders.stageVertex = m_standardVertexshader.getShader();
-		command.shaders.stagePixel = m_standardPixelshader.getShader();
+		command.shaders.stageVertex = shaderMng.getShaderProxy(m_standardVertexshader);
+		command.shaders.stagePixel = shaderMng.getShaderProxy(m_standardPixelshader);
 
 		command.textureSamplers[0] = m_texSampler;
 
@@ -716,8 +686,8 @@ void Application::onUpdate(double dt)
 		//Sphere
 		const SMesh& mesh = m_sphere->getMesh(0);
 
-		command.shaders.stageVertex = m_lightVertexShader.getShader();
-		command.shaders.stagePixel = m_lightPixelShader.getShader();
+		command.shaders.stageVertex = shaderMng.getShaderProxy(m_lightVertexShader);
+		command.shaders.stagePixel = shaderMng.getShaderProxy(m_lightPixelShader);
 		command.vertexInputDescriptor = m_vertexInputLight;
 		command.vertexTopology = EVertexTopology::eTopologyTriangleList;
 
@@ -826,8 +796,8 @@ void Application::onUpdate(double dt)
 							m_framerates.pop_front();
 					}
 
-					if ((uint32)m_frametimes.size() > 0u) ImGui::PlotHistogram("Frametimes", [](void* data, int idx)->float { return (1000 * ((Application*)data)->m_frametimes[idx]); }, this, m_frametimes.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
-					if ((uint32)m_framerates.size() > 0u) ImGui::PlotHistogram("FPS", [](void* data, int idx)->float { return (((Application*)data)->m_framerates[idx]); }, this, m_framerates.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
+					if ((uint32)m_frametimes.size() > 0) ImGui::PlotHistogram("Frametimes", [](void* data, int idx)->float { return (1000 * ((Application*)data)->m_frametimes[idx]); }, this, m_frametimes.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
+					if ((uint32)m_framerates.size() > 0) ImGui::PlotHistogram("FPS", [](void* data, int idx)->float { return (((Application*)data)->m_framerates[idx]); }, this, m_framerates.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
 
 					double frametime_sum = 0.0;
 					double frametime_sum_squared = 0.0f;

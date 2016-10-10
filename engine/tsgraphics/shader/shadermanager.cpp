@@ -5,11 +5,13 @@
 */
 
 #include "shadermanager.h"
+#include "preprocessor.h"
+#include "../rendermodule.h"
 
 #include <fstream>
 #include <tscore/debug/assert.h>
 
-#include "API/DX11/DX11render.h"
+#include "../API/DX11/DX11render.h"
 
 using namespace std;
 using namespace ts;
@@ -71,17 +73,16 @@ bool CShaderManager::createShaderFromFile(ShaderId& id, const Path& codefile, co
 
 	Path source(m_sourcePath);
 	source.addDirectories((string)codefile.str() + ".fx");
-	ifstream filestream(source.str());
+	stringstream sourcestream;
+
+	preprocessFile(source, sourcestream);
 
 	SShaderCompileConfig config;
 	config.entrypoint.set(entrypoint);
-	config.sourcename.set(source.str());
 	config.debuginfo = m_flags & eShaderManagerFlag_Debug;
 	config.stage = stage;
 
-	string buf((istreambuf_iterator<char>(filestream)), istreambuf_iterator<char>());
-
-	if (!m_shaderCompiler->compile(buf.c_str(), config, bytecode))
+	if (!m_shaderCompiler->compile(sourcestream.str().c_str(), config, bytecode))
 		return false;
 
 	//Set new id

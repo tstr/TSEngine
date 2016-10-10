@@ -30,8 +30,8 @@ namespace ts
 		ResourceProxy m_textureAtlasView;
 		ResourceProxy m_textureAtlasSampler;
 
-		CShader m_vertexShader;
-		CShader m_pixelShader;
+		ShaderId m_vertexShader;
+		ShaderId m_pixelShader;
 		ResourceProxy m_vertexInput;
 
 		CUniformBuffer m_uniformBuffer;

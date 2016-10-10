@@ -11,9 +11,11 @@ SET(src_list
 	
 	texturemanager.h
 	texturemanager.cpp
-	shadermanager.h
-	shadermanager.cpp
-	
+	shader/shadermanager.h
+	shader/shadermanager.cpp
+	shader/preprocessor.h
+	shader/preprocessor.cpp
+
 	indexbuffer.h
 	vertexbuffer.h
 	uniformbuffer.h

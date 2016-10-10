@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <tsgraphics/renderapi.h>
 #include <tsgraphics/rendercommon.h>
+#include <tsgraphics/renderapi.h>
 
 #include <tscore/filesystem/path.h>
 #include <tscore/strings.h>
@@ -31,14 +31,6 @@ namespace ts
 
 	typedef uint64 ShaderId;
 
-	typedef StaticString<128> PreprocessorString;
-
-	struct SPreprocessorMacro
-	{
-		PreprocessorString name;
-		PreprocessorString value;
-	};
-	
 	class CShaderManager
 	{
 	private:
@@ -71,8 +63,6 @@ namespace ts
 		
 		uint getFlags() const { return m_flags; }
 		void setFlags(uint f) { m_flags = f; }
-
-		void addMacro(const std::string& macroname, const std::string& macrovalue);
 
 		void setSourcepath(const Path& sourcepath) { m_sourcePath = sourcepath; }
 		void setCachepath(const Path& cachepath) { m_cachePath = cachepath; }

@@ -50,14 +50,14 @@ namespace ts
 		
 		CTextureCube m_skybox;
 
-		CShader m_standardVertexshader;
-		CShader m_standardPixelshader;
-		CShader m_lightVertexShader;
-		CShader m_lightPixelShader;
-		CShader m_shadowVertexShader;
-		CShader m_shadowPixelShader;
-		CShader m_skyboxVertexShader;
-		CShader m_skyboxPixelShader;
+		ShaderId m_standardVertexshader = 0;
+		ShaderId m_standardPixelshader  = 0;
+		ShaderId m_lightVertexShader    = 0;
+		ShaderId m_lightPixelShader		= 0;
+		ShaderId m_shadowVertexShader	= 0;
+		ShaderId m_shadowPixelShader	= 0;
+		ShaderId m_skyboxVertexShader	= 0;
+		ShaderId m_skyboxPixelShader	= 0;
 
 		CUniformBuffer m_sceneBuffer;
 		CUniformBuffer m_materialBuffer;

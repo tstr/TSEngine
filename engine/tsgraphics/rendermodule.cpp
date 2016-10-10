@@ -13,7 +13,7 @@ using namespace ts;
 CRenderModule::CRenderModule(const SRenderModuleConfiguration& cfg) :
 	m_config(cfg),
 	m_textureManager(this),
-	m_shaderManager(this)
+	m_shaderManager(this, 0)
 {
 	if (!loadApi(cfg.apiEnum))
 		tserror("Unable to load graphics api (ERenderApiID::eRenderApiD3D11)");
@@ -23,6 +23,8 @@ CRenderModule::CRenderModule(const SRenderModuleConfiguration& cfg) :
 	Path sourcepath(m_config.rootpath);
 	sourcepath.addDirectories("shaders");
 	m_shaderManager.setSourcepath(sourcepath);
+
+	m_shaderManager.setFlags(m_shaderManager.getFlags() | eShaderManagerFlag_Debug);
 
 	setWindowSettings(cfg.windowMode, cfg.width, cfg.height, cfg.multisampling);
 }

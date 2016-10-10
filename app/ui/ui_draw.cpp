@@ -55,18 +55,11 @@ void CUIModule::init()
 		}
 	)";
 
-	SShaderCompileConfig vsconfig;
-	vsconfig.debuginfo = true;
-	vsconfig.entrypoint = "vs";
-	vsconfig.stage = eShaderStageVertex;
-	tsassert(m_rendermodule->getShaderManager().compileAndLoadShader(m_vertexShader, shaderCode, vsconfig));
+	auto& shaderMng = m_rendermodule->getShaderManager();
 
-	//Create pixel shader
-	SShaderCompileConfig psconfig;
-	psconfig.debuginfo = true;
-	psconfig.entrypoint = "ps";
-	psconfig.stage = eShaderStagePixel;
-	tsassert(m_rendermodule->getShaderManager().compileAndLoadShader(m_pixelShader, shaderCode, psconfig));
+	//Create shaders
+	tsassert(shaderMng.createShaderFromString(m_vertexShader, shaderCode, "vs", eShaderStageVertex));
+	tsassert(shaderMng.createShaderFromString(m_pixelShader, shaderCode, "ps", eShaderStagePixel));
 
 	//Create shader input descriptor
 	SShaderInputDescriptor inputdesc[3];
@@ -88,7 +81,7 @@ void CUIModule::init()
 	inputdesc[2].semanticName = "COLOR";
 	inputdesc[2].type = eShaderInputRGBA;
 
-	tsassert(!m_rendermodule->getApi()->createShaderInputDescriptor(m_vertexInput, m_vertexShader.getShader(), inputdesc, 3));
+	tsassert(!m_rendermodule->getApi()->createShaderInputDescriptor(m_vertexInput, shaderMng.getShaderProxy(m_vertexShader), inputdesc, 3));
 
 	//Create buffers
 	Matrix matrix;
@@ -213,10 +206,12 @@ void CUIModule::draw(IRenderContext* context, ResourceProxy rendertarget, Viewpo
 	//command.depthTarget = depthtarget;
 	command.viewport = viewport;
 
+	auto& shaderMng = m_rendermodule->getShaderManager();
+
 	command.vertexBuffer = m_vertexBuffer.getBuffer();
 	command.indexBuffer = m_indexBuffer.getBuffer();
-	command.shaders.stageVertex = m_vertexShader.getShader();
-	command.shaders.stagePixel = m_pixelShader.getShader();
+	command.shaders.stageVertex = shaderMng.getShaderProxy(m_vertexShader);
+	command.shaders.stagePixel = shaderMng.getShaderProxy(m_pixelShader);
 
 	command.vertexInputDescriptor = m_vertexInput;
 	command.vertexTopology = EVertexTopology::eTopologyTriangleList;
@@ -267,8 +262,8 @@ void CUIModule::destroy()
 	m_textureAtlasRsc.reset(nullptr);
 	m_textureAtlasView.reset(nullptr);
 	m_textureAtlasSampler.reset(nullptr);
-	m_vertexShader = CShader();
-	m_pixelShader = CShader();
+	m_vertexShader = 0;
+	m_pixelShader = 0;
 	m_vertexInput.reset(nullptr);
 	m_uniformBuffer = CUniformBuffer();
 	m_vertexBuffer = CVertexBuffer();

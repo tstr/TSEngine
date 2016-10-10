@@ -15,7 +15,7 @@
 #include "rendercommon.h"
 #include "renderapi.h"
 
-#include "shadermanager.h"
+#include "shader/shadermanager.h"
 #include "texturemanager.h"
 
 #include "indexbuffer.h"

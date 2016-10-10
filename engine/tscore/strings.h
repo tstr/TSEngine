@@ -9,6 +9,7 @@
 #include "types.h"
 #include <sstream>
 #include <vector>
+#include <algorithm>
 
 #define tocstr(x) std::to_string((x)).c_str()
 
@@ -152,11 +153,13 @@ namespace ts
 
 	static std::string trim(const std::string& str)
 	{
+		using namespace std;
+
 		if (str == "")
 			return "";
 
-		size_t first = str.find_first_not_of(' ');
-		size_t last = str.find_last_not_of(' ');
+		size_t first = max(str.find_first_not_of(' '), str.find_first_not_of('\t'));
+		size_t last = min(str.find_last_not_of(' '), str.find_last_not_of('\t'));
 
 		if (first == std::string::npos)
 			first = 0;
@@ -246,24 +249,48 @@ namespace ts
 
 	public:
 
+		static const size_t npos = n;
+
+		//Constructors
+
 		StaticString()
 		{
 			memset(m_chars, 0, n);
 		}
 
-		StaticString(const char* str) : StaticString()
+		StaticString(const char* str) :
+			StaticString()
 		{
 			set(str);
 		}
 
 		StaticString(const std::string& str) :
-			this->StaticString(str.c_str())
+			StaticString(str.c_str())
 		{}
+
+		//Operator overloads
 
 		inline StaticString& operator=(const StaticString<n>& str)
 		{
 			set(str.m_chars);
 			return *this;
+		}
+
+		inline bool operator==(const StaticString<n>& str) const
+		{
+			return compare(str);
+		}
+
+		inline bool operator!=(const StaticString<n>& str) const
+		{
+			return !this->operator==(str);
+		}
+
+		//methods
+
+		inline bool compare(const StaticString<n>& str) const
+		{
+			return strcmp(str.m_chars, this->m_chars);
 		}
 
 		inline void set(const std::string& str, size_t offset = 0)
@@ -286,11 +313,6 @@ namespace ts
 		char* str()
 		{
 			return m_chars;
-		}
-
-		inline void get(std::string& str) const
-		{
-			str = std::string(m_chars);
 		}
 
 		inline char at(size_t i) const

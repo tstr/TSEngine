@@ -44,6 +44,18 @@ namespace ts
 		Path(const std::string& pathstr) :
 			Path(pathstr.c_str())
 		{}
+
+		//operator overloads
+
+		bool operator==(const Path& p) const
+		{
+			return compare_string_weak(p.m_path.str(), m_path.str());
+		}
+
+		bool operator!=(const Path& p) const
+		{
+			return !this->operator==(p);
+		}
 		
 		//methods
 
@@ -73,6 +85,22 @@ namespace ts
 	private:
 		
 		StaticString<Path::MaxLength> m_path;
+	};
+
+
+}
+
+//Hash function
+namespace std
+{
+	template<>
+	struct hash<ts::Path>
+	{
+		size_t operator()(ts::Path path) const
+		{
+			hash<const char*>h;
+			return h(path.str());
+		}
 	};
 }
 
