@@ -19,14 +19,6 @@ namespace ts
 		eFlagReportObjects = 2
 	};
 
-	enum EWindowMode
-	{
-		eWindowUnknown    = 0,
-		eWindowDefault    = 1,
-		eWindowBorderless = 2,
-		eWindowFullscreen = 3
-	};
-	
 	struct SRenderAdapterDesc
 	{
 		StaticString<128> adapterName;

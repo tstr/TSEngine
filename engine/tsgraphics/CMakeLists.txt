@@ -22,7 +22,9 @@ SET(src_list
 	renderbuffer.cpp
 	buffercommon.h
 	
-	internal/nvoptimus.cpp
+	platform/nvoptimus.cpp
+	platform/borderless.h
+	platform/borderless.cpp
 	model/modeldefs.h
 
 	api/DX11/DX11base.h

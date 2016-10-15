@@ -44,7 +44,7 @@ int Application::onWindowEvent(const SWindowEventArgs& args)
 	if (args.eventcode == EWindowEvent::eEventResize)
 	{
 		//Recreate the depth target
-		buildDepthTarget();
+		m_rebuildDepthTarget = true;
 	}
 	else if (args.eventcode == EWindowEvent::eEventKillfocus)
 	{
@@ -389,6 +389,12 @@ void Application::onUpdate(double dt)
 	//CVar table
 	auto table = m_system->getCVarTable();
 
+	//Resize depth target if necessary
+	if (m_rebuildDepthTarget.exchange(false))
+	{
+		buildDepthTarget();
+	}
+
 	//Update camera
 	if (!ImGui::GetIO().WantTextInput)
 	{
@@ -476,7 +482,7 @@ void Application::onUpdate(double dt)
 	auto& shaderMng = m_system->getRenderModule()->getShaderManager();
 
 	ResourceProxy defaultrendertarget;
-	api->getWindowRenderTarget(defaultrendertarget);
+	api->getDisplayRenderTarget(defaultrendertarget);
 
 	Viewport viewport;
 	viewport.x = 0;
@@ -789,15 +795,15 @@ void Application::onUpdate(double dt)
 
 					if ((m_frameno % framestep) == 0)
 					{
-						m_framerates.push_back((float)framestep / m_frametime);
+						m_framerates.push_back((float)framestep / (float)m_frametime);
 						m_frametime = 0.0;
 
 						if (m_framerates.size() > n)
 							m_framerates.pop_front();
 					}
 
-					if ((uint32)m_frametimes.size() > 0) ImGui::PlotHistogram("Frametimes", [](void* data, int idx)->float { return (1000 * ((Application*)data)->m_frametimes[idx]); }, this, m_frametimes.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
-					if ((uint32)m_framerates.size() > 0) ImGui::PlotHistogram("FPS", [](void* data, int idx)->float { return (((Application*)data)->m_framerates[idx]); }, this, m_framerates.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
+					if ((uint32)m_frametimes.size() > 0) ImGui::PlotHistogram("Frametimes", [](void* data, int idx)->float { return (1000 * ((Application*)data)->m_frametimes[idx]); }, this, (int)m_frametimes.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
+					if ((uint32)m_framerates.size() > 0) ImGui::PlotHistogram("FPS", [](void* data, int idx)->float { return (((Application*)data)->m_framerates[idx]); }, this, (int)m_framerates.size(), 0, 0, FLT_MIN, FLT_MAX, ImVec2(0, 30));
 
 					double frametime_sum = 0.0;
 					double frametime_sum_squared = 0.0f;
@@ -829,30 +835,47 @@ void Application::onUpdate(double dt)
 
 				if (ImGui::CollapsingHeader("Settings"))
 				{
+					//Update display mode
+					auto displayModeIdx = (int)rendercfg.displaymode - 1;
+					const char* displayModeStrings[] = { "windowed", "borderless", "fullscreen" };
+					if (ImGui::Combo("display mode", &displayModeIdx, displayModeStrings, ARRAYSIZE(displayModeStrings)))
+					{
+						m_system->getRenderModule()->setDisplayConfiguration((EDisplayMode)(displayModeIdx + 1), 0, 0, SMultisampling(0));
+					}
+
 					//Update MSAA
-					int s = (int)log2(rendercfg.multisampling.count);
-					const char* items[] = { "x1", "x2", "x4", "x8" };
-					if (ImGui::Combo("MSAA", &s, items, ARRAYSIZE(items)))
+					int msaaIdx = (int)log2(rendercfg.multisampling.count);
+					const char* msaaItems[] = { "x1", "x2", "x4", "x8" };
+					if (ImGui::Combo("MSAA", &msaaIdx, msaaItems, ARRAYSIZE(msaaItems)))
 					{
 						//Map the combo box index to the multisample level
-						uint32 level = (1 << s);
-						m_system->getRenderModule()->setWindowSettings(eWindowUnknown, 0, 0, SMultisampling(level));
+						uint32 level = (1 << msaaIdx);
+						m_system->getRenderModule()->setDisplayConfiguration(eDisplayUnknown, 0, 0, SMultisampling(level));
 						buildDepthTarget();
 					}
 
 					//Update resolution
-					int res[2] = { (int)rendercfg.width, (int)rendercfg.height };
-					if (ImGui::InputInt2("resolution", res, ImGuiInputTextFlags_EnterReturnsTrue))
+					int resItems[] = { (int)rendercfg.width, (int)rendercfg.height };
+					if (ImGui::InputInt2("resolution", resItems, ImGuiInputTextFlags_EnterReturnsTrue))
 					{
-						m_system->getRenderModule()->setWindowSettings(eWindowUnknown, res[0], res[1], SMultisampling(0));
+						tsprofile("w:% h:%", resItems[0], resItems[1]);
+						m_system->getRenderModule()->setDisplayConfiguration(eDisplayUnknown, resItems[0], resItems[1], SMultisampling(0));
+						m_rebuildDepthTarget.store(true); //Mark depth target for rebuild
 					}
 
+					/*
 					//Update to borderless mode
-					bool b = rendercfg.windowMode == eWindowBorderless;
-					if (ImGui::Checkbox("Borderless", &b))
+					bool is_borderless = (rendercfg.displaymode == EDisplayMode::eDisplayBorderless);
+					bool is_fullscreen = (rendercfg.displaymode == EDisplayMode::eDisplayFullscreen);
+					if (ImGui::Checkbox("Borderless", &is_borderless))
 					{
-						m_system->getRenderModule()->setWindowSettings((b) ? eWindowBorderless : eWindowDefault, 0, 0, SMultisampling(0));
+						m_system->getRenderModule()->setDisplayConfiguration((is_borderless) ? eDisplayBorderless : eDisplayWindowed, 0, 0, SMultisampling(0));
 					}
+					if (ImGui::Checkbox("Fullscreen", &is_fullscreen))
+					{
+						m_system->getRenderModule()->setDisplayConfiguration((is_fullscreen) ? eDisplayFullscreen : eDisplayWindowed, 0, 0, SMultisampling(0));
+					}
+					*/
 				}
 			}
 			ImGui::End();

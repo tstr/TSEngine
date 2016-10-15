@@ -26,9 +26,11 @@ namespace ts
 		private:
 
 			HWND m_hwnd;
-			SRenderApiConfiguration m_config;
+			uint32 m_flags = 0;
 
 			ComPtr<IDXGIFactory> m_dxgiFactory;
+			ComPtr<IDXGIOutput> m_dxgiOutput;
+			ComPtr<IDXGIAdapter> m_dxgiAdapter;
 			ComPtr<IDXGISwapChain> m_dxgiSwapchain;
 			ComPtr<ID3D11Device> m_device;
 			ComPtr<ID3D11DeviceContext> m_immediateContext;
@@ -41,6 +43,7 @@ namespace ts
 
 			std::atomic<uint32> m_cachedRes;
 			std::atomic<uint32> m_cachedSampling;
+			std::atomic<bool> m_fullscreenState;
 			std::vector<DX11RenderContext*> m_renderContexts;
 
 			std::atomic<uint32> m_drawCallCounter;
@@ -82,8 +85,14 @@ namespace ts
 			void destroyContext(IRenderContext* context) override;
 			void executeContext(IRenderContext* context) override;
 
-			void setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling) override;
-			void getWindowRenderTarget(ResourceProxy& target) override;
+			//Window methods
+			void setDisplayResolution(uint32 width, uint32 height) override;
+			void setDisplayMultisampleCount(uint32 samplecount) override;
+			void setDisplayFullscreenState(bool fullscreen) override;
+			bool getDisplayFullscreenState() const override;
+			void getDisplayRenderTarget(ResourceProxy& target) override;
+
+			//Statistics
 			void getDrawStatistics(SRenderStatistics& stats) override;
 
 			void drawBegin(const Vector& vec) override;

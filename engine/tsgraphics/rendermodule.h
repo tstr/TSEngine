@@ -32,16 +32,28 @@ namespace ts
 		eRenderApiD3D11 = 1
 	};
 
+	enum EDisplayMode
+	{
+		eDisplayUnknown	   = 0,
+		eDisplayWindowed   = 1,
+		eDisplayBorderless = 2,
+		eDisplayFullscreen = 3
+	};
+
 	struct SRenderModuleConfiguration
 	{
-		//Handle to screen (application window)
+		//Handle to display (application window)
 		intptr windowHandle = 0;
-		//Screen dimensions
+
+		//Display dimensions
 		uint32 width = 0;
 		uint32 height = 0;
 		SMultisampling multisampling;
-		EWindowMode windowMode = eWindowDefault;
+		EDisplayMode displaymode = eDisplayWindowed;
+
+		//Graphics API id
 		ERenderApiID apiEnum = ERenderApiID::eRenderApiNull;
+
 		//Root asset loading path for textures/shaders/models
 		Path rootpath;
 	};
@@ -52,13 +64,14 @@ namespace ts
 	{
 	private:
 
-		SRenderModuleConfiguration m_config;
 		UniquePtr<IRenderApi> m_api;
 
 		CTextureManager m_textureManager;
 		CShaderManager m_shaderManager;
 
 		bool loadApi(ERenderApiID id);
+
+		SRenderModuleConfiguration m_config;
 
 	public:
 
@@ -67,12 +80,12 @@ namespace ts
 
 		CRenderModule(const CRenderModule&) = delete;
 		CRenderModule& operator=(const CRenderModule&) = delete;
-
+		
 		CTextureManager& getTextureManager() { return m_textureManager; }
 		CShaderManager& getShaderManager() { return m_shaderManager; }
 		IRenderApi* const getApi() const { return m_api.get(); }
 
-		void setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling);
+		void setDisplayConfiguration(EDisplayMode displaymode, uint32 width = 0, uint32 height = 0, SMultisampling sampling = SMultisampling(0));
 		void getConfiguration(SRenderModuleConfiguration& cfg) { cfg = m_config; }
 
 		void drawBegin(const Vector& vec);

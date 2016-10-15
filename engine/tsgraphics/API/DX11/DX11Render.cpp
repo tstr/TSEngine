@@ -28,6 +28,8 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	HRESULT hr = S_OK;
 
+	m_flags = cfg.flags;
+
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	//initialize direct3D
 	//////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,15 +44,15 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = m_hwnd;
 
-	scd.SampleDesc.Count = cfg.multisampling.count;
+	scd.SampleDesc.Count = cfg.multisampleCount;
 	scd.SampleDesc.Quality = 0;
-	scd.Windowed = cfg.windowMode != EWindowMode::eWindowFullscreen;
+	scd.Windowed = !cfg.fullscreen;
 	scd.BufferDesc.Width = cfg.resolutionWidth;
 	scd.BufferDesc.Height = cfg.resolutionHeight;
 
 	scd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 	scd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-	//scd.SwapEffect = DXGI_SWAP_EFFECT::DXGI_SWAP_EFFECT_DISCARD;
+	scd.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
 
 	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
@@ -74,8 +76,6 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	try
 	{
-		ComPtr<IDXGIAdapter> dxgiAdapter;
-
 		//Create DXGI Factory
 		hr = CreateDXGIFactory(IID_OF(IDXGIFactory), (void**)m_dxgiFactory.GetAddressOf());
 
@@ -84,16 +84,16 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 			throw _com_error(hr);
 		}
 
-		hr = m_dxgiFactory->EnumAdapters(cfg.adapterIndex, dxgiAdapter.GetAddressOf());
+		hr = m_dxgiFactory->EnumAdapters(cfg.adapterIndex, m_dxgiAdapter.GetAddressOf());
+		if (FAILED(hr)) throw _com_error(hr);
 
-		if (FAILED(hr))
-		{
-			throw _com_error(hr);
-		}
+		//Get the first output for now
+		hr = m_dxgiAdapter->EnumOutputs(0, m_dxgiOutput.GetAddressOf());
+		if (FAILED(hr)) throw _com_error(hr);
 
 		//Create D3D11 Device and Device Context
 		hr = D3D11CreateDevice(
-			dxgiAdapter.Get(),
+			m_dxgiAdapter.Get(),
 			D3D_DRIVER_TYPE_UNKNOWN,//D3D_DRIVER_TYPE_HARDWARE,
 			NULL,
 			flags,
@@ -123,6 +123,16 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 		{
 			throw _com_error(hr);
 		}
+
+		m_dxgiFactory->MakeWindowAssociation(
+			m_hwnd,
+			DXGI_MWA_NO_WINDOW_CHANGES
+		);
+
+		if (FAILED(hr))
+		{
+			throw _com_error(hr);
+		}
 	}
 	catch (_com_error& e)
 	{
@@ -132,9 +142,6 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 		return;
 	}
-
-	//Save a copy of the configuration
-	m_config = cfg;
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -184,12 +191,23 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 		m_device->CreateRasterizerState(&desc, m_rasterizerState.GetAddressOf());
 	}
 
+	//Initialize values
+	m_cachedRes = 0;
+	m_cachedSampling = 0;
+	m_fullscreenState = cfg.fullscreen;
+
 	//////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 DX11RenderApi::~DX11RenderApi()
 {
-	if (m_config.flags & ERenderApiFlags::eFlagReportObjects)
+	//If the swapchain is in fullscreen mode then exit before releasing the swapchain
+	if (m_dxgiSwapchain.Get())
+	{
+		m_dxgiSwapchain->SetFullscreenState(false, nullptr);
+	}
+
+	if (m_flags & ERenderApiFlags::eFlagReportObjects)
 	{
 		ComPtr<ID3D11Debug> debug;
 		m_device.As(&debug);
@@ -210,93 +228,33 @@ bool DX11RenderApi::getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DX11RenderApi::setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling)
+void DX11RenderApi::setDisplayResolution(uint32 width, uint32 height)
 {
-	if (sampling.count)
-		m_cachedSampling = sampling.count;
-
-	if (w && h)
-		m_cachedRes = MAKELPARAM((uint16)w, (uint16)h);
-
-	if (mode && mode != m_config.windowMode)
-	{
-		switch (mode)
-		{
-		case (EWindowMode::eWindowDefault):
-
-			if (m_config.windowMode == eWindowFullscreen)
-			{
-				//Exit windowed mode
-				HRESULT hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr);
-				if (FAILED(hr))
-					tswarn("failed to exit fullscreen mode");
-			}
-			else
-			{
-				//Exit borderless mode
-				SetWindowLongPtr(m_hwnd, GWL_EXSTYLE, WS_EX_LEFT);
-				SetWindowLongPtr(m_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
-
-				SetWindowPos(m_hwnd, HWND_NOTOPMOST, 0, 0, m_config.resolutionWidth, m_config.resolutionHeight, SWP_SHOWWINDOW);
-				ShowWindow(m_hwnd, SW_RESTORE);
-			}
-
-			break;
-
-		case (EWindowMode::eWindowBorderless):
-
-			if (m_config.windowMode == eWindowFullscreen)
-			{
-				HRESULT hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr);
-				if (FAILED(hr))
-					tswarn("failed to exit fullscreen mode");
-			}
-			{
-				//Set borderless mode
-				DEVMODE dev;
-				ZeroMemory(&dev, sizeof(DEVMODE));
-
-				int width = GetSystemMetrics(SM_CXSCREEN),
-					height = GetSystemMetrics(SM_CYSCREEN);
-
-				EnumDisplaySettings(NULL, 0, &dev);
-
-				HDC context = GetWindowDC(m_hwnd);
-				int colourBits = GetDeviceCaps(context, BITSPIXEL);
-				int refreshRate = GetDeviceCaps(context, VREFRESH);
-
-				dev.dmPelsWidth = width;
-				dev.dmPelsHeight = height;
-				dev.dmBitsPerPel = colourBits;
-				dev.dmDisplayFrequency = refreshRate;
-				dev.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
-
-				//todo: fix
-				LONG result = ChangeDisplaySettingsA(&dev, CDS_FULLSCREEN);// == DISP_CHANGE_SUCCESSFUL);
-				//tserror("ChangeDisplaySettings returned %", result);
-
-				SetWindowLongPtr(m_hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-				SetWindowPos(m_hwnd, HWND_TOP, 0, 0, width, height, 0);
-				BringWindowToTop(m_hwnd);
-			}
-
-			break;
-
-		case (EWindowMode::eWindowFullscreen):
-
-			HRESULT hr = m_dxgiSwapchain->SetFullscreenState(true, nullptr);
-			if (FAILED(hr))
-				tswarn("failed to enter fullscreen mode");
-
-			break;
-		}
-
-		m_config.windowMode = mode;
-
-	}
+	if (width && height)
+		m_cachedRes.store(MAKELPARAM((uint16)width, (uint16)height));
+	else
+		tswarn("Invalid resolution (w:%)(h:%)", width, height);
 }
 
-void DX11RenderApi::getWindowRenderTarget(ResourceProxy& target)
+void DX11RenderApi::setDisplayMultisampleCount(uint32 samplecount)
+{
+	if (samplecount)
+		m_cachedSampling.store(samplecount);
+	else
+		tswarn("Invalid multisample count %", samplecount);
+}
+
+void DX11RenderApi::setDisplayFullscreenState(bool fullscreen)
+{
+	m_fullscreenState.store(fullscreen);
+} 
+
+bool DX11RenderApi::getDisplayFullscreenState() const
+{
+	return m_fullscreenState.load();
+}
+
+void DX11RenderApi::getDisplayRenderTarget(ResourceProxy& target)
 {
 	target.reset(new DX11View(this, this->m_swapChainRenderTarget.Get(), STextureViewDescriptor()));
 }
@@ -310,72 +268,135 @@ void DX11RenderApi::getDrawStatistics(SRenderStatistics& stats)
 
 void DX11RenderApi::drawBegin(const Vector& vec)
 {
-	auto res = m_cachedRes.load();
-	auto sample = m_cachedSampling.load(); //Multisample count
-	uint32 w = LOWORD(res);
-	uint32 h = HIWORD(res);
-
-	bool res_changed = (w != m_config.resolutionWidth) || (h != m_config.resolutionHeight);
-	bool sample_changed = (sample != m_config.multisampling.count);
-
-	if (res_changed || sample_changed)
+	//Changing states (resolution/msaa/fullscreenstate) must be done outside of rendering but on the rendering thread so we execute these state changes before rendering
 	{
-		//Reset deferred contexts
-		for (auto& rc : m_renderContexts)
+		HRESULT hr = S_OK;
+
+		auto res = m_cachedRes.exchange(0);
+		auto sample = m_cachedSampling.exchange(0); //Multisample count
+		uint32 w = LOWORD(res); //New resolution width
+		uint32 h = HIWORD(res); //New resolution height
+
+		//New fullscreen state
+		auto screenstate = m_fullscreenState.load();
+		//Old fullscreen state
+		BOOL old_screenstate = FALSE;
+
+		if (FAILED(hr = m_dxgiSwapchain->GetFullscreenState(&old_screenstate, nullptr)))
+			tswarn("failed to get fullscreen mode. Error: \"%\"", _com_error(hr).ErrorMessage());
+
+		bool screenstate_changed = (BOOL)screenstate != old_screenstate;
+		bool res_changed = (w != 0) || (h != 0);
+		bool sample_changed = (sample != 0);
+
+		if (res_changed || sample_changed || screenstate_changed)
 		{
-			rc->reset();
-		}
+			w = max(1u, w);
+			h = max(1u, h);
 
-		//Destroy the old render target view
-		m_swapChainRenderTarget.Reset();
-
-		//If the multisampling count value has changed then rebuild the swap chain
-		if (sample_changed)
-		{
-			DXGI_SWAP_CHAIN_DESC desc;
-			m_dxgiSwapchain->GetDesc(&desc);
-
-			desc.SampleDesc.Count = sample;
-			getMultisampleQuality(desc.SampleDesc);
-
-			m_dxgiSwapchain.Reset();
-
-			tsassert(SUCCEEDED(m_dxgiFactory->CreateSwapChain((IUnknown*)m_device.Get(), &desc, m_dxgiSwapchain.GetAddressOf())));
-
-			m_config.multisampling.count = sample;
-		}
-
-		w = max(1u, w);
-		h = max(1u, h);
-
-		//Only resize if width/height is different
-		if ((m_config.resolutionWidth != w) || (m_config.resolutionHeight != h))
-		{
-			DXGI_SWAP_CHAIN_DESC desc;
-			m_dxgiSwapchain->GetDesc(&desc);
-
-			//ComPtr<ID3D11Debug> debug;
-			//m_device.As(&debug);
-			//debug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY | D3D11_RLDO_DETAIL);
-
-			//Resize swapchain - DXGI_FORMAT_R8G8B8A8_UNORM
-			if (FAILED(m_dxgiSwapchain->ResizeBuffers(2, w, h, DXGI_FORMAT_UNKNOWN, desc.Flags)))
+			//Reset deferred contexts
+			for (auto& rc : m_renderContexts)
 			{
-				tswarn("unable to resize IDXGISwapChain");
+				rc->reset();
 			}
 
-			m_config.resolutionWidth = w;
-			m_config.resolutionHeight = h;
-		}
+			//Destroy the old render target view
+			m_swapChainRenderTarget.Reset();
 
-		//Create the new render target view
-		ComPtr<ID3D11Texture2D> backbuffer;
-		HRESULT hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());
-		tsassert(SUCCEEDED(hr));
-		hr = m_device->CreateRenderTargetView(backbuffer.Get(), nullptr, m_swapChainRenderTarget.GetAddressOf());
-		tsassert(SUCCEEDED(hr));
+			//If the multisampling count value has changed then rebuild the swap chain
+			if (sample_changed)
+			{
+				//If the current state of the swapchain is fullscreen then we must exit in order to rebuild the swapchain
+				if (old_screenstate)
+					hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr);
+
+				DXGI_SWAP_CHAIN_DESC desc;
+				m_dxgiSwapchain->GetDesc(&desc);
+
+				//Because we are rebuilding the swap chain we can update the resolution/fullscreen state here instead of in separate calls to ResizeBuffers/SetFullscreenState
+				bool windowed = !old_screenstate;
+				if (screenstate_changed)
+					windowed = !screenstate;
+
+				desc.Windowed = windowed;
+
+				if (res_changed)
+				{
+					desc.BufferDesc.Width = w;
+					desc.BufferDesc.Height = h;
+				}
+
+				desc.SampleDesc.Count = sample;
+				getMultisampleQuality(desc.SampleDesc);
+
+				//Release swapchain
+				m_dxgiSwapchain.Reset();
+
+				//Recreate swapchain
+				tsassert(SUCCEEDED(m_dxgiFactory->CreateSwapChain((IUnknown*)m_device.Get(), &desc, m_dxgiSwapchain.GetAddressOf())));
+
+				m_dxgiFactory->MakeWindowAssociation(
+					m_hwnd,
+					DXGI_MWA_NO_WINDOW_CHANGES
+				);
+			}
+			else
+			{
+				//Only resize if width/height differ
+				if (res_changed)
+				{
+					DXGI_SWAP_CHAIN_DESC desc;
+					m_dxgiSwapchain->GetDesc(&desc);
+
+					//Resize swapchain - DXGI_FORMAT_R8G8B8A8_UNORM
+					//if (FAILED(m_dxgiSwapchain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, desc.Flags)))
+					if (FAILED(m_dxgiSwapchain->ResizeBuffers(2, w, h, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH)))
+						tswarn("unable to resize IDXGISwapChain");
+				}
+
+				//Only change fullscreen state if states differ
+				if (screenstate_changed)
+				{
+					DXGI_SWAP_CHAIN_DESC desc;
+					m_dxgiSwapchain->GetDesc(&desc);
+
+					//Zero out refresh rate values because DXGI calculates them automatically
+					desc.BufferDesc.RefreshRate.Denominator = 0;
+					desc.BufferDesc.RefreshRate.Numerator = 0;
+
+					//Enter
+					if (screenstate)
+					{
+						//Call resizetarget before entering fullscreen
+						if (FAILED(hr = m_dxgiSwapchain->ResizeTarget(&desc.BufferDesc)))
+							tserror("unable to resize IDXGISwapChain target. Error: \"%\"", _com_error(hr).ErrorMessage());
+
+						if (FAILED(hr = m_dxgiSwapchain->SetFullscreenState(true, nullptr)))
+							tserror("failed to enter fullscreen mode. Error: \"%\"", _com_error(hr).ErrorMessage());
+
+						//Call resize target again in order to prevent issues with the refresh rate
+						if (FAILED(hr = m_dxgiSwapchain->ResizeTarget(&desc.BufferDesc)))
+							tserror("unable to resize IDXGISwapChain target. Error: \"%\"", _com_error(hr).ErrorMessage());
+					}
+					//Exit
+					else 
+					{
+						if (FAILED(hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr)))
+							tserror("failed to exit fullscreen mode. Error: \"%\"", _com_error(hr).ErrorMessage());
+					}
+				}
+			}
+
+			//Create the new render target view
+			ComPtr<ID3D11Texture2D> backbuffer;
+			HRESULT hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());
+			tsassert(SUCCEEDED(hr));
+			hr = m_device->CreateRenderTargetView(backbuffer.Get(), nullptr, m_swapChainRenderTarget.GetAddressOf());
+			tsassert(SUCCEEDED(hr));
+		}
 	}
 
+	//Clear the backbuffer
 	const float colour[] = { vec.x(), vec.y(), vec.z(), 1.0f };
 	m_immediateContext->ClearRenderTargetView(m_swapChainRenderTarget.Get(), colour);
 }

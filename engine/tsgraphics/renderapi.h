@@ -306,8 +306,8 @@ namespace ts
 		uint32 adapterIndex = 0;
 		uint32 resolutionWidth = 0;
 		uint32 resolutionHeight = 0;
-		SMultisampling multisampling;
-		EWindowMode windowMode = EWindowMode::eWindowDefault;
+		uint32 multisampleCount = 0;
+		bool fullscreen = false;
 		uint16 flags = 0;
 	};
 
@@ -345,8 +345,12 @@ namespace ts
 		virtual void executeContext(IRenderContext* context) = 0;
 
 		//Window/swapchain methods
-		virtual void setWindowSettings(EWindowMode mode, uint32 w, uint32 h, SMultisampling sampling) = 0;
-		virtual void getWindowRenderTarget(ResourceProxy& target) = 0;
+		virtual void setDisplayResolution(uint32 width, uint32 height) = 0;
+		virtual void setDisplayMultisampleCount(uint32 samplecount) = 0;
+		virtual void setDisplayFullscreenState(bool fullscreen) = 0;
+		virtual bool getDisplayFullscreenState() const = 0;
+		virtual void getDisplayRenderTarget(ResourceProxy& target) = 0;
+
 		virtual void getDrawStatistics(SRenderStatistics& stats) = 0;
 
 		virtual void drawBegin(const Vector& vec) = 0;

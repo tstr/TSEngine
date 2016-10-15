@@ -80,6 +80,7 @@ namespace ts
 		int onMouseUp(const SInputMouseEvent&) override;
 		int onMouse(int16 dx, int16 dy) override;
 
+		std::atomic<bool> m_rebuildDepthTarget;
 		void buildDepthTarget();
 		void buildVertexInputDescriptor(std::vector<SShaderInputDescriptor>& inputdescriptor, uint32 vertexFlags);
 		

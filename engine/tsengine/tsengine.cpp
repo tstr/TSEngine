@@ -65,7 +65,7 @@ private:
 				getWindowResizeEventArgs(args, w, h);
 				if (auto render = m_wnd->getSystem()->getRenderModule())
 				{
-					render->setWindowSettings(eWindowUnknown, w, h, SMultisampling(0));
+					render->setDisplayConfiguration(eDisplayUnknown, w, h, SMultisampling(0));
 				}
 			}
 
@@ -154,12 +154,12 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 		this_thread::yield();
 	}
 
-	uint32 fullscreenmode = 0;
-	config.getProperty("video.fullscreen", fullscreenmode);
-	if (fullscreenmode > 2)
+	uint32 displaymode = 0;
+	config.getProperty("video.displaymode", displaymode);
+	if (displaymode > 2)
 	{
-		tswarn("% is not a valid fullscreen mode", fullscreenmode);
-		fullscreenmode = 0;
+		tswarn("% is not a valid fullscreen mode", displaymode);
+		displaymode = 0;
 	}
 
 	string assetpathbuf;
@@ -175,7 +175,7 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	rendercfg.width = width;
 	rendercfg.height = height;
 	rendercfg.apiEnum = ERenderApiID::eRenderApiD3D11;
-	rendercfg.windowMode = (EWindowMode)(fullscreenmode + 1);
+	rendercfg.displaymode = (EDisplayMode)(displaymode + 1);
 	rendercfg.rootpath = assetpath;
 	rendercfg.multisampling.count = samplecount;
 	m_renderModule.reset(new CRenderModule(rendercfg));

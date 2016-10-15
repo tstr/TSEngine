@@ -61,7 +61,7 @@ static bool EnableVisualStyles()
 enum Win32flags
 {
 	win_registered = 1,
-	win_open	   = 2,
+	win_open	   = 2
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -174,7 +174,8 @@ struct CWindow::Impl
 		windowClass.hIcon = LoadIcon(0, IDI_APPLICATION);
 		windowClass.hIconSm = 0;
 
-		tsassert(RegisterClassEx(&windowClass));
+		//Register the window class
+		tsassert(RegisterClassExA(&windowClass));
 
 		flags |= win_registered;
 	}
@@ -189,7 +190,7 @@ struct CWindow::Impl
 			window->close();
 		}
 
-		tsassert(UnregisterClass(windowClassname.c_str(), windowModule));
+		tsassert(UnregisterClassA(windowClassname.c_str(), windowModule));
 
 		flags &= ~win_registered;
 	}
@@ -250,7 +251,15 @@ struct CWindow::Impl
 		UINT styles = WS_VISIBLE | WS_OVERLAPPEDWINDOW;
 		UINT exStyles = WS_EX_APPWINDOW;
 
-		RECT r = { size.x, size.y, size.w, size.h };
+		RECT r = {
+			(LONG)size.x,
+			(LONG)size.y,
+			//Convert width/height into coordinates of bottom right corner
+			(LONG)size.x + (LONG)size.w,
+			(LONG)size.y + (LONG)size.h
+		};
+
+		//Set size of the client area of the window - prevents visual artifacting
 		AdjustWindowRectEx(&r,
 			styles,
 			false,
@@ -262,14 +271,11 @@ struct CWindow::Impl
 			windowClassname.c_str(),
 			windowTitle.c_str(),
 			styles,
-			//size.x,
-			//size.y,
-			//size.w,
-			//size.h,
 			r.left,
 			r.top,
-			r.right,
-			r.bottom,
+			//Convert coordinates of bottom right corner back into width and height of window
+			r.right - r.left,
+			r.bottom - r.top,
 			0,
 			0,
 			windowModule,

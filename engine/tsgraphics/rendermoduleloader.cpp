@@ -34,9 +34,9 @@ bool CRenderModule::loadApi(ERenderApiID id)
 	apicfg.adapterIndex = 0; //hard code the adapter for now
 	apicfg.resolutionHeight = m_config.height;
 	apicfg.resolutionWidth = m_config.width;
-	apicfg.windowMode = m_config.windowMode;
+	apicfg.fullscreen = (m_config.displaymode == EDisplayMode::eDisplayFullscreen);
 	apicfg.windowHandle = m_config.windowHandle;
-	apicfg.multisampling = m_config.multisampling;
+	apicfg.multisampleCount = m_config.multisampling.count;
 
 #ifdef _DEBUG
 	apicfg.flags |= ERenderApiFlags::eFlagDebug;
