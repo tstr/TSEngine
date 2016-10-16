@@ -26,7 +26,8 @@ namespace ts
 		private:
 
 			HWND m_hwnd;
-			uint32 m_flags = 0;
+			UINT m_apiFlags = 0;
+			UINT m_swapChainFlags = 0;
 
 			ComPtr<IDXGIFactory> m_dxgiFactory;
 			ComPtr<IDXGIOutput> m_dxgiOutput;
@@ -41,9 +42,8 @@ namespace ts
 
 			ComPtr<ID3D11RenderTargetView> m_swapChainRenderTarget;
 
-			std::atomic<uint32> m_cachedRes;
-			std::atomic<uint32> m_cachedSampling;
-			std::atomic<bool> m_fullscreenState;
+			std::atomic<UINT> m_cachedRes;
+			std::atomic<UINT> m_cachedSampling;
 			std::vector<DX11RenderContext*> m_renderContexts;
 
 			std::atomic<uint32> m_drawCallCounter;

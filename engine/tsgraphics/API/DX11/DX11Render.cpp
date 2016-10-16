@@ -28,7 +28,7 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 
 	HRESULT hr = S_OK;
 
-	m_flags = cfg.flags;
+	m_apiFlags = cfg.flags;
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	//initialize direct3D
@@ -54,7 +54,8 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	scd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 	scd.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
 
-	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	m_swapChainFlags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	scd.Flags = m_swapChainFlags;
 
 	UINT flags = 0;
 	//UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT; //for D2D and D3D interop
@@ -194,7 +195,6 @@ DX11RenderApi::DX11RenderApi(const SRenderApiConfiguration& cfg)
 	//Initialize values
 	m_cachedRes = 0;
 	m_cachedSampling = 0;
-	m_fullscreenState = cfg.fullscreen;
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 }
@@ -207,7 +207,7 @@ DX11RenderApi::~DX11RenderApi()
 		m_dxgiSwapchain->SetFullscreenState(false, nullptr);
 	}
 
-	if (m_flags & ERenderApiFlags::eFlagReportObjects)
+	if (m_apiFlags & ERenderApiFlags::eFlagReportObjects)
 	{
 		ComPtr<ID3D11Debug> debug;
 		m_device.As(&debug);
@@ -246,12 +246,46 @@ void DX11RenderApi::setDisplayMultisampleCount(uint32 samplecount)
 
 void DX11RenderApi::setDisplayFullscreenState(bool fullscreen)
 {
-	m_fullscreenState.store(fullscreen);
+	HRESULT hr = S_OK;
+
+	DXGI_SWAP_CHAIN_DESC desc;
+	m_dxgiSwapchain->GetDesc(&desc);
+
+	//Zero out refresh rate values because DXGI calculates them automatically
+	desc.BufferDesc.RefreshRate.Denominator = 0;
+	desc.BufferDesc.RefreshRate.Numerator = 0;
+
+	//Enter
+	if (fullscreen)
+	{
+		//Call resizetarget before entering fullscreen
+		if (FAILED(hr = m_dxgiSwapchain->ResizeTarget(&desc.BufferDesc)))
+			tserror("unable to resize IDXGISwapChain target. Error: \"%\"", _com_error(hr).ErrorMessage());
+
+		if (FAILED(hr = m_dxgiSwapchain->SetFullscreenState(true, nullptr)))
+			tserror("failed to enter fullscreen mode. Error: \"%\"", _com_error(hr).ErrorMessage());
+
+		//Call resize target again in order to prevent issues with the refresh rate
+		if (FAILED(hr = m_dxgiSwapchain->ResizeTarget(&desc.BufferDesc)))
+			tserror("unable to resize IDXGISwapChain target. Error: \"%\"", _com_error(hr).ErrorMessage());
+	}
+	//Exit
+	else
+	{
+		if (FAILED(hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr)))
+			tserror("failed to exit fullscreen mode. Error: \"%\"", _com_error(hr).ErrorMessage());
+	}
 } 
 
 bool DX11RenderApi::getDisplayFullscreenState() const
 {
-	return m_fullscreenState.load();
+	HRESULT hr = S_OK;
+	BOOL screenstate = FALSE;
+
+	if (FAILED(hr =m_dxgiSwapchain->GetFullscreenState(&screenstate, nullptr)))
+		tswarn("failed to get fullscreen mode. Error: \"%\"", _com_error(hr).ErrorMessage());
+
+	return (screenstate != FALSE);
 }
 
 void DX11RenderApi::getDisplayRenderTarget(ResourceProxy& target)
@@ -277,19 +311,15 @@ void DX11RenderApi::drawBegin(const Vector& vec)
 		uint32 w = LOWORD(res); //New resolution width
 		uint32 h = HIWORD(res); //New resolution height
 
-		//New fullscreen state
-		auto screenstate = m_fullscreenState.load();
-		//Old fullscreen state
-		BOOL old_screenstate = FALSE;
-
-		if (FAILED(hr = m_dxgiSwapchain->GetFullscreenState(&old_screenstate, nullptr)))
+		//Get current fullscreen state
+		BOOL screenstate = FALSE;
+		if (FAILED(hr = m_dxgiSwapchain->GetFullscreenState(&screenstate, nullptr)))
 			tswarn("failed to get fullscreen mode. Error: \"%\"", _com_error(hr).ErrorMessage());
 
-		bool screenstate_changed = (BOOL)screenstate != old_screenstate;
 		bool res_changed = (w != 0) || (h != 0);
 		bool sample_changed = (sample != 0);
 
-		if (res_changed || sample_changed || screenstate_changed)
+		if (res_changed || sample_changed)
 		{
 			w = max(1u, w);
 			h = max(1u, h);
@@ -307,18 +337,14 @@ void DX11RenderApi::drawBegin(const Vector& vec)
 			if (sample_changed)
 			{
 				//If the current state of the swapchain is fullscreen then we must exit in order to rebuild the swapchain
-				if (old_screenstate)
+				if (screenstate)
 					hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr);
 
 				DXGI_SWAP_CHAIN_DESC desc;
 				m_dxgiSwapchain->GetDesc(&desc);
 
 				//Because we are rebuilding the swap chain we can update the resolution/fullscreen state here instead of in separate calls to ResizeBuffers/SetFullscreenState
-				bool windowed = !old_screenstate;
-				if (screenstate_changed)
-					windowed = !screenstate;
-
-				desc.Windowed = windowed;
+				desc.Windowed = !screenstate;
 
 				if (res_changed)
 				{
@@ -328,6 +354,8 @@ void DX11RenderApi::drawBegin(const Vector& vec)
 
 				desc.SampleDesc.Count = sample;
 				getMultisampleQuality(desc.SampleDesc);
+
+				desc.Flags = m_swapChainFlags;
 
 				//Release swapchain
 				m_dxgiSwapchain.Reset();
@@ -340,51 +368,16 @@ void DX11RenderApi::drawBegin(const Vector& vec)
 					DXGI_MWA_NO_WINDOW_CHANGES
 				);
 			}
-			else
+			else if (res_changed)
 			{
 				//Only resize if width/height differ
-				if (res_changed)
-				{
-					DXGI_SWAP_CHAIN_DESC desc;
-					m_dxgiSwapchain->GetDesc(&desc);
+				DXGI_SWAP_CHAIN_DESC desc;
+				m_dxgiSwapchain->GetDesc(&desc);
 
-					//Resize swapchain - DXGI_FORMAT_R8G8B8A8_UNORM
-					//if (FAILED(m_dxgiSwapchain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, desc.Flags)))
-					if (FAILED(m_dxgiSwapchain->ResizeBuffers(2, w, h, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH)))
-						tswarn("unable to resize IDXGISwapChain");
-				}
-
-				//Only change fullscreen state if states differ
-				if (screenstate_changed)
-				{
-					DXGI_SWAP_CHAIN_DESC desc;
-					m_dxgiSwapchain->GetDesc(&desc);
-
-					//Zero out refresh rate values because DXGI calculates them automatically
-					desc.BufferDesc.RefreshRate.Denominator = 0;
-					desc.BufferDesc.RefreshRate.Numerator = 0;
-
-					//Enter
-					if (screenstate)
-					{
-						//Call resizetarget before entering fullscreen
-						if (FAILED(hr = m_dxgiSwapchain->ResizeTarget(&desc.BufferDesc)))
-							tserror("unable to resize IDXGISwapChain target. Error: \"%\"", _com_error(hr).ErrorMessage());
-
-						if (FAILED(hr = m_dxgiSwapchain->SetFullscreenState(true, nullptr)))
-							tserror("failed to enter fullscreen mode. Error: \"%\"", _com_error(hr).ErrorMessage());
-
-						//Call resize target again in order to prevent issues with the refresh rate
-						if (FAILED(hr = m_dxgiSwapchain->ResizeTarget(&desc.BufferDesc)))
-							tserror("unable to resize IDXGISwapChain target. Error: \"%\"", _com_error(hr).ErrorMessage());
-					}
-					//Exit
-					else 
-					{
-						if (FAILED(hr = m_dxgiSwapchain->SetFullscreenState(false, nullptr)))
-							tserror("failed to exit fullscreen mode. Error: \"%\"", _com_error(hr).ErrorMessage());
-					}
-				}
+				//Resize swapchain - DXGI_FORMAT_R8G8B8A8_UNORM
+				//if (FAILED(m_dxgiSwapchain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, desc.Flags)))
+				if (FAILED(m_dxgiSwapchain->ResizeBuffers(2, w, h, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH)))
+					tswarn("unable to resize IDXGISwapChain");
 			}
 
 			//Create the new render target view
