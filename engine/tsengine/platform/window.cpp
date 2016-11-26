@@ -197,9 +197,14 @@ struct CWindow::Impl
 
 	static LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	{
-		auto wnd = reinterpret_cast<CWindow::Impl*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+		//If window was just created, set user data to value in create parameters
+		if (msg == WM_CREATE)
+		{
+			SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)((LPCREATESTRUCT)lparam)->lpCreateParams);
+		}
 
-		if (wnd)
+		//Get window ptr from user data
+		if (auto wnd = reinterpret_cast<CWindow::Impl*>(GetWindowLongPtr(hwnd, GWLP_USERDATA)))
 		{
 			if (msg == TSM_INVOKE)
 			{
@@ -279,30 +284,34 @@ struct CWindow::Impl
 			0,
 			0,
 			windowModule,
-			0
+			this
 		);
 
 		tsassert(IsWindow(windowHandle));
 
 		ShowWindow(windowHandle, showCmd);
 
-		flags |= win_open;
-
-		SetWindowLongPtr(windowHandle, GWLP_USERDATA, LONG_PTR(this));
-		SendMessage(windowHandle, TSM_CREATE, 0, 0);
-
 		MSG msg;
 		ZeroMemory(&msg, sizeof(MSG));
 
-		UpdateWindow(windowHandle);
+		this->flags |= win_open;
 
-		while (BOOL ret = GetMessage(&msg, NULL, 0, 0))
-		{			
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+		BOOL ret = 0;
+		while ((ret = GetMessage(&msg, windowHandle, 0, 0)) != 0)
+		{
+			if (ret == -1)
+			{
+				tserror("Win32 GetLastError(): %", GetLastError());
+				break;
+			}
+			else
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
 		}
 
-		flags &= ~win_open;
+		this->flags &= ~win_open;
 	}
 };
 
@@ -351,7 +360,6 @@ bool CWindow::isOpen() const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 void CWindow::open(int showCmd)
 {
 	pImpl->open(showCmd);
@@ -359,7 +367,7 @@ void CWindow::open(int showCmd)
 
 void CWindow::close()
 {
-	raiseEvent(EWindowEvent::eEventClose, 0, 0);
+	SendMessageA(pImpl->windowHandle, WM_CLOSE, 0, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

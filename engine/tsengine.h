@@ -65,11 +65,6 @@ namespace ts
 
 		CMessageReciever<SSystemMessage> m_messageReciever;
 
-		void onExit();
-		void onInit();
-
-		int run();
-
 		std::recursive_mutex m_exitMutex;
 
 	public:

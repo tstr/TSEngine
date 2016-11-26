@@ -9,7 +9,7 @@
 
 namespace ts
 {
-	class CUIModule : public IInputEventListener
+	class UISystem : public IInputEventListener
 	{
 	private:
 		
@@ -54,10 +54,10 @@ namespace ts
 
 	public:
 		
-		CUIModule(CInputModule* inputmodule, CRenderModule* rendermodule);
-		~CUIModule();
+		UISystem(CInputModule* inputmodule, CRenderModule* rendermodule);
+		~UISystem();
 
-		CUIModule(const CUIModule&) = delete;
+		UISystem(const UISystem&) = delete;
 
 		void setDisplaySize(uint32 width, uint32 height)
 		{

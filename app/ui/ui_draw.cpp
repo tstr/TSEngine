@@ -13,7 +13,7 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CUIModule::init()
+void UISystem::init()
 {
 	//Create the vertex shader
 	static const char* shaderCode = R"(
@@ -145,7 +145,7 @@ void CUIModule::init()
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CUIModule::draw(IRenderContext* context, ResourceProxy rendertarget, Viewport viewport)
+void UISystem::draw(IRenderContext* context, ResourceProxy rendertarget, Viewport viewport)
 {
 	ImDrawData* drawData = ImGui::GetDrawData();
 
@@ -257,7 +257,7 @@ void CUIModule::draw(IRenderContext* context, ResourceProxy rendertarget, Viewpo
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CUIModule::destroy()
+void UISystem::destroy()
 {
 	m_textureAtlasRsc.reset(nullptr);
 	m_textureAtlasView.reset(nullptr);

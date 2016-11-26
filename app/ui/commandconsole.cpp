@@ -18,7 +18,7 @@ UICommandConsole::UICommandConsole(Application* app) :
 
 UICommandConsole::~UICommandConsole()
 {
-
+	ts::global::getLogger().detachStream(this);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

@@ -74,7 +74,7 @@ namespace ts
 	public:
 
 		CWindow(const SWindowDesc& desc);
-		~CWindow();
+		virtual ~CWindow();
 			
 		CWindow(const CWindow&) = delete;
 		CWindow(CWindow&& mov) { pImpl = mov.pImpl; mov.pImpl = nullptr; }

@@ -14,10 +14,10 @@ namespace ts
 {
 	class CCamera;
 	class CModel;
-	class CUIModule;
+	class UISystem;
 	class UICommandConsole;
 	class UIDebugMenu;
-
+	
 	class Application :
 		public IApplication,
 		public CWindow::IEventListener,
@@ -30,7 +30,7 @@ namespace ts
 		UniquePtr<CCamera> m_camera;
 		UniquePtr<CModel> m_model;
 		UniquePtr<CModel> m_sphere;
-		UniquePtr<CUIModule> m_ui;
+		UniquePtr<UISystem> m_ui;
 		UniquePtr<UICommandConsole> m_consoleMenu;
 		UniquePtr<UIDebugMenu> m_debugMenu;
 

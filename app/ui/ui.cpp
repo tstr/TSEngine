@@ -15,7 +15,7 @@ using namespace std;
 // ctor
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-CUIModule::CUIModule(CInputModule* inputmodule, CRenderModule* rendermodule) :
+UISystem::UISystem(CInputModule* inputmodule, CRenderModule* rendermodule) :
 	m_rendermodule(rendermodule),
 	m_inputmodule(inputmodule)
 {
@@ -56,18 +56,21 @@ CUIModule::CUIModule(CInputModule* inputmodule, CRenderModule* rendermodule) :
 	init();
 }
 
-CUIModule::~CUIModule()
+UISystem::~UISystem()
 {
+	ImGui::Shutdown();
+
 	//Destroy graphical resources
 	destroy();
-	ImGui::Shutdown();
+
+	m_inputmodule->removeEventListener(this);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //Update function
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CUIModule::begin(IRenderContext* context, double dt)
+void UISystem::begin(IRenderContext* context, double dt)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.DeltaTime = (float)dt;
@@ -82,7 +85,7 @@ void CUIModule::begin(IRenderContext* context, double dt)
 	ImGui::NewFrame();
 }
 
-void CUIModule::end(ResourceProxy rendertarget)
+void UISystem::end(ResourceProxy rendertarget)
 {
 	Viewport viewport;
 	viewport.x = 0;
@@ -98,7 +101,7 @@ void CUIModule::end(ResourceProxy rendertarget)
 // Input event handlers
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-int CUIModule::onMouse(int16 dx, int16 dy)
+int UISystem::onMouse(int16 dx, int16 dy)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -111,7 +114,7 @@ int CUIModule::onMouse(int16 dx, int16 dy)
 	return 0;
 }
 
-int CUIModule::onMouseDown(const SInputMouseEvent& args)
+int UISystem::onMouseDown(const SInputMouseEvent& args)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -125,7 +128,7 @@ int CUIModule::onMouseDown(const SInputMouseEvent& args)
 	return 0;
 }
 
-int CUIModule::onMouseUp(const SInputMouseEvent& args)
+int UISystem::onMouseUp(const SInputMouseEvent& args)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -139,7 +142,7 @@ int CUIModule::onMouseUp(const SInputMouseEvent& args)
 	return 0;
 }
 
-int CUIModule::onMouseScroll(const SInputMouseEvent& args)
+int UISystem::onMouseScroll(const SInputMouseEvent& args)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -147,7 +150,7 @@ int CUIModule::onMouseScroll(const SInputMouseEvent& args)
 	return 0;
 }
 
-int CUIModule::onKeyDown(EKeyCode code)
+int UISystem::onKeyDown(EKeyCode code)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.KeysDown[code] = 1;
@@ -156,7 +159,7 @@ int CUIModule::onKeyDown(EKeyCode code)
 	return 0;
 }
 
-int CUIModule::onKeyUp(EKeyCode code)
+int UISystem::onKeyUp(EKeyCode code)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.KeysDown[code] = 0;
@@ -164,7 +167,7 @@ int CUIModule::onKeyUp(EKeyCode code)
 	return 0;
 }
 
-int CUIModule::onChar(wchar ch)
+int UISystem::onChar(wchar ch)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.AddInputCharacter(ch);

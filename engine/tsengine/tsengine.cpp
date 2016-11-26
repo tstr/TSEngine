@@ -23,14 +23,6 @@
 using namespace ts;
 using namespace std;
 
-/*
-//todo: find a way to set program to exit correctly when console is closed
-static void consoleClosingHandlerFunc()
-{
-	gSystem->deinit();
-}
-*/
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Application window class
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -84,6 +76,11 @@ public:
 	{
 		this->addEventListener((IEventListener*)&m_eventListener);
 	}
+
+	~Window()
+	{
+		this->removeEventListener((IEventListener*)&m_eventListener);
+	}
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,7 +107,7 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	//Set application instance
 	m_app.reset(params.app);
 	tsassert(m_app.get());
-	
+
 	//Create cvar table
 	m_cvarTable.reset(new CVarTable());
 	
@@ -146,7 +143,10 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 
 	//Runs window message loop on separate thread
 	const int showcmd = params.showWindow;
-	thread([this, &showcmd]() { this->m_window->open(showcmd); }).detach();
+	thread windowThread([=](){
+		this->m_window->open(showcmd);
+	});
+
 	//Delay this thread until the window has opened fully
 	while (!m_window->isOpen())
 	{
@@ -178,8 +178,8 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	rendercfg.displaymode = (EDisplayMode)(displaymode + 1);
 	rendercfg.rootpath = assetpath;
 	rendercfg.multisampling.count = samplecount;
-	m_renderModule.reset(new CRenderModule(rendercfg));
 
+	m_renderModule.reset(new CRenderModule(rendercfg));
 	m_inputModule.reset(new CInputModule(m_window.get()));
 
 	/*
@@ -189,12 +189,54 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	}).detach();
 	*/
 
-	onInit();
+	m_app->onInit(this);
 
-	//Run simulation loop
-	run();
+	/////////////////////////////////////////////////////////////////////////
+	//Main loop	
+	{
+		lock_guard<recursive_mutex>lk(m_exitMutex);
 
-	onExit();
+		Timer timer;
+
+		SSystemMessage msg;
+
+		//Main engine loop
+		while (msg.eventcode != ESystemMessage::eMessageExit)
+		{
+			m_messageReciever.peek(msg);
+
+			timer.tick();
+			double dt = timer.deltaTime();
+
+			Vector framecolour = colours::AntiqueWhite;
+
+			//Clear the frame to a specific colour
+			m_renderModule->drawBegin(framecolour);
+
+			//Update application
+			m_app->onUpdate(dt);
+
+			//Present the frame
+			m_renderModule->drawEnd();
+		}
+	}
+
+	/////////////////////////////////////////////////////////////////////////
+	//Shutdown
+
+	m_app->onExit();
+
+	m_window->close();
+	windowThread.join();
+
+	m_app.reset();
+	m_inputModule.reset();
+	m_renderModule.reset();
+	m_window.reset();
+
+	consoleClose();
+
+	/////////////////////////////////////////////////////////////////////////
 }
 
 CEngineSystem::~CEngineSystem()
@@ -204,62 +246,10 @@ CEngineSystem::~CEngineSystem()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int CEngineSystem::run()
-{
-	lock_guard<recursive_mutex>lk(m_exitMutex);
-
-	Timer timer;
-
-	SSystemMessage msg;
-
-	//Main engine loop
-	while (msg.eventcode != ESystemMessage::eMessageExit)
-	{
-		m_messageReciever.peek(msg);
-		
-		timer.tick();
-		double dt = timer.deltaTime();
-
-		Vector framecolour = colours::AntiqueWhite;
-
-		//Clear the frame to a specific colour
-		m_renderModule->drawBegin(framecolour);
-
-		//Update application
-		m_app->onUpdate(dt);
-
-		//Present the frame
-		m_renderModule->drawEnd();
-	}
-
-	return 0;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 void CEngineSystem::shutdown()
 {
 	m_messageReciever.post(SSystemMessage(ESystemMessage::eMessageExit));
 	lock_guard<recursive_mutex>lk(m_exitMutex);
-}
-
-//Event handlers
-void CEngineSystem::onExit()
-{
-	m_app->onExit();
-
-	m_window->close();
-
-	m_app.reset();
-	m_inputModule.reset();
-	m_renderModule.reset();
-
-	consoleClose();
-}
-
-void CEngineSystem::onInit()
-{
-	m_app->onInit(this);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
