@@ -1,0 +1,9 @@
+/*
+	Version file
+*/
+
+//Git macros
+#define TS_GIT_SHA1 "@GIT_SHA1@"
+#define TS_GIT_REFSPEC "@GIT_REFSPEC@"
+#define TS_GIT_COMMIT_DATE "@GIT_DATE@"
+#define TS_GIT_COMMIT_SUBJECT "@GIT_COMMIT_SUBJECT@"

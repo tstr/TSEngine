@@ -1,49 +1,66 @@
-#TSCORE
+#
+#	tscore
+#
 
-SET(src_list
-
-	internal/tscoreapi.h
+set(tscore_inc
 	
-	debug/assert.h
-	debug/assert.cpp
-	debug/log.h
-	debug/log.cpp
-	debug/profiling.h
-
-	system/memory.h
-	system/memory.cpp
-	system/thread.h
-	system/error.h
-	system/error.cpp
-	system/time.h
-	system/info.h
-	system/info.cpp
-
-	filesystem/path.cpp
-	filesystem/path.h
-	filesystem/pathhelpers.h
-	filesystem/pathhelpers.cpp
-
-	containers/circularbuffer.h
-	containers/threadqueue.h
-	containers/stack.h
+	inc/tscore/abi.h
 	
-	maths/common.h
-	maths/functions.h
-	maths/maths.cpp
-	maths/matrix.h
-	maths/quaternion.h
-	maths/vector.h
-	maths.h
+	inc/tscore/debug/assert.h
+	inc/tscore/debug/profiling.h
+	inc/tscore/debug/log.h
+
+	inc/tscore/system/memory.h
+	inc/tscore/system/thread.h
+	inc/tscore/system/error.h
+	inc/tscore/system/time.h
+	inc/tscore/system/info.h
 	
-	types.h
-	strings.h
-	delegate.h
+	inc/tscore/filesystem/path.h
+	inc/tscore/filesystem/pathhelpers.h
+	
+	inc/tscore/containers/circularbuffer.h
+	inc/tscore/containers/threadqueue.h
+	inc/tscore/containers/stack.h
+	
+	inc/tscore/maths/common.h
+	inc/tscore/maths/functions.h
+	inc/tscore/maths/matrix.h
+	inc/tscore/maths/quaternion.h
+	inc/tscore/maths/vector.h
+	inc/tscore/maths.h
+	
+	inc/tscore/types.h
+	inc/tscore/strings.h
+	inc/tscore/delegate.h
 )
 
-ADD_LIBRARY_EX(
+SET(tscore_src
+	
+	src/maths.cpp
+	
+	src/assert.cpp
+	src/log.cpp
+
+	src/system/memory.cpp
+	src/system/error.cpp
+	src/system/info.cpp
+
+	src/filesystem/path.cpp
+	src/filesystem/pathhelpers.cpp
+)
+
+SET(tscore_files ${tscore_src} ${tscore_inc})
+
+add_library_tse(
 	tscore
-	"${src_list}"
+	"${tscore_files}"
 )
 
-copy_source_groups(${src_list})
+target_include_directories(
+	tscore
+	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc
+	PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+assign_source_groups(${tscore_files})

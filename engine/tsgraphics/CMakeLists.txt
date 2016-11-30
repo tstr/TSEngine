@@ -1,48 +1,66 @@
-#TSGRAPHICS
+#
+#	tsgraphics
+#
 
-SET(src_list
-	
-	colour.h
-	rendermodule.h
-	rendermodule.cpp
-	rendermoduleloader.cpp
-	renderapi.h
-	rendercommon.h
-	
-	texturemanager.h
-	texturemanager.cpp
-	shader/shadermanager.h
-	shader/shadermanager.cpp
-	shader/preprocessor.h
-	shader/preprocessor.cpp
+set(tsgraphics_inc
 
-	indexbuffer.h
-	vertexbuffer.h
-	uniformbuffer.h
-	renderbuffer.cpp
-	buffercommon.h
+	inc/tsgraphics/abi.h
 	
-	platform/nvoptimus.cpp
-	platform/borderless.h
-	platform/borderless.cpp
-	model/modeldefs.h
+	inc/tsgraphics/rendermodule.h
+	inc/tsgraphics/texturemanager.h
+	inc/tsgraphics/shadermanager.h
+	
+	inc/tsgraphics/api/renderapi.h
+	inc/tsgraphics/api/rendercommon.h
+	
+	inc/tsgraphics/indexbuffer.h
+	inc/tsgraphics/vertexbuffer.h
+	inc/tsgraphics/uniformbuffer.h
+	inc/tsgraphics/buffercommon.h
+	inc/tsgraphics/colour.h
 
-	api/DX11/DX11base.h
-	api/DX11/DX11render.h
-	api/DX11/DX11render.cpp
-	api/DX11/DX11adapter.cpp
-	api/DX11/DX11helpers.h
-	api/DX11/DX11helpers.cpp
-	api/DX11/DX11context.cpp
-	api/DX11/DX11shaderCompiler.cpp
+	inc/tsgraphics/model/modeldefs.h
 )
 
-ADD_LIBRARY_EX(
+SET(tsgraphics_src
+	
+	src/api/DX11/DX11base.h
+	src/api/DX11/DX11render.h
+	src/api/DX11/DX11render.cpp
+	src/api/DX11/DX11adapter.cpp
+	src/api/DX11/DX11helpers.h
+	src/api/DX11/DX11helpers.cpp
+	src/api/DX11/DX11context.cpp
+	src/api/DX11/DX11shaderCompiler.cpp
+	
+	src/rendermodule.cpp
+	src/rendermoduleloader.cpp
+	src/texturemanager.cpp
+	
+	src/shader/shadermanager.cpp
+	src/shader/preprocessor.h
+	src/shader/preprocessor.cpp
+	
+	src/renderbuffer.cpp
+	
+	src/platform/nvoptimus.cpp
+	src/platform/borderless.h
+	src/platform/borderless.cpp
+)
+
+SET(tsgraphics_files ${tsgraphics_src} ${tsgraphics_inc})
+
+add_library_tse(
 	tsgraphics
-	"${src_list}"
+	"${tsgraphics_files}"
 )
 
+target_include_directories(
+	tsgraphics
+	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc
+	PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
-TARGET_LINK_LIBRARIES(tsgraphics tscore)
+assign_source_groups(${tsgraphics_files})
 
-copy_source_groups(${src_list})
+TARGET_LINK_LIBRARIES(tsgraphics PUBLIC tscore)

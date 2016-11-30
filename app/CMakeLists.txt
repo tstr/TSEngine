@@ -1,45 +1,46 @@
-#Application
+#
+#	Application
+#
 
 SET(src_list
 	
-	main.cpp
-	application.cpp
-	application.h
+	src/main.cpp
+	src/application.cpp
+	src/application.h
 	
-	scene/modelimporter.h
-	scene/modelimporter.cpp
-	scene/camera.h
-	scene/camera.cpp
+	src/scene/modelimporter.h
+	src/scene/modelimporter.cpp
+	src/scene/camera.h
+	src/scene/camera.cpp
 	
-	helpers/geometry.cpp
-	helpers/geometry.h
-	helpers/appinfo.h
-	helpers/appinfo.cpp
+	src/helpers/geometry.cpp
+	src/helpers/geometry.h
+	src/helpers/appinfo.h
+	src/helpers/appinfo.cpp
 
-	ui/ui.h
-	ui/ui.cpp
-	ui/ui_draw.cpp
-	ui/imgui/imconfig.h
-	ui/imgui/imgui.h
-	ui/imgui/imgui.cpp
-	ui/imgui/imgui_draw.cpp
-	ui/imgui/imgui_internal.h
+	src/ui/ui.h
+	src/ui/ui.cpp
+	src/ui/ui_draw.cpp
+	src/ui/imgui/imconfig.h
+	src/ui/imgui/imgui.h
+	src/ui/imgui/imgui.cpp
+	src/ui/imgui/imgui_draw.cpp
+	src/ui/imgui/imgui_internal.h
 
-	ui/debugmenu.h
-	ui/debugmenu.cpp
-	ui/commandconsole.h
-	ui/commandconsole.cpp
+	src/ui/debugmenu.h
+	src/ui/debugmenu.cpp
+	src/ui/commandconsole.h
+	src/ui/commandconsole.cpp
 )
 
-ADD_EXECUTABLE(
+ADD_EXECUTABLE_TSE(
 	application
-	WIN32		#build exe as a win32 application
-	${src_list}
+	"${src_list}"
 )
 
-copy_source_groups(${src_list})
+ASSIGN_SOURCE_GROUPS(${src_list})
 
-TARGET_LINK_LIBRARIES(application tsengine)
+TARGET_LINK_LIBRARIES(application PUBLIC tsengine)
 
 #Copy config.ini file to the build folder
 ADD_CUSTOM_COMMAND(
@@ -47,5 +48,3 @@ ADD_CUSTOM_COMMAND(
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/config.ini" $<TARGET_FILE_DIR:application>
 	DEPENDS ${PROJECT_SOURCE_DIR}/config.ini
 )
-
-SET_TARGET_PROPERTIES(application PROPERTIES FOLDER applications)

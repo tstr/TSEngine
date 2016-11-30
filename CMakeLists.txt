@@ -1,5 +1,5 @@
 ################################################################################################
-#TS-Engine
+#	TS-Engine
 ################################################################################################
 
 CMAKE_MINIMUM_REQUIRED (VERSION 3.0)
@@ -12,45 +12,110 @@ if("${PROJECT_BINARY_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
 	message(FATAL_ERROR "In-source builds are not permitted")
 endif()
 
-SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/)
-SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib/)
-SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin/)
+SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
-SET (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmakemodules)
-#Find an install runtime library dependencies
-include(InstallSystemLibs)
+SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin/")
+SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin/")
+SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/")
+
+set (TS_BINARY_INSTALL "${CMAKE_INSTALL_PREFIX}/bin")
+set (TS_LIBRARY_INSTALL "${CMAKE_INSTALL_PREFIX}/lib")
+set (TS_INCLUDE_INSTALL "${CMAKE_INSTALL_PREFIX}/include")
+
+# Project include directory
+INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/inc")
+
+# System Libs
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS 1)
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${BIN_INSTALL}")
+set(CMAKE_INSTALL_DEBUG_LIBRARIES 0)
+include(InstallRequiredSystemLibraries)
+
+# Module path
+SET (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmakemodules")
 
 ################################################################################################
-#	build shared libraries
+#	functions
 ################################################################################################
 
 include(GenerateExportHeader)
 
-
 SET(TS_BUILD_SHARED_LIBRARIES CACHE BOOL OFF)
 
-macro(ADD_LIBRARY_EX libname libsrcs)
+#Add a component library
+function(add_library_tse libname libsrcs)
 	
-	UNSET(LIB_TYPE)
-	SET(LIB_TYPE STATIC)
+	set(libtype STATIC)
 	
-	IF(TS_BUILD_SHARED_LIBRARIES)
-		SET(LIB_TYPE SHARED)
-	ENDIF()
+	if (TS_BUILD_SHARED_LIBRARIES)
+		set (libtype SHARED)
+	endif()
 	
-	ADD_LIBRARY(
-		${libname} ${LIB_TYPE}
+	add_library(
+		${libname}
+		${libtype}
 		${libsrcs}
+	)
+	
+	set(macro_libname ${libname})
+	string(TOUPPER ${macro_libname} macro_libname)
+	
+	GENERATE_EXPORT_HEADER(
+		${libname}
+		STATIC_DEFINE TS_LIBRARY_STATIC
+		EXPORT_MACRO_NAME "${macro_libname}_API"
+		NO_EXPORT_MACRO_NAME "${macro_libname}_API_NO"
+	)
+	
+	#Add location of libname_export.h file to public interface
+	TARGET_INCLUDE_DIRECTORIES(
+		${libname}
+		PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
 	)
 	
 	SET_TARGET_PROPERTIES(${libname} PROPERTIES LINKER_LANGUAGE CXX)
 	
-	IF (TS_BUILD_SHARED_LIBRARIES)
-		GENERATE_EXPORT_HEADER( ${libname} )
-		message(FATAL_ERROR "shared libraries currently aren't implemented")
-	ENDIF()
+	INSTALL(
+		TARGETS ${libname}
+		RUNTIME DESTINATION ${TS_BINARY_INSTALL}
+		LIBRARY DESTINATION ${TS_BINARY_INSTALL}
+		ARCHIVE DESTINATION ${TS_LIBRARY_INSTALL}
+	)
 	
-endmacro()
+endfunction()
+
+#Add a component executable
+function(add_executable_tse libname libsrcs)
+	
+	ADD_EXECUTABLE(
+		${libname}
+		WIN32
+		${libsrcs}
+	)
+	
+	INSTALL(
+		TARGETS ${libname}
+		RUNTIME DESTINATION ${TS_BINARY_INSTALL}
+		LIBRARY DESTINATION ${TS_BINARY_INSTALL}
+		ARCHIVE DESTINATION ${TS_LIBRARY_INSTALL}
+	)
+	
+endfunction()
+
+#Create source groups based on the directory structure
+function(assign_source_groups)
+	foreach(file ${ARGN})
+		
+		#Get parent directory
+		get_filename_component(source_dir "${file}" DIRECTORY)
+		
+		#Make sure we are using windows slashes
+		string(REPLACE "/" "\\" source_dir "${source_dir}")
+		
+		source_group("${source_dir}" FILES "${file}")
+		
+	endforeach()
+endfunction()
 
 ################################################################################################
 #	configuration file
@@ -76,8 +141,6 @@ execute_process(COMMAND
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   OUTPUT_VARIABLE GIT_COMMIT_SUBJECT
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-  
-################################################################################################
 
 #platform macros
 if (WIN32)
@@ -98,45 +161,33 @@ CONFIGURE_FILE (
 	"${PROJECT_BINARY_DIR}/cfg/tsconfig.h"
 )
 
+#create version info file
+CONFIGURE_FILE(
+	"${PROJECT_SOURCE_DIR}/tsversion.h.in"
+	"${PROJECT_BINARY_DIR}/cfg/tsversion.h"
+)
+
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/cfg")
 
 ################################################################################################
-
-#sets project filters to match directory structure automatically
-function(copy_source_groups)
-	foreach(FILE ${ARGV})
-		# Get the directory of the source file
-		get_filename_component(PARENT_DIR "${FILE}" DIRECTORY)
-
-		# Remove common directory prefix to make the group
-		string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" GROUP "${PARENT_DIR}")
-
-		# Make sure we are using windows slashes
-		string(REPLACE "/" "\\" GROUP "${GROUP}")
-
-		set(GROUP "src\\${GROUP}")
-		
-		source_group("${GROUP}" FILES "${FILE}")
-	endforeach()
-endfunction()
-
+#	Projects
 ################################################################################################
-
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/engine)
-
-SET (CMAKE_LIBRARY_PATH
-	${CMAKE_LIBRARY_PATH}
-	${PROJECT_SOURCE_DIR}/dependencies
-	${PROJECT_BINARY_DIR}/lib
-)
 
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
-#application
+#applications
 ADD_SUBDIRECTORY(app)
 
+SET_TARGET_PROPERTIES(application PROPERTIES FOLDER applications)
+
 #engine components
-ADD_SUBDIRECTORY(engine)
+ADD_SUBDIRECTORY(engine/tscore)
+ADD_SUBDIRECTORY(engine/tsengine)
+ADD_SUBDIRECTORY(engine/tsgraphics)
+
+SET_TARGET_PROPERTIES(tscore PROPERTIES FOLDER engine)
+SET_TARGET_PROPERTIES(tsgraphics PROPERTIES FOLDER engine)
+SET_TARGET_PROPERTIES(tsengine PROPERTIES FOLDER engine)
 
 ################################################################################################
 
@@ -145,8 +196,10 @@ OPTION(TS_BUILD_TOOLS "build tools" ON)
 IF(TS_BUILD_TOOLS)
 
 	#engine tools
-	ADD_SUBDIRECTORY(tools)
-
+	ADD_SUBDIRECTORY(tools/modelbuild)
+	
+	SET_TARGET_PROPERTIES(modelbuild PROPERTIES FOLDER tools)
+	
 ENDIF()
 
 ################################################################################################
