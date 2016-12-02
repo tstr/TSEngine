@@ -11,7 +11,6 @@
 //Engine headers
 #include <tscore/filesystem/path.h>
 #include <tscore/system/time.h>
-#include <tsengine/cmdargs.h>
 //Model format types and constants
 #include <tsgraphics/model/modeldefs.h>
 
@@ -21,6 +20,8 @@
 #include "assimp\mesh.h"
 #include "assimp\postprocess.h"
 #include "assimp\scene.h"
+#include "assimp\Logger.hpp"
+#include "assimp\DefaultLogger.hpp"
 
 using namespace std;
 using namespace ts;
@@ -65,41 +66,72 @@ void printwarning(const char* str, t ... args)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-//Main function
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 bool exportModel(const aiScene* model, ostream& outputstream);
 bool exportMaterials(const aiScene* scene, ostream& outputstream);
+
+void attachAILogger(bool verbose);
+
+//Command line flags
+enum CMD_FLAGS
+{
+	CmdNone			= 0,
+	CmdGenMaterials	= 1,
+	CmdQuiet		= 2,
+	CmdLogVerbose	= 4,
+	CmdHasTarget	= 8,
+	CmdHasOutput	= 16
+};
+
+//Command line errors
+enum CMD_ERROR
+{
+	CmdErrOk		  = 0,
+	CmdErrFail		  = 1,
+	CmdErrInvalidArgC = 2
+};
+
+//Parses command line arguments - and retrieves program parameters
+int parseCmdArgs(int argc, char** argv, int& flags, string& target, string& output);
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//Main function
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv)
 {
 	if (argc <= 1)
 	{
 		printf("This application was called with invalid arguments, arguments are:\n");
-		printf("[TARGET] -t : path to model file to parse\n");
-		printf("[OUTPUT] -o : path to directory you want to produce the output model\n");
-		printf("[QUIET]  -q : disable printing to stdout\n");
-		printf("[MAT]    -m : generate a material file\n");
+		printf("[TARGET]  -t : path to model file to parse\n");
+		printf("[OUTPUT]  -o : path to directory you want to produce the output model\n");
+		printf("[QUIET]   -q : disable printing to stdout\n");
+		printf("[MAT]     -m : generate a material file\n");
+		printf("[VERBOSE] -v : verbose logging\n");
 		
 		return EXIT_FAILURE;
 	}
 	
-	string cmdstr;
+	int flagArgs = 0;
+	string targetArg;
+	string outputArg;
 
-	CommandLineArgs args(argv, argc);
-
-	bool has_target = args.isArgumentTag("t"); //A path to a model file
-	bool has_output = args.isArgumentTag("o"); //An output directory
-	bool has_mat = args.isArgumentTag("m"); //
-	g_quiet = args.isArgumentTag("q");
+	if (int ret = parseCmdArgs(argc, argv, flagArgs, targetArg, outputArg))
+	{
+		return ret;
+	}
+	
+	bool has_target = (flagArgs & CmdHasTarget) != 0; //A path to a model file
+	bool has_output = (flagArgs & CmdHasOutput) != 0; //An output directory
+	bool has_mat = (flagArgs & CmdGenMaterials) != 0; //Generate a material file for this model
+	g_quiet = (flagArgs & CmdQuiet) != 0;
 
 	Path targetpath;
 	Path outputpath;
 
 	if (has_target)
 	{
-		string buf(trim(args.getArgumentValue("t")));
-		targetpath = Path(buf.c_str());
+		targetpath = Path(targetArg.c_str());
 		if (targetpath.str() == "")
 		{
 			printerror("An invalid target path was specified");
@@ -114,8 +146,7 @@ int main(int argc, char** argv)
 
 	if (has_output)
 	{
-		string buf(trim(args.getArgumentValue("o")));
-		outputpath = Path(buf.c_str());
+		outputpath = Path(outputArg.c_str());
 	}
 	else
 	{
@@ -124,6 +155,9 @@ int main(int argc, char** argv)
 	}
 
 	Assimp::Importer imp;
+
+	//Attach an Assimp logger
+	attachAILogger((flagArgs & CmdLogVerbose) != 0);
 
 	printline("parsing model \"%\"...", targetpath.str());
 	
@@ -435,6 +469,97 @@ bool exportMaterials(const aiScene* scene, ostream& outputstream)
 	}
 	
 	return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+int parseCmdArgs(int argc, char** argv, int& flags, string& target, string& output)
+{
+	if (argc == 1)
+		return CmdErrInvalidArgC;
+
+	string argToken;
+	char prevToken = 0;
+
+	for (int i = 1; i < argc; i++)
+	{
+		argToken = trim(argv[i]);
+		
+		if (argToken.size() > 1)
+		{
+			//If first character is '-' then the current argument token is a tag
+			if (argToken[0] == '-')
+			{
+				//Set flags
+				switch (argToken[1])
+				{
+					case 't':
+					{
+						flags |= CmdHasTarget;
+						break;
+					}
+					case 'o':
+					{
+						flags |= CmdHasOutput;
+						break;
+					}
+					case 'q':
+					{
+						flags |= CmdQuiet;
+						break;
+					}
+					case 'm':
+					{
+						flags |= CmdGenMaterials;
+						break;
+					}
+					case 'v':
+					{
+						flags |= CmdLogVerbose;
+						break;
+					}
+					default:
+					{
+						printwarning("Unknown argument tag '%'", argToken[1]);
+					}
+				}
+
+				prevToken = argToken[1];
+			}
+			else
+			{
+				if (prevToken == 't')
+				{
+					//Current token must be the argument for -t
+					target = argToken;
+				}
+				else if (prevToken == 'o')
+				{
+					//Current token must be the argument for -o
+					output = argToken;
+				}
+				else
+				{
+					printwarning("Argument tag '%' does not expect a parameter: \"%\"", prevToken, argToken);
+				}
+			}
+		}
+	}
+
+	return CmdErrOk;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+void attachAILogger(bool verbose)
+{
+	if (!g_quiet)
+	{
+		Assimp::Logger::LogSeverity severity = (verbose) ? Assimp::Logger::VERBOSE : Assimp::Logger::NORMAL;
+
+		// Create a logger instance for Console Output
+		Assimp::DefaultLogger::create("", severity, aiDefaultLogStream_STDOUT);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

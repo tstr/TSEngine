@@ -26,8 +26,9 @@ INSTALL(
 assign_source_groups(${modelbuild_src})
 
 target_link_libraries(
-	modelbuild
-	tsengine
+	modelbuild PRIVATE
+	tscore
+	tsgraphics
 	assimpLib
 	zlib
 )
@@ -62,6 +63,7 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(assimp BINARY_DIR)
+ExternalProject_Get_Property(assimp INSTALL_DIR)
 
 add_dependencies(modelbuild assimp)
 
@@ -80,7 +82,7 @@ set_target_properties(zlib PROPERTIES IMPORTED_LOCATION_RELWITHDEBINFO "${BINARY
 set_target_properties(zlib PROPERTIES IMPORTED_LOCATION_MINSIZEREL "${BINARY_DIR}/contrib/zlib/MinSizeRel/zlibstatic${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 #External project include directories
-target_include_directories(modelbuild PRIVATE "${PROJECT_BINARY_DIR}/external/assimp/include")
+target_include_directories(modelbuild PRIVATE "${INSTALL_DIR}/include")
 
 #####################################################################################################################
 

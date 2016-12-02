@@ -15,6 +15,6 @@ diffuseColour = 0.64, 0.64, 0.64
 ambientColour = 0, 0, 0
 emissiveColour = 0, 0, 0
 specularColour = 0.5, 0.5, 0.5
-shininess = 384.314
+shininess = 96.0784
 alpha = 1
 
