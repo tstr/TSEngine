@@ -140,7 +140,7 @@ void CInputModule::showCursor(bool show)
 			}
 			else
 			{
-				auto hwnd = (HWND)m_window->handle();
+				auto hwnd = (HWND)m_window->nativeHandle();
 
 				RECT rect;
 				::GetWindowRect(hwnd, &rect);
@@ -164,7 +164,7 @@ void CInputModule::getCursorPos(int16& x, int16& y)
 {
 	POINT p;
 	::GetCursorPos(&p);
-	::ScreenToClient((HWND)m_window->handle(), &p);
+	::ScreenToClient((HWND)m_window->nativeHandle(), &p);
 	x = (uint16)p.x;
 	y = (uint16)p.y;
 }
@@ -174,7 +174,7 @@ void CInputModule::setCursorPos(int16 x, int16 y)
 	POINT p;
 	p.x = x;
 	p.y = y;
-	::ClientToScreen((HWND)m_window->handle(), &p);
+	::ClientToScreen((HWND)m_window->nativeHandle(), &p);
 	::SetCursorPos(p.x, p.y);
 }
 

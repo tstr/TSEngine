@@ -130,7 +130,7 @@ namespace ts
 
 			void finish() override;
 
-			void reset();
+			void resetCommandList();
 			ComPtr<ID3D11CommandList> getCommandList() const { return m_contextCommandList; }
 		};
 

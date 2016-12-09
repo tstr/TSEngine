@@ -76,9 +76,9 @@ namespace ts
 
 		CWindow(const SWindowDesc& desc);
 		virtual ~CWindow();
-			
+		
 		CWindow(const CWindow&) = delete;
-		CWindow(CWindow&& mov) { pImpl = mov.pImpl; mov.pImpl = nullptr; }
+		CWindow(CWindow&&) = delete;
 
 		struct IEventListener
 		{
@@ -97,7 +97,16 @@ namespace ts
 		void open(int show = 0);
 		void close();
 
+		enum EEventQueueRet
+		{
+			eQueueExit			 = 0,
+			eQueueMessageEmpty   = 1,
+			eQueueMessagePresent = 2
+		};
+
 		bool isOpen() const;
+		int handleEvents();	//Handle window messages (non blocking) - Returns true if a messages are present in queue
+		intptr nativeHandle() const;	//Returns a handle to the window - depends on platform
 
 		template<typename t>
 		void invoke(t _f)
@@ -119,10 +128,6 @@ namespace ts
 
 			invoke_internal(&i);
 		}
-
-		intptr handle() const;
-		void raiseEvent(EWindowEvent e, uint64 a, uint64 b);
-		void messageBox(const char* text, const char* caption = "");
 	};
 	
 	//Helper functions

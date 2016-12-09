@@ -327,7 +327,7 @@ void DX11RenderApi::drawBegin(const Vector& vec)
 			//Reset deferred contexts
 			for (auto& rc : m_renderContexts)
 			{
-				rc->reset();
+				rc->resetCommandList();
 			}
 
 			//Destroy the old render target view
@@ -1099,7 +1099,7 @@ void DX11RenderApi::createContext(IRenderContext** context)
 void DX11RenderApi::destroyContext(IRenderContext* context)
 {
 	//upcast
-	if (auto ptr = static_cast<DX11RenderContext*>(context))
+	if (auto ptr = dynamic_cast<DX11RenderContext*>(context))
 	{
 		auto it = find(m_renderContexts.begin(), m_renderContexts.end(), ptr);
 		m_renderContexts.erase(it);
@@ -1110,9 +1110,10 @@ void DX11RenderApi::destroyContext(IRenderContext* context)
 void DX11RenderApi::executeContext(IRenderContext* context)
 {
 	//upcast
-	if (auto rcon = static_cast<DX11RenderContext*>(context))
+	if (auto rcon = dynamic_cast<DX11RenderContext*>(context))
 	{
 		m_immediateContext->ExecuteCommandList(rcon->getCommandList().Get(), false);
+		rcon->resetCommandList();
 	}
 }
 

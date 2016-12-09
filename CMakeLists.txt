@@ -89,7 +89,6 @@ function(add_executable_tse libname libsrcs)
 	
 	ADD_EXECUTABLE(
 		${libname}
-		WIN32
 		${libsrcs}
 	)
 	
@@ -185,9 +184,12 @@ ADD_SUBDIRECTORY(engine/tscore)
 ADD_SUBDIRECTORY(engine/tsengine)
 ADD_SUBDIRECTORY(engine/tsgraphics)
 
-SET_TARGET_PROPERTIES(tscore PROPERTIES FOLDER engine)
-SET_TARGET_PROPERTIES(tsgraphics PROPERTIES FOLDER engine)
-SET_TARGET_PROPERTIES(tsengine PROPERTIES FOLDER engine)
+SET_TARGET_PROPERTIES(
+	tscore
+	tsengine
+	tsgraphics
+	PROPERTIES FOLDER engine
+)
 
 ################################################################################################
 
@@ -198,7 +200,10 @@ IF(TS_BUILD_TOOLS)
 	#engine tools
 	ADD_SUBDIRECTORY(tools/modelbuild)
 	
-	SET_TARGET_PROPERTIES(modelbuild PROPERTIES FOLDER tools)
+	SET_TARGET_PROPERTIES(
+		modelbuild
+		PROPERTIES FOLDER tools
+	)
 	
 ENDIF()
 

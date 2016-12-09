@@ -22,14 +22,12 @@ namespace ts
 	
 	void getSystemInformation(SSystemInfo& info)
 	{
-		ZeroMemory(&info, sizeof(SSystemInfo));
-
 		//Get computer username
 		char username[64];
 		DWORD usernameLength = 64;
 		GetUserName(username, &usernameLength);
 		info.userName = username;
-
+		
 		//OS info
 		getOSname(info.osName, "Unknown");
 

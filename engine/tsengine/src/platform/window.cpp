@@ -5,8 +5,8 @@
 #include <tsconfig.h>
 
 #include <array>
-#include <atomic>
 #include <map>
+#include <list>
 
 #include <Windows.h>
 #include <Windowsx.h> //todo: use the macros
@@ -14,7 +14,6 @@
 #include <tsengine/platform/window.h>
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
-#include <tscore/system/thread.h>
 
 //#define USE_VISUAL_STYLES
 
@@ -53,16 +52,7 @@ static bool EnableVisualStyles()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Custom window event codes
-#define TSM_CREATE (WM_USER + 0x0001)
-#define TSM_INVOKE (WM_USER + 0x0002)
-#define TSM_DESTROY WM_DESTROY
-
-
-enum Win32flags
-{
-	win_registered = 1,
-	win_open	   = 2
-};
+#define TSM_INVOKE (WM_USER + 0x0001)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -85,8 +75,8 @@ public:
 		m_windowEvents[EWindowEvent::eEventInput] = WM_INPUT;
 		m_windowEvents[EWindowEvent::eEventActivate] = WM_ACTIVATE;
 		m_windowEvents[EWindowEvent::eEventResize] = WM_SIZE;
-		m_windowEvents[EWindowEvent::eEventCreate] = TSM_CREATE;
-		m_windowEvents[EWindowEvent::eEventDestroy] = TSM_DESTROY;
+		m_windowEvents[EWindowEvent::eEventCreate] = WM_CREATE;
+		m_windowEvents[EWindowEvent::eEventDestroy] = WM_DESTROY;
 		m_windowEvents[EWindowEvent::eEventClose] = WM_CLOSE;
 		m_windowEvents[EWindowEvent::eEventDraw] = WM_PAINT;
 		m_windowEvents[EWindowEvent::eEventSetfocus] = WM_SETFOCUS;
@@ -138,13 +128,8 @@ struct CWindow::Impl
 
 	SWindowRect size;
 
-	mutex m_eventMutex;
-
-	vector<CWindow::IEventListener*> windowEventListeners;
-
-	atomic<int> flags = 0;
-
-
+	list<CWindow::IEventListener*> windowEventListeners;
+	
 	Impl(CWindow* window, const SWindowDesc& desc) :
 		window(window),
 		windowClassname("tsAppWindow"),
@@ -176,23 +161,11 @@ struct CWindow::Impl
 
 		//Register the window class
 		tsassert(RegisterClassExA(&windowClass));
-
-		flags |= win_registered;
 	}
 
 	~Impl()
 	{
-		if (~flags & win_registered) return;
-
-		//Destroy window if it is still open
-		if (flags & win_open)
-		{
-			window->close();
-		}
-
 		tsassert(UnregisterClassA(windowClassname.c_str(), windowModule));
-
-		flags &= ~win_registered;
 	}
 
 	static LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -201,6 +174,11 @@ struct CWindow::Impl
 		if (msg == WM_CREATE)
 		{
 			SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)((LPCREATESTRUCT)lparam)->lpCreateParams);
+		}
+		//Manually ensure message pump exits
+		else if (msg == WM_DESTROY)
+		{
+			PostQuitMessage(0);
 		}
 
 		//Get window ptr from user data
@@ -224,9 +202,8 @@ struct CWindow::Impl
 				args.a = lparam;
 				args.b = wparam;
 
-				unique_lock<mutex> lk(wnd->m_eventMutex);
+				//Copy event listeners
 				auto ls = wnd->windowEventListeners;
-				lk.unlock();
 
 				for (CWindow::IEventListener* listener : ls)
 				{
@@ -242,7 +219,7 @@ struct CWindow::Impl
 
 			}
 		}
-		
+
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
 
@@ -270,7 +247,7 @@ struct CWindow::Impl
 			false,
 			exStyles  
 		);
-
+		
 		windowHandle = CreateWindowEx(
 			exStyles,
 			windowClassname.c_str(),
@@ -290,28 +267,6 @@ struct CWindow::Impl
 		tsassert(IsWindow(windowHandle));
 
 		ShowWindow(windowHandle, showCmd);
-
-		MSG msg;
-		ZeroMemory(&msg, sizeof(MSG));
-
-		this->flags |= win_open;
-
-		BOOL ret = 0;
-		while ((ret = GetMessage(&msg, windowHandle, 0, 0)) != 0)
-		{
-			if (ret == -1)
-			{
-				tserror("Win32 GetLastError(): %", GetLastError());
-				break;
-			}
-			else
-			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-		}
-
-		this->flags &= ~win_open;
 	}
 };
 
@@ -325,66 +280,92 @@ CWindow::CWindow(const SWindowDesc& desc) :
 
 CWindow::~CWindow()
 {
-	if (pImpl)
-	{
-		delete pImpl;
-	}
+	delete pImpl;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void CWindow::addEventListener(IEventListener* listener)
 {
-	lock_guard<mutex>lk(pImpl->m_eventMutex);
+	auto f = [this, &listener]() {
+			pImpl->windowEventListeners.push_back(listener);
+	};
 
-	pImpl->windowEventListeners.push_back(listener);
+	if (isOpen())
+	{
+		invoke(f);
+	}
+	else
+	{
+		f();
+	}
 }
 
 void CWindow::removeEventListener(IEventListener* listener)
 {
-	lock_guard<mutex>lk(pImpl->m_eventMutex);
+	auto f = [this, &listener]() {
+		auto& listeners = pImpl->windowEventListeners;
+		auto it = find(listeners.begin(), listeners.end(), listener);
 
-	auto& listeners = pImpl->windowEventListeners;
-	auto it = find(listeners.begin(), listeners.end(), listener);
+		if (it != listeners.end())
+			pImpl->windowEventListeners.erase(it);
+	};
 
-	if (it != listeners.end())
-		pImpl->windowEventListeners.erase(it);
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-bool CWindow::isOpen() const
-{
-	return ((pImpl->flags & win_open) != 0);
+	if (isOpen())
+	{
+		invoke(f);
+	}
+	else
+	{
+		f();
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void CWindow::open(int showCmd)
 {
+	tsassert(pImpl);
 	pImpl->open(showCmd);
 }
 
 void CWindow::close()
 {
-	SendMessageA(pImpl->windowHandle, WM_CLOSE, 0, 0);
+	tsassert(pImpl);
+	DestroyWindow(pImpl->windowHandle);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-intptr CWindow::handle() const
+bool CWindow::isOpen() const
 {
-	return (uint64)pImpl->windowHandle;
+	tsassert(pImpl);
+	return IsWindow(pImpl->windowHandle) != 0;
 }
 
-void CWindow::messageBox(const char* text, const char* caption)
+int CWindow::handleEvents()
 {
-	MessageBoxA(pImpl->windowHandle, text, caption, 0);
+	MSG msg;
+	ZeroMemory(&msg, sizeof(MSG));
+	BOOL ret = 0;
+
+	while (ret = PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+	{
+		if (msg.message == WM_QUIT)
+		{
+			return eQueueExit;
+		}
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	return (ret != 0) ? eQueueMessagePresent : eQueueMessageEmpty;
 }
 
-void CWindow::raiseEvent(EWindowEvent e, uint64 a, uint64 b)
+intptr CWindow::nativeHandle() const
 {
-	SendMessage(pImpl->windowHandle, EventCodes.GetWin32MessageEnum(e), a, b);
+	return (intptr)pImpl->windowHandle;
 }
 
 void CWindow::invoke_internal(CWindow::IInvoker* i)

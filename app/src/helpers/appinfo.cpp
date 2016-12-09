@@ -14,7 +14,7 @@ namespace ts
 		//CPU information
 		SSystemInfo inf;
 		getSystemInformation(inf);
-
+		
 		tsinfo("CPU name: %", inf.cpuName);
 		tsinfo("CPU cores: %", inf.cpuProcessorCount);
 

@@ -44,9 +44,8 @@ void DX11RenderContext::finish()
 	m_context->FinishCommandList(false, m_contextCommandList.GetAddressOf());
 }
 
-void DX11RenderContext::reset()
+void DX11RenderContext::resetCommandList()
 {
-	m_context->Flush();
 	m_contextCommandList.Reset();
 }
 

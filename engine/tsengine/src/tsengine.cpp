@@ -7,6 +7,7 @@
 #include <tscore/debug/log.h>
 #include <tscore/system/info.h>
 #include <tscore/system/thread.h>
+#include <tscore/system/error.h>
 #include <tsgraphics/colour.h>
 
 //Modules
@@ -27,59 +28,56 @@ using namespace std;
 //Application window class
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class Window : public CWindow
+class EngineWindow :
+	public CWindow,
+	public CWindow::IEventListener
 {
 private:
 
-	CEngineSystem* m_pSystem = nullptr;
+	CEngineEnv& m_env;
 
 	//Window event listener
-	struct CEventListener : public IEventListener
+	int onWindowEvent(const SWindowEventArgs& args) override
 	{
-		Window* m_wnd = nullptr;
-
-		CEventListener(Window* wnd) :
-			m_wnd(wnd)
-		{}
-		
-		int onWindowEvent(const SWindowEventArgs& args) override
+		switch (args.eventcode)
 		{
-			if (args.eventcode == EWindowEvent::eEventDestroy)
+		case EWindowEvent::eEventResize:
+		{
+			uint32 w = 1;
+			uint32 h = 1;
+			getWindowResizeEventArgs(args, w, h);
+			if (auto render = m_env.getRenderModule())
 			{
-				m_wnd->m_pSystem->shutdown();
-				//return IEventListener::eHandled;
-				return 0;
-			}
-			else if (args.eventcode == EWindowEvent::eEventResize)
-			{
-				uint32 w = 1;
-				uint32 h = 1;
-				getWindowResizeEventArgs(args, w, h);
-				if (auto render = m_wnd->getSystem()->getRenderModule())
-				{
-					render->setDisplayConfiguration(eDisplayUnknown, w, h, SMultisampling(0));
-				}
+				render->setDisplayConfiguration(eDisplayUnknown, w, h, SMultisampling(0));
 			}
 
-			return 0;
+			break;
 		}
-	} m_eventListener;
+		case EWindowEvent::eEventDestroy:
+		{
+			m_env.getRenderModule()->setDisplayConfiguration(eDisplayWindowed, 0, 0, 0);
+
+			break;
+		}
+		}
+
+		return 0;
+	}
 
 public:
 
-	CEngineSystem* getSystem() { return m_pSystem; }
+	CEngineEnv& getSystem() { return m_env; }
 
-	Window(CEngineSystem* sys, const SWindowDesc& desc) :
-		m_pSystem(sys),
-		m_eventListener(this),
+	EngineWindow(CEngineEnv& env, const SWindowDesc& desc) :
+		m_env(env),
 		CWindow(desc)
 	{
-		this->addEventListener((IEventListener*)&m_eventListener);
+		this->addEventListener((IEventListener*)this);
 	}
 
-	~Window()
+	~EngineWindow()
 	{
-		this->removeEventListener((IEventListener*)&m_eventListener);
+		this->removeEventListener((IEventListener*)this);
 	}
 };
 
@@ -87,10 +85,21 @@ public:
 //Engine initialization
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
+CEngineEnv::CEngineEnv(const SEngineStartupParams& params)
 {
-	//Parse command line arguments
-	CommandLineArgs args(params.commandArgs);
+	/////////////////////////////////////////////////////////////////////////
+	//Initialize debug layer
+	/////////////////////////////////////////////////////////////////////////
+
+	ts::internal::initializeSystemExceptionHandlingFilter();	//This sets the global exception handling filter for the process, meaning uncaught exceptions can be detected and a minidump can be generated
+#ifdef _DEBUG
+	ts::internal::initializeSystemMemoryLeakDetector();			//This allows the crt to detect memory leaks
+#endif
+
+	/////////////////////////////////////////////////////////////////////////
+	//Parse command line arguments and load config
+	/////////////////////////////////////////////////////////////////////////
+	CommandLineArgs args(params.argv, params.argc);
 
 	//Console initialization
 	if (!args.isArgumentTag("noconsole"))
@@ -103,10 +112,6 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	Path cfgpath(params.appPath.getParent());
 	cfgpath.addDirectories((args.isArgumentTag("config")) ? args.getArgumentValue("config") : "config.ini");
 	ConfigFile config(cfgpath);
-
-	//Set application instance
-	m_app.reset(params.app);
-	tsassert(m_app.get());
 
 	//Create cvar table
 	m_cvarTable.reset(new CVarTable());
@@ -121,6 +126,8 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 			m_cvarTable->setVar(p.key, p.value);
 		}
 	}
+
+	/////////////////////////////////////////////////////////////////////////
 	
 	//Set application window parameters
 	SDisplayInfo dispinf;
@@ -139,21 +146,11 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	windesc.appInstance = params.appInstance;
 	
 	//Create application window object
-	m_window.reset(new Window(this, windesc));
+	m_window.reset(new EngineWindow(*this, windesc));
 
 	//Runs window message loop on separate thread
-	const int showcmd = params.showWindow;
-	thread windowThread([=](){
-		this->m_window->open(showcmd);
-	});
-
-	//Delay this thread until the window has opened fully
-	while (!m_window->isOpen())
-	{
-		this_thread::sleep_for(chrono::milliseconds(1));
-		this_thread::yield();
-	}
-
+	m_window->open(params.showWindow);
+	
 	uint32 displaymode = 0;
 	config.getProperty("video.displaymode", displaymode);
 	if (displaymode > 2)
@@ -171,7 +168,7 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	config.getProperty("video.multisamplecount", samplecount);
 
 	SRenderModuleConfiguration rendercfg;
-	rendercfg.windowHandle = m_window->handle();
+	rendercfg.windowHandle = m_window->nativeHandle();
 	rendercfg.width = width;
 	rendercfg.height = height;
 	rendercfg.apiEnum = ERenderApiID::eRenderApiD3D11;
@@ -182,31 +179,41 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 	m_renderModule.reset(new CRenderModule(rendercfg));
 	m_inputModule.reset(new CInputModule(m_window.get()));
 
-	/*
-	//Console commands - todo: allow console commands to be called from both consoles
-	thread([this] {
-		this->consoleCommands();
-	}).detach();
-	*/
+	/////////////////////////////////////////////////////////////////////////
+}
 
-	m_app->onInit(this);
+CEngineEnv::~CEngineEnv()
+{
+	//Shutdown
+	m_inputModule.reset();
+	m_renderModule.reset();
+	m_window.reset();
+
+	consoleClose();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+int CEngineEnv::start(IApplication& app)
+{
+	if (int err = app.onInit())
+	{
+		tserror("Failed to load application class (%)", err);
+		return err;
+	}
 
 	/////////////////////////////////////////////////////////////////////////
-	//Main loop	
 	{
-		lock_guard<recursive_mutex>lk(m_exitMutex);
-
+		Timer timer;
 		Stopwatch watch;
-		SSystemMessage msg;
-
 		double dt = 0.0;
 
 		//Main engine loop
-		while (msg.eventcode != ESystemMessage::eMessageExit)
+		while (m_window->handleEvents())
 		{
 			watch.start();
 
-			m_messageReciever.peek(msg);
+			//timer.tick();
 
 			Vector framecolour = colours::AntiqueWhite;
 
@@ -214,46 +221,24 @@ CEngineSystem::CEngineSystem(const SEngineStartupParams& params)
 			m_renderModule->drawBegin(framecolour);
 
 			//Update application
-			m_app->onUpdate(dt);
+			app.onUpdate(dt);
 
 			//Present the frame
 			m_renderModule->drawEnd();
 
 			watch.stop();
-
-			dt = max(0.0, watch.deltaTime()); //cannot have a negative delta time - just to be sure
+			dt = max(0.0, watch.deltaTime()); //clamp delta time to positive value - just to be safe
 		}
 	}
 
-	/////////////////////////////////////////////////////////////////////////
-	//Shutdown
+	app.onExit();
 
-	m_app->onExit();
+	return 0;
+}
 
+void CEngineEnv::shutdown()
+{
 	m_window->close();
-	windowThread.join();
-
-	m_app.reset();
-	m_inputModule.reset();
-	m_renderModule.reset();
-	m_window.reset();
-
-	consoleClose();
-
-	/////////////////////////////////////////////////////////////////////////
-}
-
-CEngineSystem::~CEngineSystem()
-{
-	shutdown();
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void CEngineSystem::shutdown()
-{
-	m_messageReciever.post(SSystemMessage(ESystemMessage::eMessageExit));
-	lock_guard<recursive_mutex>lk(m_exitMutex);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

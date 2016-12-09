@@ -29,7 +29,7 @@ using namespace ts;
 CInputDevice::CInputDevice(CWindow* window) :
 	m_pWindow(window)
 {
-	auto hwnd = (HWND)m_pWindow->handle();
+	auto hwnd = (HWND)m_pWindow->nativeHandle();
 	
 	tsassert(IsWindow(hwnd));
 

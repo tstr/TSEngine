@@ -31,7 +31,11 @@ using namespace std;
 //Ctor/dtor
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-Application::Application() {}
+Application::Application(CEngineEnv& env) :
+	m_env(env)
+{
+
+}
 
 Application::~Application() {}
 
@@ -59,7 +63,7 @@ int Application::onKeyDown(EKeyCode code)
 	switch (code)
 	{
 	case EKeyCode::eKeyEsc:
-		m_system->shutdown();
+		m_env.shutdown();
 		break;
 	case EKeyCode::eKeyY:
 		m_simulation = !m_simulation;
@@ -116,11 +120,11 @@ int Application::onMouseScroll(const SInputMouseEvent& args)
 	const float scrollMin = 2.0f;
 	const float scrollInterval = 0.8f;
 
-	float depth = m_scrollDepth.load();
+	float depth = m_scrollDepth;
 	depth += (args.deltaScroll * scrollInterval);
 	depth = min(depth, scrollMax);
 	depth = max(depth, scrollMin);
-	m_scrollDepth.store(depth);
+	m_scrollDepth = depth;
 
 	return 0;
 }
@@ -166,18 +170,16 @@ struct SUniforms
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //Application event handlers
 /////////////////////////////////////////////////////////////////////////////////////////////////
-void Application::onInit(CEngineSystem* system)
+int Application::onInit()
 {
-	m_system = system;
-
 	//Register event listeners
-	m_system->getInputModule()->addEventListener(this);
-	m_system->getWindow()->addEventListener(this);
+	m_env.getInputModule()->addEventListener(this);
+	m_env.getWindow()->addEventListener(this);
 
 	//Initialize UI
 	m_ui.reset(new UISystem(
-		m_system->getInputModule(),
-		m_system->getRenderModule()
+		m_env.getInputModule(),
+		m_env.getRenderModule()
 	));
 	
 	m_consoleMenu.reset(new UICommandConsole(this));
@@ -185,11 +187,11 @@ void Application::onInit(CEngineSystem* system)
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	//Console commands
-	m_consoleMenu->setCommand("exit", [&](const SCommandConsoleCallbackArgs& args) { m_system->shutdown(); });
+	m_consoleMenu->setCommand("exit", [&](const SCommandConsoleCallbackArgs& args) { m_env.shutdown(); });
 	m_consoleMenu->setCommand("listvars", [&](const SCommandConsoleCallbackArgs& args)
 	{
 		CVarTable::CVarArray array;
-		m_system->getCVarTable()->getVarArray(array);
+		m_env.getCVarTable()->getVarArray(array);
 		for (auto& s : array)
 		{
 			tsinfo("% = %", s.name, s.value);
@@ -209,7 +211,7 @@ void Application::onInit(CEngineSystem* system)
 		{
 			string cvar(commandargs.substr(0, pos));
 			string cval(commandargs.substr(pos));
-			m_system->getCVarTable()->setVar(cvar.c_str(), cval.c_str());
+			m_env.getCVarTable()->setVar(cvar.c_str(), cval.c_str());
 		}
 	});
 
@@ -217,9 +219,9 @@ void Application::onInit(CEngineSystem* system)
 	{
 		string commandargs = trim(args.params);
 		string val;
-		if (m_system->getCVarTable()->isVar(commandargs))
+		if (m_env.getCVarTable()->isVar(commandargs))
 		{
-			m_system->getCVarTable()->getVarString(commandargs.c_str(), val);
+			m_env.getCVarTable()->getVarString(commandargs.c_str(), val);
 			tsinfo(val);
 		}
 		else
@@ -231,9 +233,8 @@ void Application::onInit(CEngineSystem* system)
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//Set up scene camera
-	m_camera.reset(new CCamera(m_system->getInputModule()));
+	m_camera.reset(new CCamera(m_env.getInputModule()));
 	m_camera->setPosition(Vector(0, 1.0f, 0));
-
 
 	//Print basic information
 	printRepositoryInfo();
@@ -243,20 +244,21 @@ void Application::onInit(CEngineSystem* system)
 
 	ERenderStatus status = eOk;
 
-	auto api = m_system->getRenderModule()->getApi();
+	auto api = m_env.getRenderModule()->getApi();
 
 	api->createContext(&m_context);
 
 	SRenderModuleConfiguration rendercfg;
-	m_system->getRenderModule()->getConfiguration(rendercfg);
+	m_env.getRenderModule()->getConfiguration(rendercfg);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	//Shaders
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
+
 	bool shader_debug = true;
 	
-	CShaderManager& shaderMng = m_system->getRenderModule()->getShaderManager();
+	CShaderManager& shaderMng = m_env.getRenderModule()->getShaderManager();
 
 	//Standard shader
 	{
@@ -304,18 +306,20 @@ void Application::onInit(CEngineSystem* system)
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	Path modelfile(rendercfg.rootpath);
-	modelfile.addDirectories("sponza/sponza.tsm");
+	//modelfile.addDirectories("sponza/sponza.tsm");
+	modelfile.addDirectories("cube.tsm");
+
 	Path spherefile(rendercfg.rootpath);
 	spherefile.addDirectories("sphere.tsm");
 
 	//Skybox texture
-	m_system->getRenderModule()->getTextureManager().loadTextureCube("skybox.png", m_skybox);
+	m_env.getRenderModule()->getTextureManager().loadTextureCube("skybox.png", m_skybox);
 
-	m_model.reset(new CModel(m_system->getRenderModule(), modelfile));
-	m_sphere.reset(new CModel(m_system->getRenderModule(), spherefile));
-	
-	m_materialBuffer = CUniformBuffer(m_system->getRenderModule(), SMaterial::SParams());
-	m_sceneBuffer = CUniformBuffer(m_system->getRenderModule(), SUniforms());
+	m_sphere.reset(new CModel(m_env.getRenderModule(), spherefile));
+	m_model.reset(new CModel(m_env.getRenderModule(), modelfile));
+
+	m_materialBuffer = CUniformBuffer(m_env.getRenderModule(), SMaterial::SParams());
+	m_sceneBuffer = CUniformBuffer(m_env.getRenderModule(), SUniforms());
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -380,19 +384,22 @@ void Application::onInit(CEngineSystem* system)
 	m_scrollDepth = 5.0f;
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
+
+	//return success
+	return 0;
 }
 
 void Application::onUpdate(double dt)
 {
 	SRenderModuleConfiguration rendercfg;
-	m_system->getRenderModule()->getConfiguration(rendercfg);
+	m_env.getRenderModule()->getConfiguration(rendercfg);
 	
 	//CVar table
-	auto table = m_system->getCVarTable();
+	auto table = m_env.getCVarTable();
 
-	//Resize depth target if necessary
-	if (m_rebuildDepthTarget.exchange(false))
+	if (m_rebuildDepthTarget)
 	{
+		m_rebuildDepthTarget = !m_rebuildDepthTarget;
 		buildDepthTarget();
 	}
 
@@ -404,6 +411,7 @@ void Application::onUpdate(double dt)
 	}
 
 	float scale = 0.1f;
+	table->getVarFloat("scale", scale);
 
 	//Update displacement of light source
 	if (m_simulation)
@@ -424,11 +432,11 @@ void Application::onUpdate(double dt)
 	{
 		int16 mousePosX = 0;
 		int16 mousePosY = 0;
-		m_system->getInputModule()->getCursorPos(mousePosX, mousePosY);
+		m_env.getInputModule()->getCursorPos(mousePosX, mousePosY);
 		mousePosX = max(min(mousePosX, (uint16)rendercfg.width), 0);
 		mousePosY = max(min(mousePosY, (uint16)rendercfg.height), 0);
 
-		float depth = m_scrollDepth.load();
+		float depth = m_scrollDepth;
 
 		//Convert screen coordinates into clip space coordinates
 		float x = (((2.0f * mousePosX) / (float)rendercfg.width) - 1);
@@ -479,8 +487,8 @@ void Application::onUpdate(double dt)
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
-	auto api = m_system->getRenderModule()->getApi();
-	auto& shaderMng = m_system->getRenderModule()->getShaderManager();
+	auto api = m_env.getRenderModule()->getApi();
+	auto& shaderMng = m_env.getRenderModule()->getShaderManager();
 
 	ResourceProxy defaultrendertarget;
 	api->getDisplayRenderTarget(defaultrendertarget);
@@ -747,18 +755,15 @@ void Application::onUpdate(double dt)
 	//Mark context as finished
 	m_context->finish();
 	//Execute context
-	m_system->getRenderModule()->getApi()->executeContext(m_context);
+	m_env.getRenderModule()->getApi()->executeContext(m_context);
 	
 }
 
 void Application::onExit()
 {
-	if (m_system)
-	{
-		m_system->getRenderModule()->getApi()->destroyContext(m_context);
-		m_system->getWindow()->removeEventListener(this);
-		m_system->getInputModule()->removeEventListener(this);
-	}
+	m_env.getRenderModule()->getApi()->destroyContext(m_context);
+	m_env.getWindow()->removeEventListener(this);
+	m_env.getInputModule()->removeEventListener(this);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -768,9 +773,9 @@ void Application::buildDepthTarget()
 	m_depthTarget.reset(nullptr);
 
 	SRenderModuleConfiguration rendercfg;
-	m_system->getRenderModule()->getConfiguration(rendercfg);
+	m_env.getRenderModule()->getConfiguration(rendercfg);
 	ERenderStatus status = eOk;
-	auto api = m_system->getRenderModule()->getApi();
+	auto api = m_env.getRenderModule()->getApi();
 
 	//Depth target view
 	ResourceProxy depthtargetrsc;

@@ -25,9 +25,9 @@ UIDebugMenu::~UIDebugMenu()
 
 void UIDebugMenu::show(double dt)
 {
-	auto system = m_app->getSystem();
-	auto table = system->getCVarTable();
-	auto render = system->getRenderModule();
+	auto& env = m_app->getSystem();
+	auto table = env.getCVarTable();
+	auto render = env.getRenderModule();
 	auto api = render->getApi();
 
 	SRenderModuleConfiguration rendercfg;
@@ -136,7 +136,7 @@ void UIDebugMenu::show(double dt)
 			const char* displayModeStrings[] = { "windowed", "borderless", "fullscreen" };
 			if (ImGui::Combo("display mode", &displayModeIdx, displayModeStrings, ARRAYSIZE(displayModeStrings)))
 			{
-				system->getRenderModule()->setDisplayConfiguration((EDisplayMode)(displayModeIdx + 1), 0, 0, SMultisampling(0));
+				render->setDisplayConfiguration((EDisplayMode)(displayModeIdx + 1), 0, 0, SMultisampling(0));
 			}
 
 			//Update MSAA
@@ -146,7 +146,7 @@ void UIDebugMenu::show(double dt)
 			{
 				//Map the combo box index to the multisample level
 				uint32 level = (1 << msaaIdx);
-				system->getRenderModule()->setDisplayConfiguration(eDisplayUnknown, 0, 0, SMultisampling(level));
+				render->setDisplayConfiguration(eDisplayUnknown, 0, 0, SMultisampling(level));
 			}
 
 			//Update resolution
@@ -154,7 +154,7 @@ void UIDebugMenu::show(double dt)
 			if (ImGui::InputInt2("resolution", resItems, ImGuiInputTextFlags_EnterReturnsTrue))
 			{
 				tsprofile("w:% h:%", resItems[0], resItems[1]);
-				system->getRenderModule()->setDisplayConfiguration(eDisplayUnknown, resItems[0], resItems[1], SMultisampling(0));
+				render->setDisplayConfiguration(eDisplayUnknown, resItems[0], resItems[1], SMultisampling(0));
 			}
 
 			/*
@@ -163,11 +163,11 @@ void UIDebugMenu::show(double dt)
 			bool is_fullscreen = (rendercfg.displaymode == EDisplayMode::eDisplayFullscreen);
 			if (ImGui::Checkbox("Borderless", &is_borderless))
 			{
-			m_system->getGraphics()->setDisplayConfiguration((is_borderless) ? eDisplayBorderless : eDisplayWindowed, 0, 0, SMultisampling(0));
+			m_env->getGraphics()->setDisplayConfiguration((is_borderless) ? eDisplayBorderless : eDisplayWindowed, 0, 0, SMultisampling(0));
 			}
 			if (ImGui::Checkbox("Fullscreen", &is_fullscreen))
 			{
-			m_system->getGraphics()->setDisplayConfiguration((is_fullscreen) ? eDisplayFullscreen : eDisplayWindowed, 0, 0, SMultisampling(0));
+			m_env->getGraphics()->setDisplayConfiguration((is_fullscreen) ? eDisplayFullscreen : eDisplayWindowed, 0, 0, SMultisampling(0));
 			}
 			*/
 		}

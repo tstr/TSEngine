@@ -6,9 +6,9 @@
 
 #include <string>
 #include <tsengine.h>
+#include <tscore/maths.h>
 #include <tsgraphics/rendermodule.h>
 #include <tsengine/input/inputmodule.h>
-#include <tscore/maths.h>
 
 namespace ts
 {
@@ -25,7 +25,7 @@ namespace ts
 	{
 	private:
 		
-		CEngineSystem* m_system = nullptr;
+		CEngineEnv& m_env;
 		
 		UniquePtr<CCamera> m_camera;
 		UniquePtr<CModel> m_model;
@@ -37,11 +37,11 @@ namespace ts
 		IRenderContext* m_context = nullptr;
 
 		float m_pulsatance = 0.0f;
-		atomic<bool> m_showConsole = false;
-		atomic<bool> m_showUI = true;
-		atomic<bool> m_simulation = true;
-		atomic<bool> m_mouseHeld = false;
-		atomic<float> m_scrollDepth;
+		bool m_showConsole = false;
+		bool m_showUI = true;
+		bool m_simulation = true;
+		bool m_mouseHeld = false;
+		float m_scrollDepth = 0.0f;
 
 		std::deque<float> m_frametimes;
 		std::deque<float> m_framerates;
@@ -80,18 +80,18 @@ namespace ts
 		int onMouseUp(const SInputMouseEvent&) override;
 		int onMouse(int16 dx, int16 dy) override;
 
-		std::atomic<bool> m_rebuildDepthTarget;
+		bool m_rebuildDepthTarget = false;
 		void buildDepthTarget();
 		void buildVertexInputDescriptor(std::vector<SShaderInputDescriptor>& inputdescriptor, uint32 vertexFlags);
 		
 	public:
 
-		Application();
+		Application(CEngineEnv& system);
 		~Application();
 
-		CEngineSystem* getSystem() const { return m_system; }
+		CEngineEnv const&  getSystem() const { return m_env; }
 		
-		void onInit(CEngineSystem* system) override;
+		int onInit() override;
 		void onExit() override;
 		void onUpdate(double deltatime) override;		
 	};
