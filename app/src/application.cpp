@@ -9,6 +9,7 @@
 #include <tscore/delegate.h>
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
+#include <tscore/filesystem/pathhelpers.h>
 
 #include "helpers/geometry.h"
 #include "helpers/appinfo.h"
@@ -306,11 +307,25 @@ int Application::onInit()
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	Path modelfile(rendercfg.rootpath);
-	//modelfile.addDirectories("sponza/sponza.tsm");
-	modelfile.addDirectories("cube.tsm");
+	
+	string mdlstr;
+	m_env.getCVarTable()->getVarString("model", mdlstr);
+	modelfile.addDirectories(mdlstr.c_str());
 
+	if (!isFile(modelfile))
+	{
+		tserror("Model path \"%\" is not a file");
+		return 1;
+	}
+	
 	Path spherefile(rendercfg.rootpath);
 	spherefile.addDirectories("sphere.tsm");
+	
+	if (!isFile(spherefile))
+	{
+		tserror("Model path \"%\" is not a file");
+		return 1;
+	}
 
 	//Skybox texture
 	m_env.getRenderModule()->getTextureManager().loadTextureCube("skybox.png", m_skybox);
@@ -410,7 +425,7 @@ void Application::onUpdate(double dt)
 		m_camera->update(dt);
 	}
 
-	float scale = 0.1f;
+	float scale = 1.0f;
 	table->getVarFloat("scale", scale);
 
 	//Update displacement of light source
