@@ -184,7 +184,7 @@ PSoutput PS(PSinput input)
 	{
 		float3x3 tbn = float3x3( normalize(input.tangent), normalize(input.bitangent), normalize(input.normal) ); //transforms tangent=>world space
 		
-		float2 t = float2(texcoord.x, 1.0f - texcoord.y);
+		float2 t = float2(texcoord.x, texcoord.y);
 		
 		float3 tangentNormal = texNormal.Sample(texSampler, t).xyz;
 		tangentNormal = normalize(tangentNormal * 2 - 1); //convert 0~1 to -1~+1.
