@@ -1,15 +1,14 @@
 /*
 	Render API
 
-	DirectX 11 implementation of rendering context
+	D3D11 implementation of rendering context
 */
 
-#include "DX11render.h"
-#include "DX11helpers.h"
+#include "context.h"
 
 using namespace std;
 using namespace ts;
-using namespace ts::dx11;
+using namespace ts::d3d11;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Constructor

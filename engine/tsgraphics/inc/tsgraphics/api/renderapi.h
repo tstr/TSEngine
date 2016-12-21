@@ -1,7 +1,7 @@
 /*
 	Render API
 
-	The render api acts as a layer between the rendering module and the low level graphics implementation (D3D11 in this case)
+	The render api acts as a layer between the rendering module and the low level graphics implementation
 */
 
 #pragma once
@@ -14,105 +14,25 @@
 namespace ts
 {
 	///////////////////////////////////////////////////////////////////////////////////////////
-	//Render resources
+	// Types
 	///////////////////////////////////////////////////////////////////////////////////////////
 	
-	class IRenderApi;
-
-	enum EResourceType
-	{
-		eResourceUnknown,
-		eResourceBuffer,
-		eResourceTexture,
-		eResourceTextureSampler,
-		eResourceViewTexture,
-		eResourceViewRender,
-		eResourceViewDepth,
-		eResourceShader,
-		eResourceShaderInput
-	};
-
-	struct IRenderResource
-	{
-		virtual EResourceType getType() const = 0;
-		virtual IRenderApi* getApi() const = 0;
-
-		virtual uint32 addref() = 0;
-		virtual void release() = 0;
-	};
-
-	class ResourceProxy
-	{
-	private:
-		
-		//uint32 m_refcount = 0;
-		IRenderResource* m_handle = nullptr;
-		
-	public:
-
-		IRenderResource* const get() const { return m_handle; }
-		bool isNull() const { return (m_handle != nullptr); }
-
-		ResourceProxy() {}
-		ResourceProxy(IRenderResource* h) : m_handle(h) {}
-
-		void reset(IRenderResource* rsc)
-		{
-			if (m_handle)
-				m_handle->release();
-
-			m_handle = rsc;
-		}
-		
-		ResourceProxy(const ResourceProxy& h) :
-			m_handle(h.m_handle)
-		{
-			if (m_handle)
-				m_handle->addref();
-		}
-		
-		ResourceProxy(ResourceProxy&& h) :
-			m_handle(h.m_handle)
-		{
-			h.m_handle = nullptr;
-		}
-		
-		~ResourceProxy()
-		{
-			if (m_handle != nullptr)
-				m_handle->release();
-
-			m_handle = nullptr;
-		}
-		
-		ResourceProxy& operator=(const ResourceProxy& h)
-		{
-			if (m_handle != nullptr)
-				m_handle->release();
-
-			m_handle = h.m_handle;
-
-			if (m_handle)
-				m_handle->addref();
-
-			return *this;
-		}
-		
-		ResourceProxy& operator=(ResourceProxy&& h)
-		{
-			//Swap handles
-			auto oldhandle = m_handle;
-			m_handle = h.m_handle;
-			h.m_handle = oldhandle;
-
-			return *this;
-		}
-		
-		EResourceType getType() const { return m_handle->getType(); }
-	};
-
+	//Interfaces and structs
+	struct IRender;
+	struct IRenderContext;
+	struct IAdapterFactory;
+	struct IShaderCompiler;
+	struct SDrawCommand;
+	
+	//Resource handles
+	enum HBuffer : intptr {};
+	enum HTexture : intptr {};
+	enum HTarget : intptr {};
+	enum HShader : intptr {};
+	enum HDrawCmd : intptr {};
+	
 	///////////////////////////////////////////////////////////////////////////////////////////
-	//Buffers
+	// Buffers
 	///////////////////////////////////////////////////////////////////////////////////////////
 
 	enum EBufferType
@@ -120,7 +40,7 @@ namespace ts
 		eBufferTypeUnknown,
 		eBufferTypeVertex,
 		eBufferTypeIndex,
-		eBufferTypeUniform
+		eBufferTypeConstant
 	};
 
 	struct SBufferResourceData
@@ -131,7 +51,7 @@ namespace ts
 	};
 
 	///////////////////////////////////////////////////////////////////////////////////////////
-	//Textures
+	// Textures
 	///////////////////////////////////////////////////////////////////////////////////////////
 
 	enum ETextureFormat
@@ -162,14 +82,14 @@ namespace ts
 		uint32 memoryByteDepth = 0;
 	};
 
-	enum ETextureResourceMask
+	enum ETextureResourceMask : uint8
 	{
 		eTextureMaskShaderResource	= 1,
 		eTextureMaskRenderTarget	= 2,
 		eTextureMaskDepthTarget		= 4
 	};
 
-	enum ETextureResourceType
+	enum ETextureResourceType : uint8
 	{
 		eTypeTexture1D   = 1,
 		eTypeTexture2D	 = 2,
@@ -177,11 +97,11 @@ namespace ts
 		eTypeTextureCube = 4
 	};
 
-	struct STextureResourceDescriptor
+	struct STextureResourceDesc
 	{
 		ETextureFormat texformat = ETextureFormat::eTextureFormatUnknown;
 		ETextureResourceType textype = ETextureResourceType::eTypeTexture2D;
-		uint32 texmask = ETextureResourceMask::eTextureMaskShaderResource;
+		uint8 texmask = ETextureResourceMask::eTextureMaskShaderResource;
 
 		uint32 width = 0;
 		uint32 height = 0;
@@ -192,41 +112,24 @@ namespace ts
 		bool useMips = false;
 		SMultisampling multisampling;
 	};
-
-	struct STextureViewDescriptor
-	{
-		uint32 arrayIndex = 0;
-		uint32 arrayCount = 0;
-	};
-
-	enum ETextureFilterMode
+	
+	enum ETextureFilterMode : uint8
 	{
 		eTextureFilterPoint,
 		eTextureFilterBilinear,
 		eTextureFilterTrilinear,
-		eTextureFilterAnisotropic2x,
-		eTextureFilterAnisotropic4x,
-		eTextureFilterAnisotropic8x,
-		eTextureFilterAnisotropic16x
+		eTextureFilterAnisotropic
 	};
 
-	enum ETextureAddressMode
+	enum ETextureAddressMode : uint8
 	{
 		eTextureAddressWrap,
 		eTextureAddressMirror,
 		eTextureAddressClamp,
 	};
 
-	struct STextureSamplerDescriptor
-	{
-		ETextureAddressMode addressU;
-		ETextureAddressMode addressV;
-		ETextureAddressMode addressW;
-		ETextureFilterMode filtering;
-	};
-
 	///////////////////////////////////////////////////////////////////////////////////////////
-	//Shaders
+	// Shaders
 	///////////////////////////////////////////////////////////////////////////////////////////
 	
 	enum EShaderStage
@@ -239,48 +142,10 @@ namespace ts
 		eShaderStageDomain,
 		eShaderStageCompute
 	};
-
-	struct SShaderProgram
-	{
-		ResourceProxy stageVertex;
-		ResourceProxy stagePixel;
-		ResourceProxy stageGeometry;
-		ResourceProxy stageHull;
-		ResourceProxy stageDomain;
-	};
-
-	enum EShaderInputType
-	{
-		eShaderInputUnknown,
-		eShaderInputFloat,
-		eShaderInputFloat2,
-		eShaderInputFloat3,
-		eShaderInputFloat4,
-		eShaderInputMatrix,
-		eShaderInputInt32,
-		eShaderInputUint32,
-		eShaderInputRGBA,
-		eShaderInputRGB
-	};
-
-	enum EShaderInputChannel
-	{
-		eInputPerVertex,
-		eInputPerInstance
-	};
-
-	struct SShaderInputDescriptor
-	{
-		uint32 bufferSlot = 0;
-		const char* semanticName = "";
-		uint32 byteOffset = 0;
-		EShaderInputType type = EShaderInputType::eShaderInputUnknown;
-		EShaderInputChannel channel = EShaderInputChannel::eInputPerVertex;
-	};
-
+	
 	///////////////////////////////////////////////////////////////////////////////////////////
 
-	struct Viewport
+	struct SViewport
 	{
 		uint32 w = 0; //width
 		uint32 h = 0; //height
@@ -294,108 +159,175 @@ namespace ts
 		eFail,
 		eInvalidParameter,
 		eInvalidResource,
-		eInvalidTextureResource,
-		eInvalidTextureView,
 		eInvalidTextureFormat,
 		eInvalidShaderByteCode
 	};
+	
+	struct SDisplayConfig
+	{
+		uint16 resolutionW = 0;
+		uint16 resolutionH = 0;
+		uint8 multisampleCount = 0;
+		bool fullscreen = false;
+	};
 
-	struct SRenderApiConfiguration
+	struct SRenderApiConfig
 	{
 		intptr windowHandle = 0;
 		uint32 adapterIndex = 0;
-		uint32 resolutionWidth = 0;
-		uint32 resolutionHeight = 0;
-		uint32 multisampleCount = 0;
-		bool fullscreen = false;
-		uint16 flags = 0;
+		SDisplayConfig display;
+		uint8 flags = 0;
 	};
-
-	class IRenderContext;
-	class IRenderAdapterFactory;
-	class IShaderCompiler;
 
 	struct SRenderStatistics
 	{
 		uint32 drawcalls = 0;
 	};
 	
-	class IRenderApi
+	struct IRender
 	{
-	public:
+		//Resource methods
+		virtual ERenderStatus createResourceBuffer(HBuffer& rsc, const SBufferResourceData& data) = 0;
+		virtual ERenderStatus createResourceTexture(HTexture& rsc, const STextureResourceData* data, const STextureResourceDesc& desc) = 0;
+		virtual ERenderStatus createShader(HShader& shader, const void* bytecode, uint32 bytecodesize, EShaderStage stage) = 0;
+		virtual ERenderStatus createTarget(HTarget& target, const HTexture* renderTexture, const uint32* renderTextureIndices, uint32 renderTextureCount, HTexture deptTextureProxy, uint32 deptTextureProxyIndex) = 0;
 		
-		//Resource creation methods
-		virtual ERenderStatus createResourceBuffer(ResourceProxy& rsc, const SBufferResourceData& data) = 0;
-		virtual ERenderStatus createResourceTexture(ResourceProxy& rsc, const STextureResourceData* data, const STextureResourceDescriptor& desc) = 0;
-		virtual ERenderStatus createTextureSampler(ResourceProxy& sampler, const STextureSamplerDescriptor& desc) = 0;
+		virtual void destroyBuffer(HBuffer buffer) = 0;
+		virtual void destroyTexture(HTexture texture) = 0;
+		virtual void destroyShader(HShader shader) = 0;
+		virtual void destroyTarget(HTarget target) = 0;
 		
-		virtual ERenderStatus createViewDepthTarget(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) = 0;
-		virtual ERenderStatus createViewRenderTarget(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) = 0;
-
-		virtual ERenderStatus createViewTextureCube(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) = 0;
-		virtual ERenderStatus createViewTexture2D(ResourceProxy& view, const ResourceProxy& rsc, const STextureViewDescriptor& desc) = 0;
-		virtual ERenderStatus createViewTexture3D(ResourceProxy& view,const ResourceProxy& rsc ) = 0;
+		//Command methods
+		virtual ERenderStatus createDrawCommand(HDrawCmd& cmd, const SDrawCommand& desc) = 0;
+		virtual void destroyDrawCommand(HDrawCmd cmd) = 0;
 		
-		virtual ERenderStatus createShader(ResourceProxy& shader, const void* bytecode, uint32 bytecodesize, EShaderStage stage) = 0;
-		virtual ERenderStatus createShaderInputDescriptor(ResourceProxy& rsc, const ResourceProxy& vertexshader, const SShaderInputDescriptor* sids, uint32 sidnum) = 0;
-		
-		//Render context methods
+		//Render context
 		virtual void createContext(IRenderContext** context) = 0;
 		virtual void destroyContext(IRenderContext* context) = 0;
-		virtual void executeContext(IRenderContext* context) = 0;
-
-		//Window/swapchain methods
-		virtual void setDisplayResolution(uint32 width, uint32 height) = 0;
-		virtual void setDisplayMultisampleCount(uint32 samplecount) = 0;
-		virtual void setDisplayFullscreenState(bool fullscreen) = 0;
-		virtual bool getDisplayFullscreenState() const = 0;
-		virtual void getDisplayRenderTarget(ResourceProxy& target) = 0;
-
+		
+		//Display methods
+		virtual void setDisplayConfiguration(const SDisplayConfig& displayCfg) = 0;
+		virtual void getDisplayConfiguration(SDisplayConfig& displayCfg) = 0;
+		virtual void getDisplayTexture(HTexture& rendertarget) = 0;
+		
 		virtual void getDrawStatistics(SRenderStatistics& stats) = 0;
-
+		
 		virtual void drawBegin(const Vector& vec) = 0;
-		virtual void drawEnd() = 0;
-
-		virtual ~IRenderApi() {}
+		virtual void drawEnd(IRenderContext** contexts, uint32 numContexts) = 0;
+	};
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	//	Draw Command
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	struct STextureUnit
+	{
+		HTexture texture;
+		uint32 arrayIndex = 0;
+		uint32 arrayCount = 0;
+	};
+	
+	struct STextureSampler
+	{
+		ETextureAddressMode addressU;
+		ETextureAddressMode addressV;
+		ETextureAddressMode addressW;
+		ETextureFilterMode filtering;
+		uint anisotropy = 0;
+	};
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+	// Vertex attributes
+	
+	enum EVertexAttributeType : uint8
+	{
+		eAttribUnknown,
+		eAttribFloat,
+		eAttribFloat2,
+		eAttribFloat3,
+		eAttribFloat4,
+		eAttribMatrix,
+		eAttribInt32,
+		eAttribUint32,
+		eAttribRGBA,
+		eAttribRGB
 	};
 
-	enum EResourceLimits
+	enum EVertexAttributeChannel : uint8
 	{
-		eMaxTextureSlots = 16,
-		eMaxTextureSamplerSlots = 4,
-		eMaxVertexBuffers = 8,
-		eMaxUniformBuffers = 8,
-		eMaxRenderTargets = 4,
-		eMaxUnorderedAccessViews = 4
+		eChannelPerVertex,
+		eChannelPerInstance
 	};
 
-
-	enum ERenderCommandFlag : uint16
+	struct SVertexAttribute
 	{
-		eCommandFlag_Null		   = 0,
-		eCommandFlag_DisableDepth  = 1,
-		eCommandFlag_DisableColour = 2
+		uint32 bufferSlot = 0;
+		const char* semanticName = "";
+		uint32 byteOffset = 0;
+		EVertexAttributeType type = EVertexAttributeType::eAttribUnknown;
+		EVertexAttributeChannel channel = EVertexAttributeChannel::eChannelPerVertex;
+	};
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+	// Render states
+
+	struct SRasterState
+	{
+		bool enableScissor = false;
+	};
+	
+	struct SDepthState
+	{
+		bool enable = false;
+	};
+	
+	struct SBlendState
+	{
+		bool enable = false;
+	};
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+	
+	enum EDrawMode : uint8
+	{
+		eDraw,
+		eDrawIndexed,
+		eDrawInstanced,
+		eDrawIndexedInstanced
 	};
 
-	struct SRenderCommand
+	struct SDrawCommand
 	{
-		ResourceProxy depthTarget;
-		ResourceProxy renderTarget[EResourceLimits::eMaxRenderTargets];
+		enum ELimits
+		{
+			eMaxTextureSlots = 16,
+			eMaxTextureSamplerSlots = 4,
+			eMaxVertexBuffers = 8,
+			eMaxConstantBuffers = 8,
+			eMaxVertexAttributes = 8
+		};
 		
-		Viewport viewport;
-		Viewport scissor;
-
-		SShaderProgram shaders;
-		ResourceProxy textures[EResourceLimits::eMaxTextureSlots];
-		ResourceProxy textureSamplers[EResourceLimits::eMaxTextureSamplerSlots];
+		//Pipeline state
+		SBlendState blendState;
+		SRasterState rasterState;
+		SDepthState depthState;
+		//Shaders
+		HShader shaderVertex;
+		HShader shaderPixel;
+		HShader shaderGeometry;
+		HShader shaderHull;
+		HShader shaderDomain;
 		
-		ResourceProxy indexBuffer;
-		ResourceProxy vertexBuffer;
-		uint32 vertexStride = 0;
-		//todo: multiple vertex buffers
-		//ResourceProxy vertexBuffers[EResourceLimits::eMaxVertexBuffers];
-		ResourceProxy uniformBuffers[EResourceLimits::eMaxUniformBuffers];
-
+		//Textures
+		STextureUnit textureUnits[eMaxTextureSlots];
+		STextureSampler textureSamplers[eMaxTextureSamplerSlots];
+		
+		//Buffers
+		HBuffer indexBuffer;
+		HBuffer constantBuffers[eMaxConstantBuffers];
+		HBuffer vertexBuffers[eMaxVertexBuffers];
+		uint32 vertexStrides[eMaxVertexBuffers];
+		
 		uint32 indexStart = 0;
 		uint32 indexCount = 0;
 		uint32 vertexStart = 0;
@@ -404,72 +336,72 @@ namespace ts
 		uint32 instanceCount = 1;
 		
 		EVertexTopology vertexTopology = EVertexTopology::eTopologyUnknown;
-		ResourceProxy vertexInputDescriptor;
-
-		bool alphaBlending = false;
-
-		ERenderCommandFlag flags;
-	};
-
-	class IRenderContext
-	{
-	public:
+		SVertexAttribute vertexAttribs[eMaxVertexAttributes];
+		uint32 vertexAttribCount = 0;
 		
-		virtual void resourceBufferUpdate(const ResourceProxy& rsc, const void* memory) = 0;
-		virtual void resourceBufferCopy(const ResourceProxy& src, ResourceProxy& dest) = 0;
-		virtual void resourceTextureUpdate(uint32 index, ResourceProxy& rsc, const void* memory) = 0;
-		virtual void resourceTextureCopy(const ResourceProxy& src, ResourceProxy& dest) = 0;
-		virtual void resourceTextureResolve(const ResourceProxy& src, ResourceProxy& dest) = 0;
-		
-		virtual void clearRenderTarget(const ResourceProxy& renderview, const Vector& vec) = 0;
-		virtual void clearDepthTarget(const ResourceProxy& depthview, float depth) = 0;
-
-		//Execute a draw call
-		virtual void execute(const SRenderCommand& command) = 0;
-
-		virtual void finish() = 0;
-	};
-
-	class IRenderAdapterFactory
-	{
-	public:
-
-		virtual uint32 getAdapterCount() const = 0;
-		virtual bool enumAdapter(uint32 idx, SRenderAdapterDesc& desc) const = 0;
-	};
-
-	struct SShaderCompileConfig
-	{
-		StaticString<64> entrypoint;
-		EShaderStage stage;
-		//Compile a shader with debug information
-		bool debuginfo = false;
-	};
-
-	class IShaderCompiler
-	{
-	public:
-
-		virtual bool compile(const char* str, const SShaderCompileConfig& options, MemoryBuffer& bytecode) = 0;
-		virtual bool compileFromFile(const char* filepath, const SShaderCompileConfig& options, MemoryBuffer& bytecode) = 0;
+		EDrawMode mode;
 	};
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////
-
-namespace std
-{
-	template<>
-	struct hash<ts::ResourceProxy>
-	{
-		size_t operator()(ts::ResourceProxy proxy)
-		{
-			hash<void*>h;
-			return h(proxy.get());
-		}
+	//	Render Context
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	struct IRenderContext
+	{		
+		virtual void bufferUpdate(HBuffer rsc, const void* memory) = 0;
+		virtual void bufferCopy(HBuffer src, HBuffer dest) = 0;
+		virtual void textureUpdate(HTexture rsc, uint32 index, const void* memory) = 0;
+		virtual void textureCopy(HTexture src, HTexture dest) = 0;
+		virtual void textureResolve(HTexture src, HTexture dest) = 0;
+		
+		virtual void clearRenderTarget(HTarget target, const Vector& vec) = 0;
+		virtual void clearDepthTarget(HTarget target, float depth) = 0;
+		
+		virtual void draw(
+			HTarget target,
+			const SViewport& viewport,
+			const SViewport& scissor,
+			HDrawCmd command
+		) = 0;
+		
+		virtual void finish() = 0;
 	};
+	
+	struct IAdapterFactory
+	{	
+		virtual uint32 getAdapterCount() const = 0;
+		virtual bool enumAdapter(uint32 idx, SRenderAdapterDesc& desc) const = 0;
+	};
+	
+	struct SShaderCompileConfig
+	{
+		const char* entrypoint = nullptr;
+		EShaderStage stage;
+		bool debuginfo = false;
+	};
+	
+	struct IShaderCompiler
+	{
+		virtual bool compile(const char* code, const SShaderCompileConfig& options, MemoryBuffer& bytecode) = 0;
+	};
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	namespace abi
+	{
+		extern "C"
+		{
+			int createRenderApi(IRender** api, const SRenderApiConfig& cfg);
+			void destroyRenderApi(IRender* api);
+			
+			int createShaderCompiler(IShaderCompiler** compiler);
+			void destroyShaderCompiler(IShaderCompiler* compiler);
+			
+			int createAdapterFactory(IAdapterFactory** adapterFactory);
+			void destroyAdapterFactory(IAdapterFactory* adapterFactory);
+		}
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

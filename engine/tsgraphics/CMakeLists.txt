@@ -6,7 +6,7 @@ set(tsgraphics_inc
 
 	inc/tsgraphics/abi.h
 	
-	inc/tsgraphics/rendermodule.h
+	inc/tsgraphics/graphicsSystem.h
 	inc/tsgraphics/texturemanager.h
 	inc/tsgraphics/shadermanager.h
 	
@@ -22,19 +22,37 @@ set(tsgraphics_inc
 	inc/tsgraphics/model/modeldefs.h
 )
 
+SET(tsgraphics_api_d3d11_src
+	
+	src/api/d3d11/Base.h
+	src/api/d3d11/Helpers.h
+	src/api/d3d11/Helpers.cpp
+	
+	src/api/d3d11/Render.h
+	src/api/d3d11/Render.cpp
+	src/api/d3d11/RenderMain.cpp
+	src/api/d3d11/RenderDisplay.cpp
+	src/api/d3d11/RenderTexture.cpp
+	src/api/d3d11/RenderShader.cpp
+	src/api/d3d11/RenderTargets.cpp
+	src/api/d3d11/RenderBuffers.cpp
+	src/api/d3d11/Shader.h
+	src/api/d3d11/Target.h
+	src/api/d3d11/Context.cpp
+	src/api/d3d11/Context.h
+	src/api/d3d11/StateManager.cpp
+	src/api/d3d11/StateManager.h
+	
+	src/api/d3d11/ShaderCompiler.cpp
+	src/api/d3d11/Adapter.cpp
+)
+
 SET(tsgraphics_src
 	
-	src/api/DX11/DX11base.h
-	src/api/DX11/DX11render.h
-	src/api/DX11/DX11render.cpp
-	src/api/DX11/DX11adapter.cpp
-	src/api/DX11/DX11helpers.h
-	src/api/DX11/DX11helpers.cpp
-	src/api/DX11/DX11context.cpp
-	src/api/DX11/DX11shaderCompiler.cpp
+	${tsgraphics_api_d3d11_src}
 	
-	src/rendermodule.cpp
-	src/rendermoduleloader.cpp
+	src/graphicsSystem.cpp
+	src/graphicsSystemLoader.cpp
 	src/texturemanager.cpp
 	
 	src/shader/shadermanager.cpp

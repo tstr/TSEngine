@@ -42,7 +42,7 @@ namespace ts
 		eDisplayFullscreen = 3
 	};
 
-	struct SRenderModuleConfiguration
+	struct SGraphicsSystemConfig
 	{
 		//Handle to display (application window)
 		intptr windowHandle = 0;
@@ -60,13 +60,13 @@ namespace ts
 		Path rootpath;
 	};
 
-	class IRenderApi;
+	class IRender;
 	
 	class CRenderModule
 	{
 	private:
 
-		IRenderApi* m_api = nullptr;
+		IRender* m_api = nullptr;
 
 		CTextureManager m_textureManager;
 		CShaderManager m_shaderManager;
@@ -86,7 +86,7 @@ namespace ts
 		
 		CTextureManager& getTextureManager() { return m_textureManager; }
 		CShaderManager& getShaderManager() { return m_shaderManager; }
-		IRenderApi* const getApi() const { return m_api; }
+		IRender* const getApi() const { return m_api; }
 
 		TSGRAPHICS_API void setDisplayConfiguration(EDisplayMode displaymode, uint32 width = 0, uint32 height = 0, SMultisampling sampling = SMultisampling(0));
 		TSGRAPHICS_API void getConfiguration(SRenderModuleConfiguration& cfg) { cfg = m_config; }
