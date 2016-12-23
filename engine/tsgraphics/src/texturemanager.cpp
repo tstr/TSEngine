@@ -2,7 +2,7 @@
 	Texture management source
 */
 
-#include <tsgraphics/rendermodule.h>
+#include <tsgraphics/graphicssystem.h>
 #include <tsgraphics/texturemanager.h>
 
 #include <tscore/debug/assert.h>
@@ -21,35 +21,22 @@ using namespace std;
 
 static std::string PrintPixelFormat(Gdiplus::PixelFormat format);
 static std::string PrintGDIstatus(Gdiplus::Status status);
-static bool LoadTGAFile(const char* filename, STextureResourceDescriptor& desc, vector<uint32>& databuffer);
+static bool LoadTGAFile(const char* filename, STextureResourceDesc& desc, vector<uint32>& databuffer);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Texture classes
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CTexture2D::CTexture2D(CTextureManager* manager, const STextureResourceData& data, const STextureResourceDescriptor& desc) :
+CTexture2D::CTexture2D(CTextureManager* manager, const STextureResourceData& data, const STextureResourceDesc& desc) :
 	m_manager(manager)
 {
-	STextureViewDescriptor vdesc;
-	vdesc.arrayCount = 1;
-	vdesc.arrayIndex = 0;
-	ERenderStatus rstatus = eOk;
 
 	IRender* api = m_manager->getModule()->getApi();
-
-	rstatus = api->createResourceTexture(m_texRsc, &data, desc);
+	ERenderStatus rstatus = api->createResourceTexture(m_hTex, &data, desc);
 
 	if (rstatus)
 	{
 		tswarn("Unable to create texture resource.");
-		return;
-	}
-
-	rstatus = api->createViewTexture2D(m_texView, m_texRsc, vdesc);
-
-	if (rstatus)
-	{
-		tswarn("Unable to create texture view.");
 		return;
 	}
 
@@ -57,44 +44,16 @@ CTexture2D::CTexture2D(CTextureManager* manager, const STextureResourceData& dat
 	m_height = desc.height;
 }
 
-CTextureCube::CTextureCube(CTextureManager* manager, const STextureResourceData* data, const STextureResourceDescriptor& desc) :
+CTextureCube::CTextureCube(CTextureManager* manager, const STextureResourceData* data, const STextureResourceDesc& desc) :
 	m_manager(manager)
 {
-	STextureViewDescriptor vdesc;
-	vdesc.arrayCount = 1;
-	vdesc.arrayIndex = 0;
-	ERenderStatus rstatus = eOk;
-
 	IRender* api = m_manager->getModule()->getApi();
-
-	rstatus = api->createResourceTexture(m_texCubeRsc, data, desc);
+	ERenderStatus rstatus = api->createResourceTexture(m_hTex, data, desc);
 
 	if (rstatus)
 	{
 		tswarn("Unable to create texture resource.");
 		return;
-	}
-
-	rstatus = api->createViewTextureCube(m_texCubeView, m_texCubeRsc, vdesc);
-
-	if (rstatus)
-	{
-		tswarn("Unable to create texture cube view.");
-		return;
-	}
-
-	for (int i = 0; i < 6; i++)
-	{
-		STextureViewDescriptor facedesc;
-		vdesc.arrayCount = 1;
-		vdesc.arrayIndex = i;
-		rstatus = api->createViewTexture2D(m_texCubeFaceViews[i], m_texCubeRsc, facedesc);
-
-		if (rstatus)
-		{
-			tswarn("Unable to create texture cube face(%) view.", i);
-			return;
-		}
 	}
 
 	m_facewidth = desc.width;
@@ -105,7 +64,7 @@ CTextureCube::CTextureCube(CTextureManager* manager, const STextureResourceData*
 //Texture manager class
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CTextureManager::CTextureManager(CRenderModule* module, const Path& rootpath) :
+CTextureManager::CTextureManager(GraphicsSystem* module, const Path& rootpath) :
 	m_renderModule(module),
 	m_rootpath(rootpath)
 {
@@ -150,14 +109,9 @@ bool CTextureManager::loadTexture2D(const Path& file, CTexture2D& texture)
 	/////////////////////////////////////////////////////////////////////////
 
 	STextureResourceData data;
-	STextureResourceDescriptor desc;
-	STextureViewDescriptor vdesc;
+	STextureResourceDesc desc;
 	vector<uint32> buffer;
-
-	ResourceProxy tex;
-	ResourceProxy texview;
-
-
+	
 	string extension;
 	string filename(filepath.str());
 
@@ -298,7 +252,7 @@ bool CTextureManager::loadTextureCube(const Path& file, CTextureCube& texture)
 	/////////////////////////////////////////////////////////////////////////
 	
 	STextureResourceData data[6];
-	STextureResourceDescriptor desc;
+	STextureResourceDesc desc;
 	//vector<uint32> buffers[6];
 	MemoryBuffer buffers[6];
 	
@@ -442,7 +396,7 @@ bool CTextureManager::loadTextureCube(const Path& file, CTextureCube& texture)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //GDI+ doesn't support TGA files so we have to use a separate loading mechanism
-static bool LoadTGAFile(const char* filename, STextureResourceDescriptor& desc, vector<uint32>& databuffer)
+static bool LoadTGAFile(const char* filename, STextureResourceDesc& desc, vector<uint32>& databuffer)
 {
 	struct TGAFILE
 	{

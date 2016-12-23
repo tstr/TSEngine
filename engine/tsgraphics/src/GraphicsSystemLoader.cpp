@@ -3,16 +3,14 @@
 */
 
 #include <Windows.h>
-#include <tsgraphics/rendermodule.h>
-
-//D3D11 interface
-#include "API/DX11/DX11Render.h"
+#include <tsgraphics/graphicssystem.h>
+#include <tscore/debug/log.h>
 
 using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////s
 
-int CRenderModule::loadApi(ERenderApiID id)
+int GraphicsSystem::loadApi(ERenderApiID id)
 {
 	if (id != eRenderApiD3D11)
 	{
@@ -20,44 +18,35 @@ int CRenderModule::loadApi(ERenderApiID id)
 		return false;
 	}
 
-	dx11::DX11RenderAdapterFactory adapterfactory;
+	IAdapterFactory* adapterfactory = nullptr;
+	abi::createAdapterFactory(&adapterfactory);
 
-	for (uint32 i = 0; i < adapterfactory.getAdapterCount(); i++)
+	for (uint32 i = 0; i < adapterfactory->getAdapterCount(); i++)
 	{
 		SRenderAdapterDesc desc;
-		adapterfactory.enumAdapter(i, desc);
+		adapterfactory->enumAdapter(i, desc);
 
 		tsinfo("Adapter(%): %", i, desc.adapterName.str());
 	}
-
-	SRenderApiConfiguration apicfg;
+	
+	SRenderApiConfig apicfg;
 	apicfg.adapterIndex = 0; //hard code the adapter for now
-	apicfg.resolutionHeight = m_config.height;
-	apicfg.resolutionWidth = m_config.width;
-	apicfg.fullscreen = (m_config.displaymode == EDisplayMode::eDisplayFullscreen);
+	apicfg.display.resolutionH = m_config.height;
+	apicfg.display.resolutionW = m_config.width;
+	apicfg.display.fullscreen = (m_config.displaymode == EDisplayMode::eDisplayFullscreen);
+	apicfg.display.multisampleCount = m_config.multisampling.count;
 	apicfg.windowHandle = m_config.windowHandle;
-	apicfg.multisampleCount = m_config.multisampling.count;
 
 #ifdef _DEBUG
 	apicfg.flags |= ERenderApiFlags::eFlagDebug;
 #endif
 
-	m_api = new dx11::DX11RenderApi(apicfg);
-
-	return 0;
+	return abi::createRenderApi(&m_api, apicfg);
 }
 
-int CRenderModule::unloadApi()
+int GraphicsSystem::unloadApi()
 {
-	if (auto api = static_cast<dx11::DX11RenderApi*>(m_api))
-	{
-		delete api;
-	}
-	else
-	{
-		return 1;
-	}
-
+	abi::destroyRenderApi(m_api);
 	return 0;
 }
 

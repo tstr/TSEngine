@@ -4,15 +4,15 @@
 	DirectX 11 implementation of shader compiler
 */
 
+#include "Render.h"
+
 #include <Windows.h>
-#include "DX11render.h"
 #include <d3dcompiler.h>
 
 #include <iostream>
 
 using namespace std;
 using namespace ts;
-using namespace ts::dx11;
 
 #define LOAD_FUNC(h, x) (decltype(x)*)GetProcAddress(h, #x);
 
@@ -72,7 +72,7 @@ public:
 			FreeLibrary(m_d3dcompiler);
 	}
 	
-	bool compile(const char* str, const SShaderCompileConfig& options, MemoryBuffer& bytecode) override
+	bool compile(const char* code, const SShaderCompileConfig& options, MemoryBuffer& codebuffer) override
 	{
 		auto fn_compile = LOAD_FUNC(m_d3dcompiler, D3DCompile);
 		
@@ -125,7 +125,7 @@ public:
 			nullptr,
 			0,
 			nullptr,
-			options.entrypoint.str(),
+			options.entrypoint,
 			shadertarget.tostring(),
 			compileflag,
 			0,
@@ -145,5 +145,28 @@ public:
 		return true;
 	}
 };
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace ts
+{
+	namespace abi
+	{
+		int createShaderCompiler(IShaderCompiler** compiler)
+		{
+			*compiler = new D3D11ShaderCompiler();
+			return 0;
+		}
+
+		void destroyShaderCompiler(IShaderCompiler* compiler)
+		{
+			if (auto sc = dynamic_cast<D3D11ShaderCompiler*>(compiler))
+			{
+				delete sc;
+			}
+		}
+	}
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

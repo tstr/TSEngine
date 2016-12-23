@@ -17,6 +17,9 @@ namespace ts
 		MemoryBuffer m_shaderBytecode;
 		
 	public:
+
+		static D3D11Shader* upcast(HShader t) { return reinterpret_cast<D3D11Shader*>(t); }
+		static HShader downcast(D3D11Shader* t) { return (HShader)reinterpret_cast<HShader&>(t); }
 		
 		D3D11Shader(ID3D11VertexShader* s, MemoryBuffer&& buf) :
 			m_shaderInterface((ID3D11DeviceChild*)s),

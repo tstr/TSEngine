@@ -6,35 +6,34 @@
 
 #include "preprocessor.h"
 
-#include <tsgraphics/rendermodule.h>
+#include <tsgraphics/graphicsSystem.h>
 #include <tsgraphics/shadermanager.h>
 
 #include <fstream>
 #include <tscore/debug/assert.h>
-
-#include "API/DX11/DX11Render.h"
+#include <tscore/debug/log.h>
 
 using namespace std;
 using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-CShaderManager::CShaderManager(CRenderModule* module, uint flags, const Path& sourcepath, const Path& cachepath) :
-	m_renderModule(module),
+CShaderManager::CShaderManager(GraphicsSystem* system, uint flags, const Path& sourcepath, const Path& cachepath) :
+	m_graphics(system),
 	m_sourcePath(sourcepath),
 	m_cachePath(cachepath),
 	m_flags(flags)
 {
-	tsassert(module);
+	tsassert(m_graphics);
 
-	m_shaderCompiler = new dx11::DX11ShaderCompiler();
+	abi::createShaderCompiler(&m_shaderCompiler);
 
 	m_idcounter = 0;
 }
 
 CShaderManager::~CShaderManager()
 {
-	delete m_shaderCompiler;
+	abi::destroyShaderCompiler(m_shaderCompiler);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,7 +41,7 @@ CShaderManager::~CShaderManager()
 bool CShaderManager::createShaderFromString(ShaderId& id, const char* code, const char* entrypoint, EShaderStage stage)
 {
 	SShaderCompileConfig config;
-	config.entrypoint.set(entrypoint);
+	config.entrypoint = entrypoint;
 	config.debuginfo = m_flags & eShaderManagerFlag_Debug;
 	config.stage = stage;
 
@@ -55,10 +54,10 @@ bool CShaderManager::createShaderFromString(ShaderId& id, const char* code, cons
 	id = m_idcounter;
 
 	SShaderInstance inst;
-	if (ERenderStatus status = m_renderModule->getApi()->createShader(inst.proxy, bytecode.pointer(), (uint32)bytecode.size(), config.stage))
+	if (ERenderStatus status = m_graphics->getApi()->createShader(inst.hShader, bytecode.pointer(), (uint32)bytecode.size(), config.stage))
 	{
 		tswarn("unable to load shader");
-		inst.proxy = ResourceProxy();
+		m_graphics->getApi()->destroyShader(inst.hShader);
 		return false;
 	}
 
@@ -79,7 +78,7 @@ bool CShaderManager::createShaderFromFile(ShaderId& id, const Path& codefile, co
 	preprocessFile(source, sourcestream);
 
 	SShaderCompileConfig config;
-	config.entrypoint.set(entrypoint);
+	config.entrypoint = entrypoint;
 	config.debuginfo = m_flags & eShaderManagerFlag_Debug;
 	config.stage = stage;
 
@@ -91,10 +90,10 @@ bool CShaderManager::createShaderFromFile(ShaderId& id, const Path& codefile, co
 	id = m_idcounter;
 
 	SShaderInstance inst;
-	if (ERenderStatus status = m_renderModule->getApi()->createShader(inst.proxy, bytecode.pointer(), (uint32)bytecode.size(), config.stage))
+	if (ERenderStatus status = m_graphics->getApi()->createShader(inst.hShader, bytecode.pointer(), (uint32)bytecode.size(), config.stage))
 	{
 		tswarn("unable to load shader");
-		inst.proxy = ResourceProxy();
+		m_graphics->getApi()->destroyShader(inst.hShader);
 		return false;
 	}
 
@@ -106,9 +105,9 @@ bool CShaderManager::createShaderFromFile(ShaderId& id, const Path& codefile, co
 	return true;
 }
 
-ResourceProxy& CShaderManager::getShaderProxy(ShaderId id)
+HShader CShaderManager::getShaderHandle(ShaderId id)
 {
-	return m_shaderInstanceMap.at(id - 1).proxy;
+	return m_shaderInstanceMap.at(id - 1).hShader;
 }
 
 void CShaderManager::addMacro(const string& macroname, const string& macrovalue)
