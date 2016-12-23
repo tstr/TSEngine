@@ -141,14 +141,7 @@ D3D11Render::D3D11Render(const SRenderApiConfig& cfg)
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
-
-	//Create the new render target view
-	ComPtr<ID3D11Texture2D> backbuffer;
-	hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());
-	tsassert(SUCCEEDED(hr));
-	hr = m_device->CreateRenderTargetView(backbuffer.Get(), nullptr, m_swapChainRenderTarget.GetAddressOf());
-	tsassert(SUCCEEDED(hr));
-
+	
 	//States
 	{
 		D3D11_BLEND_DESC desc;
@@ -246,7 +239,7 @@ void D3D11Render::drawBegin(const Vector& vec)
 
 void D3D11Render::drawEnd(IRenderContext** contexts, uint32 numContexts)
 {
-	for (int i = 0; i < numContexts; i++)
+	for (uint32 i = 0; i < numContexts; i++)
 	{
 		if (auto rcon = dynamic_cast<D3D11RenderContext*>(contexts[i]))
 		{
@@ -265,6 +258,22 @@ void D3D11Render::drawEnd(IRenderContext** contexts, uint32 numContexts)
 	//Sets drawing status to inactive
 	//If status was already marked as inactive then show error
 	tsassert(m_drawActive.exchange(false));
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void D3D11Render::getDrawStatistics(SRenderStatistics& stats)
+{
+	stats.drawcalls = m_drawCallCounter.load();
+}
+
+bool D3D11Render::getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc)
+{
+	tsassert(m_device.Get());
+	tsassert(SUCCEEDED(m_device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, sampledesc.Count, &sampledesc.Quality)));
+	sampledesc.Quality--;
+
+	return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

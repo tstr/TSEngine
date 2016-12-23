@@ -10,7 +10,8 @@
 #include <atomic>
 #include <tsgraphics/api/renderapi.h>
 
-#include "base.h"
+#include "Base.h"
+#include "Target.h"
 
 namespace ts
 {
@@ -35,15 +36,14 @@ namespace ts
 		ComPtr<ID3D11Device> m_device;
 		ComPtr<ID3D11DeviceContext> m_immediateContext;
 
-		ComPtr<ID3D11BlendState> m_blendState;
-		ComPtr<ID3D11RasterizerState> m_rasterizerState;
-		ComPtr<ID3D11DepthStencilState> m_depthStencilState;
-				
+		D3D11Target m_displayTarget;
+		
 		std::atomic<bool> m_drawActive;
 		std::atomic<bool> m_displayNeedRebuild;
 		SDisplayConfig m_cachedDisplayConfig;
 		void tryRebuildDisplay();
 		void doRebuildDisplay();
+		void initDisplayTarget();
 		
 		//All allocated render contexts
 		std::vector<D3D11RenderContext*> m_renderContexts;
@@ -51,6 +51,10 @@ namespace ts
 		std::atomic<uint32> m_drawCallCounter;
 
 		bool getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc);
+
+		ComPtr<ID3D11BlendState> m_blendState;
+		ComPtr<ID3D11RasterizerState> m_rasterizerState;
+		ComPtr<ID3D11DepthStencilState> m_depthStencilState;
 
 	public:
 		
@@ -110,7 +114,7 @@ namespace ts
 		//Window methods
 		void setDisplayConfiguration(const SDisplayConfig& displayCfg) override;
 		void getDisplayConfiguration(SDisplayConfig& displayCfg) override;
-		void getDisplayTexture(HTexture& tex) override;
+		void getDisplayTarget(HTarget& target) override;
 
 		//Statistics
 		void getDrawStatistics(SRenderStatistics& stats) override;

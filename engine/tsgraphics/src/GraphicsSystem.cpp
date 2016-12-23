@@ -2,7 +2,7 @@
 	Graphics module source
 */
 
-#include <tsgraphics/rendermodule.h>
+#include <tsgraphics/graphicssystem.h>
 #include <tscore/debug/log.h>
 
 #include "platform/borderless.h"
@@ -12,13 +12,15 @@ using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////s
 
-CRenderModule::CRenderModule(const SRenderModuleConfiguration& cfg) :
+GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg) :
 	m_config(cfg),
 	m_textureManager(this),
 	m_shaderManager(this, 0)
 {
 	if (int err = loadApi(cfg.apiEnum))
 		tserror("Unable to load graphics api (id:%)(error:%)", cfg.apiEnum, err);
+
+	m_api->createContext(&m_context);
 
 	m_textureManager.setRootpath(m_config.rootpath);
 
@@ -29,23 +31,28 @@ CRenderModule::CRenderModule(const SRenderModuleConfiguration& cfg) :
 	m_shaderManager.setFlags(m_shaderManager.getFlags() | eShaderManagerFlag_Debug);
 }
 
-CRenderModule::~CRenderModule()
+GraphicsSystem::~GraphicsSystem()
 {
+	m_api->destroyContext(m_context);
+	m_context = nullptr;
+
 	unloadApi();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CRenderModule::setDisplayConfiguration(EDisplayMode displaymode, uint32 w, uint32 h, SMultisampling sampling)
+void GraphicsSystem::setDisplayConfiguration(EDisplayMode displaymode, uint32 w, uint32 h, SMultisampling sampling)
 {
+	SDisplayConfig display;
+	m_api->getDisplayConfiguration(display);
+
 	//Update multisample count
 	if (sampling.count)
 	{
 		if (m_config.multisampling.count != sampling.count)
 		{
-			m_api->setDisplayMultisampleCount(sampling.count);
-
 			m_config.multisampling = sampling;
+			display.multisampleCount = sampling.count;
 		}
 	}
 
@@ -63,13 +70,13 @@ void CRenderModule::setDisplayConfiguration(EDisplayMode displaymode, uint32 w, 
 					exitBorderless(winhandle);
 
 				//Enter fullscreen
-				m_api->setDisplayFullscreenState(true);
+				display.fullscreen = true;
 			}
 			else if (displaymode == eDisplayBorderless)
 			{
 				//Exit fullscreen if the previous mode was fullscreen
 				if (m_config.displaymode == eDisplayFullscreen)
-					m_api->setDisplayFullscreenState(false);
+					display.fullscreen = false;
 				
 				//Enter borderless fullscreen
 				enterBorderless(winhandle);
@@ -78,7 +85,7 @@ void CRenderModule::setDisplayConfiguration(EDisplayMode displaymode, uint32 w, 
 			{
 				//Exit fullscreen if the previous mode was fullscreen
 				if (m_config.displaymode == eDisplayFullscreen)
-					m_api->setDisplayFullscreenState(false);
+					display.fullscreen = false;
 				//Exit borderless if previous mode was borderless
 				else if (m_config.displaymode == eDisplayBorderless)
 					exitBorderless(winhandle);
@@ -98,24 +105,27 @@ void CRenderModule::setDisplayConfiguration(EDisplayMode displaymode, uint32 w, 
 
 		if (m_config.width != w || m_config.height != h)
 		{
-			m_api->setDisplayResolution(w, h);
+			display.resolutionH = h;
+			display.resolutionW = w;
 
 			m_config.width = w;
 			m_config.height = h;
 		}
 	}
+
+	m_api->setDisplayConfiguration(display);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CRenderModule::drawBegin(const Vector& colour)
+void GraphicsSystem::drawBegin(const Vector& colour)
 {
 	m_api->drawBegin(colour);
 }
 
-void CRenderModule::drawEnd()
+void GraphicsSystem::drawEnd()
 {
-	m_api->drawEnd();
+	m_api->drawEnd(&m_context, 1);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

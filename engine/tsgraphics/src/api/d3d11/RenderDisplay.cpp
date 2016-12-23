@@ -48,6 +48,8 @@ void D3D11Render::doRebuildDisplay()
 
 	//Release swapchain
 	m_dxgiSwapchain.Reset();
+	//Release targets associated with swapchain
+	m_displayTarget.reset();
 
 	//Recreate swapchain
 	tsassert(SUCCEEDED(m_dxgiFactory->CreateSwapChain((IUnknown*)m_device.Get(), &desc, m_dxgiSwapchain.GetAddressOf())));
@@ -56,6 +58,9 @@ void D3D11Render::doRebuildDisplay()
 		m_hwnd,
 		DXGI_MWA_NO_WINDOW_CHANGES
 	);
+
+	//Recreate render targets associated with display
+	initDisplayTarget();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,10 +106,50 @@ void D3D11Render::getDisplayConfiguration(SDisplayConfig& displayCfg)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Display target methods
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Render::getDisplayTexture(HTexture& tex)
+//creates a new 
+void D3D11Render::initDisplayTarget()
 {
+	m_displayTarget.reset();
 	
+	ComPtr<ID3D11Texture2D> backbuffer;
+	ComPtr<ID3D11Texture2D> depthbuffer;
+	ComPtr<ID3D11RenderTargetView> rtv;
+	ComPtr<ID3D11DepthStencilView> dsv;
+	
+	//Get ID3D11Texture2D resource from swapchain backbuffer
+	HRESULT hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());
+	tsassert(SUCCEEDED(hr));
+
+	hr = m_device->CreateRenderTargetView(backbuffer.Get(), nullptr, rtv.GetAddressOf());
+	tsassert(SUCCEEDED(hr));
+
+	//Backbuffer description
+	D3D11_TEXTURE2D_DESC bbdesc;
+	backbuffer->GetDesc(&bbdesc);
+	
+	//Depth stencil description
+	D3D11_TEXTURE2D_DESC dsdesc;
+	dsdesc = bbdesc;
+	dsdesc.ArraySize = 1;
+	dsdesc.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+	dsdesc.MipLevels = 1;
+	dsdesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+	hr = m_device->CreateTexture2D(&dsdesc, nullptr, depthbuffer.GetAddressOf());
+	tsassert(SUCCEEDED(hr));
+	
+	hr = m_device->CreateDepthStencilView(depthbuffer.Get(), nullptr, dsv.GetAddressOf());
+	tsassert(SUCCEEDED(hr));
+
+	m_displayTarget = D3D11Target(rtv.GetAddressOf(), 1, dsv.Get());
+}
+
+void D3D11Render::getDisplayTarget(HTarget& target)
+{
+	target = D3D11Target::downcast(&m_displayTarget);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
