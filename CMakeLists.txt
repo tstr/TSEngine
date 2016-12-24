@@ -175,9 +175,14 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/cfg")
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 #applications
-ADD_SUBDIRECTORY(app)
+ADD_SUBDIRECTORY(app/sceneviewer)
+ADD_SUBDIRECTORY(app/rendertest)
 
-SET_TARGET_PROPERTIES(application PROPERTIES FOLDER applications)
+SET_TARGET_PROPERTIES(
+	sceneviewer
+	rendertest
+	PROPERTIES FOLDER applications
+)
 
 #engine components
 ADD_SUBDIRECTORY(engine/tscore)

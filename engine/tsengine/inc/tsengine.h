@@ -15,8 +15,8 @@
 namespace ts
 {
 	class CWindow;
-	class CRenderModule;
 	class CInputModule;
+	class GraphicsSystem;
 	class CEngineEnv;
 
 	struct IApplication
@@ -43,7 +43,7 @@ namespace ts
 	private:
 
 		UniquePtr<CWindow> m_window;
-		UniquePtr<CRenderModule> m_renderModule;
+		UniquePtr<GraphicsSystem> m_graphics;
 		UniquePtr<CInputModule> m_inputModule;
 		UniquePtr<CVarTable> m_cvarTable;
 		
@@ -56,10 +56,10 @@ namespace ts
 		CEngineEnv(const CEngineEnv& sys) = delete;
 		CEngineEnv(CEngineEnv&& sys) = delete;
 
-		//methods
+		//system methods
 		CWindow* const getWindow() const { return m_window.get(); }
-		CRenderModule* const getRenderModule() const { return m_renderModule.get(); }
-		CInputModule* const getInputModule() const { return m_inputModule.get(); }
+		GraphicsSystem* const getGraphics() const { return m_graphics.get(); }
+		CInputModule* const getInput() const { return m_inputModule.get(); }
 		CVarTable* const getCVarTable() const { return m_cvarTable.get(); }
 
 		//Start and run an application
