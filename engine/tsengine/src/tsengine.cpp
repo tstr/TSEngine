@@ -11,7 +11,7 @@
 #include <tsgraphics/colour.h>
 
 //Modules
-#include <tsgraphics/rendermodule.h>
+#include <tsgraphics/GraphicsSystem.h>
 #include <tsengine/input/inputmodule.h>
 
 #include <tsengine/platform/window.h>
@@ -46,7 +46,7 @@ private:
 			uint32 w = 1;
 			uint32 h = 1;
 			getWindowResizeEventArgs(args, w, h);
-			if (auto render = m_env.getRenderModule())
+			if (auto render = m_env.getGraphics())
 			{
 				render->setDisplayConfiguration(eDisplayUnknown, w, h, SMultisampling(0));
 			}
@@ -55,7 +55,7 @@ private:
 		}
 		case EWindowEvent::eEventDestroy:
 		{
-			m_env.getRenderModule()->setDisplayConfiguration(eDisplayWindowed, 0, 0, 0);
+			m_env.getGraphics()->setDisplayConfiguration(eDisplayWindowed, 0, 0, 0);
 
 			break;
 		}
@@ -167,16 +167,16 @@ CEngineEnv::CEngineEnv(const SEngineStartupParams& params)
 	uint32 samplecount = 1;
 	config.getProperty("video.multisamplecount", samplecount);
 
-	SRenderModuleConfiguration rendercfg;
-	rendercfg.windowHandle = m_window->nativeHandle();
-	rendercfg.width = width;
-	rendercfg.height = height;
-	rendercfg.apiEnum = ERenderApiID::eRenderApiD3D11;
-	rendercfg.displaymode = (EDisplayMode)(displaymode + 1);
-	rendercfg.rootpath = assetpath;
-	rendercfg.multisampling.count = samplecount;
+	SGraphicsSystemConfig graphicscfg;
+	graphicscfg.windowHandle = m_window->nativeHandle();
+	graphicscfg.width = width;
+	graphicscfg.height = height;
+	graphicscfg.apiEnum = ERenderApiID::eRenderApiD3D11;
+	graphicscfg.displaymode = (EDisplayMode)(displaymode + 1);
+	graphicscfg.rootpath = assetpath;
+	graphicscfg.multisampling.count = samplecount;
 
-	m_renderModule.reset(new CRenderModule(rendercfg));
+	m_graphics.reset(new GraphicsSystem(graphicscfg));
 	m_inputModule.reset(new CInputModule(m_window.get()));
 
 	/////////////////////////////////////////////////////////////////////////
@@ -186,7 +186,7 @@ CEngineEnv::~CEngineEnv()
 {
 	//Shutdown
 	m_inputModule.reset();
-	m_renderModule.reset();
+	m_graphics.reset();
 	m_window.reset();
 
 	consoleClose();
@@ -201,8 +201,7 @@ int CEngineEnv::start(IApplication& app)
 		tserror("Failed to load application class (%)", err);
 		return err;
 	}
-
-	/////////////////////////////////////////////////////////////////////////
+	
 	{
 		Timer timer;
 		Stopwatch watch;
@@ -218,13 +217,13 @@ int CEngineEnv::start(IApplication& app)
 			Vector framecolour = colours::AntiqueWhite;
 
 			//Clear the frame to a specific colour
-			m_renderModule->drawBegin(framecolour);
+			m_graphics->drawBegin(framecolour);
 
 			//Update application
 			app.onUpdate(dt);
 
 			//Present the frame
-			m_renderModule->drawEnd();
+			m_graphics->drawEnd();
 
 			watch.stop();
 			dt = max(0.0, watch.deltaTime()); //clamp delta time to positive value - just to be safe

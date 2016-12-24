@@ -1,5 +1,5 @@
 #
-#	Application
+#	3D Scene Viewers
 #
 
 SET(src_list
@@ -34,17 +34,17 @@ SET(src_list
 )
 
 ADD_EXECUTABLE_TSE(
-	application
+	sceneviewer
 	"${src_list}"
 )
 
 ASSIGN_SOURCE_GROUPS(${src_list})
 
-TARGET_LINK_LIBRARIES(application PUBLIC tsengine)
+TARGET_LINK_LIBRARIES(sceneviewer PUBLIC tsengine)
 
 #Copy config.ini file to the build folder
 ADD_CUSTOM_COMMAND(
-	TARGET application POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/config.ini" $<TARGET_FILE_DIR:application>
+	TARGET sceneviewer POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/config.ini" $<TARGET_FILE_DIR:sceneviewer>
 	DEPENDS ${PROJECT_SOURCE_DIR}/config.ini
 )
