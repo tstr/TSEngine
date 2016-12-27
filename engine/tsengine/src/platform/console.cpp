@@ -14,8 +14,6 @@
 #include <tscore/system/memory.h>
 #include <tscore/system/thread.h>
 
-static bool g_active = false;
-
 using namespace ts;
 using namespace std;
 
@@ -23,17 +21,15 @@ using namespace std;
 
 class CConsoleLogStream : public ILogStream
 {
-private:
-
-	mutex m_mutex;
-	stringstream m_stringbuffer;
-	
 public:
 	
 	void write(const SLogMessage& msg) override
 	{
 		if (HANDLE hCon = GetStdHandle(STD_OUTPUT_HANDLE))
 		{
+			static mutex m_mutex;
+			static stringstream m_stringbuffer;
+
 			lock_guard<mutex>lk(m_mutex);
 
 			m_stringbuffer << "[" << msg.function.str() << ":" << msg.line << "] " << msg.message.str();
@@ -81,7 +77,7 @@ namespace ts
 	void consoleOpen()
 	{
 		//Check if application does not have a console already open
-		if (!g_active)
+		if (GetStdHandle(STD_OUTPUT_HANDLE) == NULL)
 		{
 			AllocConsole();
 
@@ -100,17 +96,13 @@ namespace ts
 			//Synchronise with standard library console functions/objects (cout/cin/cerr)
 			std::ios::sync_with_stdio();
 
-			ts::global::getLogger().addStream(&getConsoleStreamInstance());
-
-			g_active = true;
 		}
+
+		ts::global::getLogger().addStream(&getConsoleStreamInstance());
 	}
 
 	void consoleClose()
 	{
-		if (!g_active)
-			return;
-
 		//fclose(stdout);
 		//fclose(stderr);
 		//fclose(stdin);
@@ -120,8 +112,6 @@ namespace ts
 		//WriteConsoleA(GetStdHandle(STD_INPUT_HANDLE), L"\r", 1, NULL, NULL);
 
 		FreeConsole();
-
-		g_active = false;
 	}
 
 	static ConsoleClosingHandler_t s_handler;

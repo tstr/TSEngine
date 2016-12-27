@@ -31,9 +31,23 @@ CShaderManager::CShaderManager(GraphicsSystem* system, uint flags, const Path& s
 	m_idcounter = 0;
 }
 
-CShaderManager::~CShaderManager()
+void CShaderManager::clear()
 {
-	abi::destroyShaderCompiler(m_shaderCompiler);
+	//Destroy all cached shaders
+	for (SShaderInstance& inst : m_shaderInstanceMap)
+	{
+		m_graphics->getApi()->destroyShader(inst.hShader);
+	}
+
+	m_shaderInstanceMap.clear();
+	m_shaderFileMap.clear();
+	m_shaderMacroMap.clear();
+
+	if (m_shaderCompiler)
+	{
+		abi::destroyShaderCompiler(m_shaderCompiler);
+		m_shaderCompiler = nullptr;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -54,10 +68,10 @@ bool CShaderManager::createShaderFromString(ShaderId& id, const char* code, cons
 	id = m_idcounter;
 
 	SShaderInstance inst;
+	inst.config = config;
 	if (ERenderStatus status = m_graphics->getApi()->createShader(inst.hShader, bytecode.pointer(), (uint32)bytecode.size(), config.stage))
 	{
 		tswarn("unable to load shader");
-		m_graphics->getApi()->destroyShader(inst.hShader);
 		return false;
 	}
 
@@ -93,7 +107,6 @@ bool CShaderManager::createShaderFromFile(ShaderId& id, const Path& codefile, co
 	if (ERenderStatus status = m_graphics->getApi()->createShader(inst.hShader, bytecode.pointer(), (uint32)bytecode.size(), config.stage))
 	{
 		tswarn("unable to load shader");
-		m_graphics->getApi()->destroyShader(inst.hShader);
 		return false;
 	}
 

@@ -140,6 +140,11 @@ D3D11Render::D3D11Render(const SRenderApiConfig& cfg)
 		return;
 	}
 
+	//Create render targets for this swapchain
+	initDisplayTarget();
+
+	m_stateManager = D3D11StateManager(m_device.Get());
+
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	
 	//States
@@ -235,10 +240,14 @@ void D3D11Render::drawBegin(const Vector& vec)
 	//Sets drawing status to active
 	//If status was already marked as active then show error
 	tsassert(!m_drawActive.exchange(true));
+
+	m_displayTarget.clearRenderTargets(m_immediateContext.Get(), vec);
+	m_displayTarget.clearDepthStencil(m_immediateContext.Get(), 1.0f);
 }
 
 void D3D11Render::drawEnd(IRenderContext** contexts, uint32 numContexts)
 {
+	//Execute queued command lists
 	for (uint32 i = 0; i < numContexts; i++)
 	{
 		if (auto rcon = dynamic_cast<D3D11RenderContext*>(contexts[i]))
@@ -246,7 +255,7 @@ void D3D11Render::drawEnd(IRenderContext** contexts, uint32 numContexts)
 			if (auto cmdlist = rcon->getCommandList().Get())
 			{
 				m_immediateContext->ExecuteCommandList(cmdlist, false);
-				rcon->resetCommandList(); //releases all outstanding references to swapchain
+				rcon->resetCommandList(); //Every command list must be released every frame
 			}
 		}
 	}
@@ -254,6 +263,11 @@ void D3D11Render::drawEnd(IRenderContext** contexts, uint32 numContexts)
 	//Handle rebuilding of swapchain if changes were marked
 	//MUST BE CALLED AT THIS POINT
 	tryRebuildDisplay();
+	
+	//Send queued commands to the GPU and present swapchain backbuffer
+	m_dxgiSwapchain->Present(0, 0);
+	//Reset draw call counter each frame
+	m_drawCallCounter = 0;
 
 	//Sets drawing status to inactive
 	//If status was already marked as inactive then show error

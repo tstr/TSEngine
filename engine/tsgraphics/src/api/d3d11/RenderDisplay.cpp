@@ -82,6 +82,7 @@ void D3D11Render::setDisplayConfiguration(const SDisplayConfig& displayCfg)
 	}
 	else
 	{
+		m_cachedDisplayConfig = displayCfg;
 		doRebuildDisplay();
 	}
 }

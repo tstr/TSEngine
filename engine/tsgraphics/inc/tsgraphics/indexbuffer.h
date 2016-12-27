@@ -20,11 +20,11 @@ namespace ts
 
 		CIndexBuffer() {}
 
-		CIndexBuffer(CRenderModule* module) :
+		CIndexBuffer(GraphicsSystem* module) :
 			CIndexBuffer::CBuffer(module)
 		{}
 
-		CIndexBuffer(CRenderModule* module, const Index* indices, uint32 indexCount) :
+		CIndexBuffer(GraphicsSystem* module, const Index* indices, uint32 indexCount) :
 			CIndexBuffer::CBuffer(module)
 		{
 			setIndexArray(indices, indexCount);

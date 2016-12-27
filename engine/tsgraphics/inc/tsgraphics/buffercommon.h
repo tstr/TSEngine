@@ -12,15 +12,15 @@
 
 namespace ts
 {
-	class CRenderModule;
+	class GraphicsSystem;
 
 	class CBuffer
 	{
 	private:
 		
-		CRenderModule* m_module = nullptr;
+		GraphicsSystem* m_system = nullptr;
 		
-		ResourceProxy m_hardwareBuffer;
+		HBuffer m_hardwareBuffer;
 		MemoryBuffer m_buffer;
 		
 	protected:
@@ -29,10 +29,10 @@ namespace ts
 		
 	public:
 		
-		CRenderModule* getModule() const { return m_module; }
-		ResourceProxy getBuffer() { return m_hardwareBuffer; }
+		GraphicsSystem* getModule() const { return m_system; }
+		HBuffer getBuffer() { return m_hardwareBuffer; }
 		
 		CBuffer() {}
-		TSGRAPHICS_API CBuffer(CRenderModule* module);
+		TSGRAPHICS_API CBuffer(GraphicsSystem* module);
 	};
 }

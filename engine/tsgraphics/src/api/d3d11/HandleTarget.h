@@ -8,12 +8,13 @@
 
 #include "render.h"
 #include "helpers.h"
+#include "handle.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace ts
 {
-	class D3D11Target
+	class D3D11Target : public Handle<D3D11Target, HTarget>
 	{
 	private:
 
@@ -23,11 +24,8 @@ namespace ts
 
 	public:
 
-		static D3D11Target* upcast(HTarget t) { return reinterpret_cast<D3D11Target*>(t); }
-		static HTarget downcast(D3D11Target* t) { return (HTarget)reinterpret_cast<HTarget&>(t); }
-
 		D3D11Target() {}
-
+		
 		D3D11Target(ID3D11RenderTargetView** rtvs, uint32 rtvCount, ID3D11DepthStencilView* dsv)
 		{
 			for (uint32 i = 0; i < rtvCount; i++)

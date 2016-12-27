@@ -6,7 +6,7 @@
 
 #include "context.h"
 #include "helpers.h"
-#include "target.h"
+#include "handletarget.h"
 
 using namespace std;
 using namespace ts;
@@ -47,14 +47,18 @@ void D3D11RenderContext::resetCommandList()
 
 void D3D11RenderContext::clearRenderTarget(HTarget h, const Vector& vec)
 {
-	D3D11Target* target = D3D11Target::upcast(h);
-	target->clearRenderTargets(m_context.Get(), vec);
+	if (D3D11Target* target = D3D11Target::upcast(h))
+	{
+		target->clearRenderTargets(m_context.Get(), vec);
+	}
 }
 
 void D3D11RenderContext::clearDepthTarget(HTarget h, float depth)
 {
-	D3D11Target* target = D3D11Target::upcast(h);
-	target->clearDepthStencil(m_context.Get(), depth);
+	if (D3D11Target* target = D3D11Target::upcast(h))
+	{
+		target->clearDepthStencil(m_context.Get(), depth);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

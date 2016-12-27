@@ -19,12 +19,12 @@ namespace ts
 		
 		CVertexBuffer() {}
 
-		CVertexBuffer(CRenderModule* module) :
+		CVertexBuffer(GraphicsSystem* module) :
 			CVertexBuffer::CBuffer(module)
 		{}
 		
 		template<typename t>
-		CVertexBuffer(CRenderModule* module, const t* vertices, uint32 vertexCount) :
+		CVertexBuffer(GraphicsSystem* module, const t* vertices, uint32 vertexCount) :
 			CVertexBuffer::CBuffer(module)
 		{
 			setVertexArray(vertices, vertexCount);

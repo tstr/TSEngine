@@ -42,6 +42,10 @@ namespace ts
 		eTopologyLineList,
 		eTopologyLineStrip,
 		eTopologyTriangleList,
-		eTopologyTriangleStrip
+		eTopologyTriangleStrip,
+		
+		eTopologyPatchList2,
+		eTopologyPatchList3,
+		eTopologyPatchList4,
 	};
 }

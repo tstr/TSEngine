@@ -28,6 +28,8 @@ int GraphicsSystem::loadApi(ERenderApiID id)
 
 		tsinfo("Adapter(%): %", i, desc.adapterName.str());
 	}
+
+	abi::destroyAdapterFactory(adapterfactory);
 	
 	SRenderApiConfig apicfg;
 	apicfg.adapterIndex = 0; //hard code the adapter for now

@@ -5,10 +5,11 @@
 */
 
 #include "base.h"
+#include "handle.h"
 
 namespace ts
 {
-	class D3D11DrawCommand
+	class D3D11DrawCommand : public Handle<D3D11DrawCommand, HDrawCmd>
 	{
 	public:
 
@@ -48,19 +49,6 @@ namespace ts
 		uint32 instanceCount = 1;
 
 		EDrawMode mode;
-
-		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		//static helper methods
-		static HDrawCmd downcast(D3D11DrawCommand* drawCommand)
-		{
-			return (HDrawCmd)reinterpret_cast<HDrawCmd&>(drawCommand);
-		}
-		
-		static D3D11DrawCommand* upcast(HDrawCmd hDraw)
-		{
-			return reinterpret_cast<D3D11DrawCommand*>(hDraw);
-		}
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	};

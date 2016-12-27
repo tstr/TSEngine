@@ -11,7 +11,8 @@
 #include <tsgraphics/api/renderapi.h>
 
 #include "Base.h"
-#include "Target.h"
+#include "HandleTarget.h"
+#include "StateManager.h"
 
 namespace ts
 {
@@ -37,6 +38,7 @@ namespace ts
 		ComPtr<ID3D11DeviceContext> m_immediateContext;
 
 		D3D11Target m_displayTarget;
+		D3D11StateManager m_stateManager;
 		
 		std::atomic<bool> m_drawActive;
 		std::atomic<bool> m_displayNeedRebuild;
@@ -91,11 +93,7 @@ namespace ts
 		
 		ERenderStatus createTarget(
 			HTarget& target,
-			const HTexture* renderTexture,
-			const uint32* renderTextureIndices,
-			uint32 renderTextureCount,
-			HTexture deptTextureProxy,
-			uint32 deptTextureProxyIndex
+			const STargetDesc& targetDesc
 		) override;
 		
 		void destroyBuffer(HBuffer buffer) override;

@@ -6,8 +6,8 @@
 
 #include "context.h"
 #include "helpers.h"
-#include "target.h"
-#include "CommandDraw.h"
+#include "HandleTarget.h"
+#include "HandleCommandDraw.h"
 
 using namespace ts;
 
@@ -65,6 +65,7 @@ void D3D11RenderContext::draw(
 	{
 		auto srv = command->shaderResourceViews[i].Get();
 		m_context->PSSetShaderResources(i, 1, &srv);
+		m_context->DSSetShaderResources(i, 1, &srv);
 	}
 
 	//Bind texture samples
@@ -72,6 +73,7 @@ void D3D11RenderContext::draw(
 	{
 		auto sampler = command->shaderSamplerStates[i].Get();
 		m_context->PSSetSamplers(i, 1, &sampler);
+		m_context->DSSetSamplers(i, 1, &sampler);
 	}
 
 
@@ -91,7 +93,7 @@ void D3D11RenderContext::draw(
 	//Bind constant buffers
 	for (int i = 0; i < SDrawCommand::eMaxConstantBuffers; i++)
 	{
-		auto u = command->constantBuffers[i].Get();
+		ID3D11Buffer* u = command->constantBuffers[0].Get();
 		m_context->VSSetConstantBuffers(i, 1, &u);
 		m_context->PSSetConstantBuffers(i, 1, &u);
 		m_context->GSSetConstantBuffers(i, 1, &u);
