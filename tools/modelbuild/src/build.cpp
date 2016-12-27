@@ -69,6 +69,7 @@ void printwarning(const char* str, t ... args)
 
 bool exportModel(const aiScene* model, ostream& outputstream);
 bool exportMaterials(const aiScene* scene, ostream& outputstream);
+bool emitModel(const aiScene* model, ostream& outputstream);
 
 void attachAILogger(bool verbose);
 
@@ -80,7 +81,8 @@ enum CMD_FLAGS
 	CmdQuiet		= 2,
 	CmdLogVerbose	= 4,
 	CmdHasTarget	= 8,
-	CmdHasOutput	= 16
+	CmdHasOutput	= 16,
+	CmdEmit			= 32
 };
 
 //Command line errors
@@ -107,6 +109,7 @@ int main(int argc, char** argv)
 		printf("[OUTPUT]  -o : path to directory you want to produce the output model\n");
 		printf("[QUIET]   -q : disable printing to stdout\n");
 		printf("[MAT]     -m : generate a material file\n");
+		printf("[EMIT]    -e : saves model data as a C style header file for embedding in applications \n");
 		printf("[VERBOSE] -v : verbose logging\n");
 		
 		return EXIT_FAILURE;
@@ -124,6 +127,7 @@ int main(int argc, char** argv)
 	bool has_target = (flagArgs & CmdHasTarget) != 0; //A path to a model file
 	bool has_output = (flagArgs & CmdHasOutput) != 0; //An output directory
 	bool has_mat = (flagArgs & CmdGenMaterials) != 0; //Generate a material file for this model
+	bool emit = (flagArgs & CmdEmit) != 0;			  //Emit model data
 	g_quiet = (flagArgs & CmdQuiet) != 0;
 
 	Path targetpath;
@@ -190,41 +194,56 @@ int main(int argc, char** argv)
 		string filename = targetpath.getDirectoryTop().str();
 		filename.erase(filename.find_last_of('.'), string::npos);
 		
-		//Append new file extension
-		modelfilepath.addDirectories(filename + ".tsm");
-		matrlfilepath.addDirectories(filename + ".tmat");
-		
-		printline("writing model data...");
-		
-		//Open model file stream
-		ofstream modelfile(modelfilepath.str(), ios::binary);
-		
-		//Export Assimp model data to custom format
-		if (exportModel(scene, modelfile))
+		if (emit)
 		{
-			printline("model data written successfully");
+			modelfilepath.addDirectories(filename + ".h");
+
+			ofstream modelfile(modelfilepath.str());
+
+			if (!emitModel(scene, modelfile))
+			{
+				printerror("failed to emit model data");
+				return EXIT_FAILURE;
+			}
 		}
 		else
 		{
-			printerror("failed to write model data");
-			return EXIT_FAILURE;
-		}
-		
-		//Export materials
-		if (has_mat)
-		{
-			printline("writing materials...");
-			
-			ofstream matfile(matrlfilepath.str());
-			
-			if (exportMaterials(scene, matfile))
+			//Append new file extension
+			modelfilepath.addDirectories(filename + ".tsm");
+			matrlfilepath.addDirectories(filename + ".tmat");
+
+			printline("writing model data...");
+
+			//Open model file stream
+			ofstream modelfile(modelfilepath.str(), ios::binary);
+
+			//Export Assimp model data to custom format
+			if (exportModel(scene, modelfile))
 			{
-				printline("materials written successfully");
+				printline("model data written successfully");
 			}
 			else
 			{
-				printwarning("failed to write materials");
+				printerror("failed to write model data");
 				return EXIT_FAILURE;
+			}
+
+			//Export materials
+			if (has_mat)
+			{
+				printline("writing materials...");
+
+				ofstream matfile(matrlfilepath.str());
+
+				if (exportMaterials(scene, matfile))
+				{
+					printline("materials written successfully");
+				}
+				else
+				{
+					printwarning("failed to write materials");
+					return EXIT_FAILURE;
+				}
 			}
 		}
 	}
@@ -473,6 +492,112 @@ bool exportMaterials(const aiScene* scene, ostream& outputstream)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+bool emitModel(const aiScene* scene, ostream& output)
+{
+	for (uint i = 0; i < scene->mNumMeshes; i++)
+	{
+		aiMesh* aimesh = scene->mMeshes[i];
+		
+		output << "//Mesh " << i << "\n\n";
+
+		//Vertex positions
+		output << "Vector positions[] = {\n";
+		for (uint j = 0; j < aimesh->mNumVertices; j++)
+		{
+			if (aimesh->HasPositions())
+			{
+				output << "\tVector(" << aimesh->mVertices[j].x << ", ";
+				output << aimesh->mVertices[j].y << ", ";
+				output << aimesh->mVertices[j].z << "),\n";
+			}
+		}
+		output << "};\n\n";
+
+		//Vertex normals
+		output << "Vector normals[] = {\n";
+		for (uint j = 0; j < aimesh->mNumVertices; j++)
+		{
+			if (aimesh->HasNormals())
+			{
+				output << "\tVector(" << aimesh->mNormals[j].x << ", ";
+				output << aimesh->mNormals[j].y << ", ";
+				output << aimesh->mNormals[j].z << "),\n";
+			}
+		}
+		output << "};\n\n";
+
+		//Vertex colours
+		output << "Vector colours[] = {\n";
+		for (uint j = 0; j < aimesh->mNumVertices; j++)
+		{
+			if (aimesh->HasVertexColors(0))
+			{
+				output << "\tVector(" << aimesh->mColors[0][j].r << ", ";
+				output << aimesh->mColors[0][j].g << ", ";
+				output << aimesh->mColors[0][j].b << ", ";
+				output << aimesh->mColors[0][j].a << "),\n";
+			}
+		}
+		output << "};\n\n";
+
+		//Vertex texcoords
+		output << "Vector texcoords[] = {\n";
+		for (uint j = 0; j < aimesh->mNumVertices; j++)
+		{
+			if (aimesh->HasTextureCoords(0))
+			{
+				output << "\tVector(" << aimesh->mTextureCoords[0][j].x << ", ";
+				output << aimesh->mTextureCoords[0][j].y << "),\n";
+
+			}
+		}
+		output << "};\n\n";
+
+		//Vertex tangents
+		output << "Vector tangents[] = {\n";
+		for (uint j = 0; j < aimesh->mNumVertices; j++)
+		{
+			if (aimesh->HasTangentsAndBitangents())
+			{
+				output << "\tVector(" << aimesh->mTangents[j].x << ", ";
+				output << aimesh->mTangents[j].y << ", ";
+				output << aimesh->mTangents[j].z << "),\n";
+
+			}
+		}
+		output << "};\n\n";
+
+		//Vertex bitangents
+		output << "Vector bitangents[] = {\n";
+		for (uint j = 0; j < aimesh->mNumVertices; j++)
+		{
+			if (aimesh->HasTangentsAndBitangents())
+			{
+				output << "\tVector(" << aimesh->mBitangents[j].x << ", ";
+				output << aimesh->mBitangents[j].y << ", ";
+				output << aimesh->mBitangents[j].z << "),\n";
+
+			}
+		}
+		output << "};\n\n";
+
+		//Indices
+		output << "Index indices[] = {\n";
+		for (UINT c = 0; c < aimesh->mNumFaces; c++)
+		{
+			for (UINT e = 0; e < aimesh->mFaces[c].mNumIndices; e++)
+			{
+				output << "\t" << aimesh->mFaces[c].mIndices[e] << ",\n";
+			}
+		}
+		output << "};\n\n";
+	}
+
+	return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 int parseCmdArgs(int argc, char** argv, int& flags, string& target, string& output)
 {
 	if (argc == 1)
@@ -516,6 +641,11 @@ int parseCmdArgs(int argc, char** argv, int& flags, string& target, string& outp
 					case 'v':
 					{
 						flags |= CmdLogVerbose;
+						break;
+					}
+					case 'e':
+					{
+						flags |= CmdEmit;
 						break;
 					}
 					default:
