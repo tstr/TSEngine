@@ -7,7 +7,7 @@
 #pragma once
 
 #include "rendercommon.h"
-#include <map>
+#include "tsgraphics/colour.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -25,11 +25,11 @@ namespace ts
 	struct SDrawCommand;
 	
 	//Resource handles
-	enum HBuffer : intptr {};
-	enum HTexture : intptr {};
-	enum HTarget : intptr {};
-	enum HShader : intptr {};
-	enum HDrawCmd : intptr {};
+	enum HBuffer : intptr { HBUFFER_NULL = 0 };
+	enum HTexture : intptr { HTEXTURE_NULL = 0 };
+	enum HTarget : intptr { HTARGET_NULL = 0 };
+	enum HShader : intptr { HSHADER_NULL = 0 };
+	enum HDrawCmd : intptr { HDRAWCMD_NULL = 0 };
 	
 	///////////////////////////////////////////////////////////////////////////////////////////
 	// Buffers
@@ -118,7 +118,10 @@ namespace ts
 		eTextureFilterPoint,
 		eTextureFilterBilinear,
 		eTextureFilterTrilinear,
-		eTextureFilterAnisotropic
+		eTextureFilterAnisotropic2x,
+		eTextureFilterAnisotropic4x,
+		eTextureFilterAnisotropic8x,
+		eTextureFilterAnisotropic16x,
 	};
 
 	enum ETextureAddressMode : uint8
@@ -126,6 +129,20 @@ namespace ts
 		eTextureAddressWrap,
 		eTextureAddressMirror,
 		eTextureAddressClamp,
+		eTextureAddressBorder
+	};
+
+	struct STargetDesc
+	{
+		enum
+		{
+			eMaxRenderTextures = 8
+		};
+
+		HTexture renderTextures[eMaxRenderTextures] = { HTEXTURE_NULL };
+		uint32 renderTextureIndices[eMaxRenderTextures] = {0};
+		HTexture depthTexture = HTEXTURE_NULL;
+		uint32 depthTextureIndex = 0;
 	};
 
 	///////////////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +168,14 @@ namespace ts
 		uint32 h = 0; //height
 		uint32 x = 0; //x offset
 		uint32 y = 0; //y offset
+
+		SViewport() {}
+		SViewport(uint32 _w, uint32 _h, uint32 _x, uint32 _y) :
+			w(_w),
+			h(_h),
+			x(_x),
+			y(_y)
+		{}
 	};
 
 	enum ERenderStatus
@@ -190,7 +215,7 @@ namespace ts
 		virtual ERenderStatus createResourceBuffer(HBuffer& rsc, const SBufferResourceData& data) = 0;
 		virtual ERenderStatus createResourceTexture(HTexture& rsc, const STextureResourceData* data, const STextureResourceDesc& desc) = 0;
 		virtual ERenderStatus createShader(HShader& shader, const void* bytecode, uint32 bytecodesize, EShaderStage stage) = 0;
-		virtual ERenderStatus createTarget(HTarget& target, const HTexture* renderTexture, const uint32* renderTextureIndices, uint32 renderTextureCount, HTexture deptTextureProxy, uint32 deptTextureProxyIndex) = 0;
+		virtual ERenderStatus createTarget(HTarget& target, const STargetDesc& desc) = 0;
 		
 		virtual void destroyBuffer(HBuffer buffer) = 0;
 		virtual void destroyTexture(HTexture texture) = 0;
@@ -208,7 +233,7 @@ namespace ts
 		//Display methods
 		virtual void setDisplayConfiguration(const SDisplayConfig& displayCfg) = 0;
 		virtual void getDisplayConfiguration(SDisplayConfig& displayCfg) = 0;
-		virtual void getDisplayTexture(HTexture& rendertarget) = 0;
+		virtual void getDisplayTarget(HTarget& target) = 0;
 		
 		virtual void getDrawStatistics(SRenderStatistics& stats) = 0;
 		
@@ -222,7 +247,8 @@ namespace ts
 	
 	struct STextureUnit
 	{
-		HTexture texture;
+		HTexture texture = (HTexture)0;
+		ETextureResourceType textureType;
 		uint32 arrayIndex = 0;
 		uint32 arrayCount = 0;
 	};
@@ -233,7 +259,8 @@ namespace ts
 		ETextureAddressMode addressV;
 		ETextureAddressMode addressW;
 		ETextureFilterMode filtering;
-		uint anisotropy = 0;
+		RGBA borderColour;
+		bool enabled = false;
 	};
 	
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -271,14 +298,30 @@ namespace ts
 	/////////////////////////////////////////////////////////////////////////////////////
 	// Render states
 
+	enum ECullMode : uint8
+	{
+		eCullNone = 1,
+		eCullBack = 2,
+		eCullFront = 3
+	};
+
+	enum EFillMode : uint8
+	{
+		eFillSolid = 1,
+		eFillWireframe = 2
+	};
+
 	struct SRasterState
 	{
 		bool enableScissor = false;
+		ECullMode cullMode = ECullMode::eCullNone;
+		EFillMode fillMode = EFillMode::eFillSolid;
 	};
 	
 	struct SDepthState
 	{
-		bool enable = false;
+		bool enableDepth = false;
+		bool enableStencil = false;
 	};
 	
 	struct SBlendState
@@ -301,10 +344,10 @@ namespace ts
 		enum ELimits
 		{
 			eMaxTextureSlots = 16,
-			eMaxTextureSamplerSlots = 4,
+			eMaxTextureSamplerSlots = 8,
 			eMaxVertexBuffers = 8,
 			eMaxConstantBuffers = 8,
-			eMaxVertexAttributes = 8
+			eMaxVertexAttributes = 16
 		};
 		
 		//Pipeline state
@@ -312,22 +355,23 @@ namespace ts
 		SRasterState rasterState;
 		SDepthState depthState;
 		//Shaders
-		HShader shaderVertex;
-		HShader shaderPixel;
-		HShader shaderGeometry;
-		HShader shaderHull;
-		HShader shaderDomain;
+		HShader shaderVertex = (HShader)0;
+		HShader shaderPixel = (HShader)0;
+		HShader shaderGeometry = (HShader)0;
+		HShader shaderHull = (HShader)0;
+		HShader shaderDomain = (HShader)0;
 		
 		//Textures
 		STextureUnit textureUnits[eMaxTextureSlots];
 		STextureSampler textureSamplers[eMaxTextureSamplerSlots];
 		
 		//Buffers
-		HBuffer indexBuffer;
-		HBuffer constantBuffers[eMaxConstantBuffers];
-		HBuffer vertexBuffers[eMaxVertexBuffers];
+		HBuffer indexBuffer = (HBuffer)0;
+		HBuffer constantBuffers[eMaxConstantBuffers] = { (HBuffer)0 };
+		HBuffer vertexBuffers[eMaxVertexBuffers] = { (HBuffer)0 };
 		uint32 vertexStrides[eMaxVertexBuffers];
-		
+		uint32 vertexOffsets[eMaxVertexBuffers];
+
 		uint32 indexStart = 0;
 		uint32 indexCount = 0;
 		uint32 vertexStart = 0;
@@ -346,7 +390,7 @@ namespace ts
 	//	Render Context
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	struct IRenderContext
-	{		
+	{
 		virtual void bufferUpdate(HBuffer rsc, const void* memory) = 0;
 		virtual void bufferCopy(HBuffer src, HBuffer dest) = 0;
 		virtual void textureUpdate(HTexture rsc, uint32 index, const void* memory) = 0;

@@ -19,7 +19,7 @@
 
 namespace ts
 {
-	class CRenderModule;
+	class GraphicsSystem;
 	class CShaderManager;
 
 	enum EShaderManagerFlags
@@ -37,7 +37,7 @@ namespace ts
 	private:
 
 		IShaderCompiler* m_shaderCompiler = nullptr;
-		CRenderModule* m_renderModule = nullptr;
+		GraphicsSystem* m_graphics = nullptr;
 		
 		Path m_sourcePath;
 		Path m_cachePath;
@@ -47,7 +47,7 @@ namespace ts
 
 		struct SShaderInstance
 		{
-			ResourceProxy proxy;
+			HShader hShader;
 			SShaderCompileConfig config;
 		};
 
@@ -57,10 +57,12 @@ namespace ts
 		
 	public:
 		
-		TSGRAPHICS_API CShaderManager(CRenderModule* module, uint flags, const Path& sourcepath = "", const Path& cachepath = "");
-		TSGRAPHICS_API ~CShaderManager();
+		TSGRAPHICS_API CShaderManager(GraphicsSystem* module, uint flags, const Path& sourcepath = "", const Path& cachepath = "");
+		~CShaderManager() { clear(); }
 
-		CRenderModule* const getModule() const { return m_renderModule; }
+		TSGRAPHICS_API void clear();
+
+		GraphicsSystem* const getModule() const { return m_graphics; }
 		
 		uint getFlags() const { return m_flags; }
 		void setFlags(uint f) { m_flags = f; }
@@ -70,7 +72,7 @@ namespace ts
 		void setSourcepath(const Path& sourcepath) { m_sourcePath = sourcepath; }
 		void setCachepath(const Path& cachepath) { m_cachePath = cachepath; }
 
-		TSGRAPHICS_API ResourceProxy& getShaderProxy(ShaderId id);
+		TSGRAPHICS_API HShader getShaderHandle(ShaderId id);
 
 		TSGRAPHICS_API bool createShaderFromString(ShaderId& id, const char* code, const char* entrypoint, EShaderStage stage);
 		TSGRAPHICS_API bool createShaderFromFile(ShaderId& id, const Path& codefile, const char* entrypoint, EShaderStage stage);

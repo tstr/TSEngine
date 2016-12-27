@@ -31,7 +31,7 @@ CTexture2D::CTexture2D(CTextureManager* manager, const STextureResourceData& dat
 	m_manager(manager)
 {
 
-	IRender* api = m_manager->getModule()->getApi();
+	IRender* api = m_manager->getSystem()->getApi();
 	ERenderStatus rstatus = api->createResourceTexture(m_hTex, &data, desc);
 
 	if (rstatus)
@@ -47,7 +47,7 @@ CTexture2D::CTexture2D(CTextureManager* manager, const STextureResourceData& dat
 CTextureCube::CTextureCube(CTextureManager* manager, const STextureResourceData* data, const STextureResourceDesc& desc) :
 	m_manager(manager)
 {
-	IRender* api = m_manager->getModule()->getApi();
+	IRender* api = m_manager->getSystem()->getApi();
 	ERenderStatus rstatus = api->createResourceTexture(m_hTex, data, desc);
 
 	if (rstatus)
@@ -64,11 +64,11 @@ CTextureCube::CTextureCube(CTextureManager* manager, const STextureResourceData*
 //Texture manager class
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CTextureManager::CTextureManager(GraphicsSystem* module, const Path& rootpath) :
-	m_renderModule(module),
+CTextureManager::CTextureManager(GraphicsSystem* system, const Path& rootpath) :
+	m_graphics(system),
 	m_rootpath(rootpath)
 {
-	tsassert(module);
+	tsassert(m_graphics);
 
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	tsassert(!Gdiplus::GdiplusStartup(&m_token, &gdiplusStartupInput, 0));
@@ -88,7 +88,7 @@ bool CTextureManager::loadTexture2D(const Path& file, CTexture2D& texture)
 {
 	using namespace Gdiplus;
 
-	IRender* api = m_renderModule->getApi();
+	IRender* api = m_graphics->getApi();
 
 	Path filepath = m_rootpath;
 
@@ -231,7 +231,7 @@ bool CTextureManager::loadTextureCube(const Path& file, CTextureCube& texture)
 {
 	using namespace Gdiplus;
 
-	IRender* api = m_renderModule->getApi();
+	IRender* api = m_graphics->getApi();
 
 	Path filepath = m_rootpath;
 
@@ -496,6 +496,7 @@ static bool LoadTGAFile(const char* filename, STextureResourceDesc& desc, vector
 	}
 
 	fclose(filePtr);
+	free(tgaFile.imageData);
 
 	desc.texformat = eTextureFormatColourARGB;
 	desc.textype = eTypeTexture2D;

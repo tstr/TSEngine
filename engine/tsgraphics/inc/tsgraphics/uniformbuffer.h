@@ -14,12 +14,12 @@ namespace ts
 
 		CUniformBuffer() {}
 
-		CUniformBuffer(CRenderModule* module) :
+		CUniformBuffer(GraphicsSystem* module) :
 			CUniformBuffer::CBuffer(module)
 		{}
 		
 		template<typename t>
-		CUniformBuffer(CRenderModule* module, const t& data) :
+		CUniformBuffer(GraphicsSystem* module, const t& data) :
 			CUniformBuffer::CBuffer(module)
 		{
 			setUniformBufferRaw(data);

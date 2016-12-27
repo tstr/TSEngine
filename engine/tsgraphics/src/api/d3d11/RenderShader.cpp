@@ -6,7 +6,7 @@
 
 #include "render.h"
 #include "helpers.h"
-#include "shader.h"
+#include "handleshader.h"
 
 using namespace ts;
 
@@ -32,7 +32,7 @@ ERenderStatus D3D11Render::createShader(
 			HRESULT hr = m_device->CreateVertexShader(bytecode, bytecodesize, nullptr, vertexshader.GetAddressOf());
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 		
-			shader = downcast(new D3D11Shader(vertexshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
+			shader = D3D11Shader::downcast(new D3D11Shader(vertexshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -43,7 +43,7 @@ ERenderStatus D3D11Render::createShader(
 
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 
-			shader = downcast(new D3D11Shader(pixelshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
+			shader = D3D11Shader::downcast(new D3D11Shader(pixelshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -54,7 +54,7 @@ ERenderStatus D3D11Render::createShader(
 
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 
-			shader = downcast(new D3D11Shader(geometryshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
+			shader = D3D11Shader::downcast(new D3D11Shader(geometryshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -64,7 +64,7 @@ ERenderStatus D3D11Render::createShader(
 			HRESULT hr = m_device->CreateHullShader(bytecode, bytecodesize, nullptr, hullshader.GetAddressOf());
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 
-			shader = downcast(new D3D11Shader(hullshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
+			shader = D3D11Shader::downcast(new D3D11Shader(hullshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -75,7 +75,7 @@ ERenderStatus D3D11Render::createShader(
 
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 
-			shader = downcast(new D3D11Shader(domainshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
+			shader = D3D11Shader::downcast(new D3D11Shader(domainshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -86,7 +86,7 @@ ERenderStatus D3D11Render::createShader(
 
 			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
 
-			shader = downcast(new D3D11Shader(computeshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
+			shader = D3D11Shader::downcast(new D3D11Shader(computeshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
 			return eOk;
 		}
 
@@ -97,7 +97,7 @@ ERenderStatus D3D11Render::createShader(
 
 void D3D11Render::destroyShader(HShader shader)
 {
-	if (auto s = reinterpret_cast<D3D11Shader*>(shader))
+	if (auto s = D3D11Shader::upcast(shader))
 	{
 		delete s;
 	}

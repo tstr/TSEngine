@@ -14,7 +14,7 @@
 
 namespace ts
 {
-	class CRenderModule;
+	class GraphicsSystem;
 	class CTextureManager;
 
 	class CTextureCube;
@@ -25,9 +25,7 @@ namespace ts
 	private:
 
 		CTextureManager* m_manager = nullptr;
-
-		ResourceProxy m_texRsc;
-		ResourceProxy m_texView;
+		HTexture m_hTex;
 
 		//Properties
 		uint32 m_width = 0;
@@ -41,10 +39,10 @@ namespace ts
 		TSGRAPHICS_API CTexture2D(
 			CTextureManager* manager,
 			const STextureResourceData& data,
-			const STextureResourceDescriptor& desc
+			const STextureResourceDesc& desc
 		);
 
-		ResourceProxy getView() const { return m_texView; }
+		HTexture getHandle() const { return m_hTex; }
 
 		uint32 getWidth() const { return m_width; }
 		uint32 getHeight() const { return m_height; }
@@ -58,9 +56,7 @@ namespace ts
 
 		CTextureManager* m_manager = nullptr;
 
-		ResourceProxy m_texCubeRsc;
-		ResourceProxy m_texCubeView;
-		ResourceProxy m_texCubeFaceViews[6];
+		HTexture m_hTex;
 
 		//Properties
 		uint32 m_facewidth = 0;
@@ -74,11 +70,10 @@ namespace ts
 		TSGRAPHICS_API CTextureCube(
 			CTextureManager* manager,
 			const STextureResourceData* data,
-			const STextureResourceDescriptor& desc
+			const STextureResourceDesc& desc
 		);
 
-		ResourceProxy getView() const { return m_texCubeView; }
-		ResourceProxy getFaceView(uint32 idx) const { return m_texCubeFaceViews[idx]; }
+		HTexture getHandle() const { return m_hTex; }
 
 		uint32 getWidth() const { return m_facewidth; }
 		uint32 getHeight() const { return m_faceheight; }
@@ -90,17 +85,17 @@ namespace ts
 	{
 	private:
 
-		CRenderModule* m_renderModule = nullptr;
+		GraphicsSystem* m_graphics = nullptr;
 		Path m_rootpath;
 		
 		uintptr_t m_token = 0;
 
 	public:
 
-		TSGRAPHICS_API CTextureManager(CRenderModule* module, const Path& rootpath = "");
+		TSGRAPHICS_API CTextureManager(GraphicsSystem* system, const Path& rootpath = "");
 		TSGRAPHICS_API ~CTextureManager();
 
-		CRenderModule* const getModule() const { return m_renderModule; }
+		GraphicsSystem* const getSystem() const { return m_graphics; }
 
 		void setRootpath(const Path& rootpath) { m_rootpath = rootpath; }
 		Path getRootpath() const { return m_rootpath; }

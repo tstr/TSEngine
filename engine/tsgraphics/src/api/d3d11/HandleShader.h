@@ -5,10 +5,11 @@
 */
 
 #include "render.h"
+#include "handle.h"
 
 namespace ts
 {
-	class D3D11Shader
+	class D3D11Shader : public Handle<D3D11Shader, HShader>
 	{
 	private:
 		
@@ -17,9 +18,6 @@ namespace ts
 		MemoryBuffer m_shaderBytecode;
 		
 	public:
-
-		static D3D11Shader* upcast(HShader t) { return reinterpret_cast<D3D11Shader*>(t); }
-		static HShader downcast(D3D11Shader* t) { return (HShader)reinterpret_cast<HShader&>(t); }
 		
 		D3D11Shader(ID3D11VertexShader* s, MemoryBuffer&& buf) :
 			m_shaderInterface((ID3D11DeviceChild*)s),

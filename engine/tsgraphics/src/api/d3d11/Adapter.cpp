@@ -4,8 +4,6 @@
 	D3D11 adapter factory
 */
 
-#pragma once
-
 #include "base.h"
 #include <tscore/debug/assert.h>
 

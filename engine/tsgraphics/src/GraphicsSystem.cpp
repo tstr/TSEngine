@@ -36,6 +36,9 @@ GraphicsSystem::~GraphicsSystem()
 	m_api->destroyContext(m_context);
 	m_context = nullptr;
 
+	//Destroy all cached shaders
+	m_shaderManager.clear();
+
 	unloadApi();
 }
 

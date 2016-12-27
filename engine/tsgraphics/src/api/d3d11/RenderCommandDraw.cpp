@@ -6,51 +6,66 @@
 
 #include "Render.h"
 #include "Helpers.h"
-#include "CommandDraw.h"
-#include "Shader.h"
+#include "HandleCommandDraw.h"
+#include "HandleShader.h"
+#include "HandleTexture.h"
 
 #include <vector>
 
 using namespace ts;
 
-//Creates a shader resource view from a texture unit description
-int createTextureUnit(ID3D11Device* device, ID3D11ShaderResourceView** srv, const STextureUnit& unit);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// functions
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int createInputLayout(ID3D11Device* device, D3D11Shader* vertexShader, const SVertexAttribute* attrib, uint32 attribCount, ID3D11InputLayout** inputlayout);
+
+//Gets a shader interface from a handle only if the handle is valid
+template<typename ishader_t>
+inline ishader_t* getID3DShader(HShader handle)
+{
+	if (auto s = D3D11Shader::upcast(handle))
+	{
+		return (ishader_t*)s->getShader();
+	}
+
+	return nullptr;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ERenderStatus D3D11Render::createDrawCommand(HDrawCmd& hDraw, const SDrawCommand& cmdDesc)
 {
 	D3D11DrawCommand* d3dCmd = new D3D11DrawCommand();
-
+	
 	/////////////////////////////////////////////////////////////////////////////////////////
 	//Set all shaders
 
-	d3dCmd->shaderVertex = (ID3D11VertexShader*)reinterpret_cast<D3D11Shader*>(cmdDesc.shaderVertex)->getShader();
-	d3dCmd->shaderPixel = (ID3D11PixelShader*)reinterpret_cast<D3D11Shader*>(cmdDesc.shaderPixel)->getShader();
-	d3dCmd->shaderGeometry = (ID3D11GeometryShader*)reinterpret_cast<D3D11Shader*>(cmdDesc.shaderGeometry)->getShader();
-	d3dCmd->shaderHull = (ID3D11HullShader*)reinterpret_cast<D3D11Shader*>(cmdDesc.shaderHull)->getShader();
-	d3dCmd->shaderDomain = (ID3D11DomainShader*)reinterpret_cast<D3D11Shader*>(cmdDesc.shaderDomain)->getShader();
+	d3dCmd->shaderVertex   = getID3DShader<ID3D11VertexShader>(cmdDesc.shaderVertex);
+	d3dCmd->shaderPixel    = getID3DShader<ID3D11PixelShader>(cmdDesc.shaderPixel);
+	d3dCmd->shaderGeometry = getID3DShader<ID3D11GeometryShader>(cmdDesc.shaderGeometry);
+	d3dCmd->shaderHull     = getID3DShader<ID3D11HullShader>(cmdDesc.shaderHull);
+	d3dCmd->shaderDomain   = getID3DShader<ID3D11DomainShader>(cmdDesc.shaderDomain);
 
-	//Create the input layout if a vertex shader is present
-	if (d3dCmd->shaderVertex)
+	//Create the input layout if vertex attributes are present
+	if (cmdDesc.vertexAttribCount)
 	{
 		tsassert(!createInputLayout(
 			m_device.Get(),
-			reinterpret_cast<D3D11Shader*>(cmdDesc.shaderVertex),
+			D3D11Shader::upcast(cmdDesc.shaderVertex),
 			cmdDesc.vertexAttribs,
 			cmdDesc.vertexAttribCount,
 			d3dCmd->inputLayout.GetAddressOf()
 		));
 	}
-
+	
 	/////////////////////////////////////////////////////////////////////////////////////////
 	//Render states
-
-	d3dCmd->depthState = this->getDepthStencilState();
-	d3dCmd->rasterState = this->getRasterizerState();
-	d3dCmd->blendState = this->getBlendState();
 	
+	m_stateManager.demandDepthState(cmdDesc.depthState, d3dCmd->depthState.GetAddressOf());
+	m_stateManager.demandBlendState(cmdDesc.blendState, d3dCmd->blendState.GetAddressOf());
+	m_stateManager.demandRasterizerState(cmdDesc.rasterState, d3dCmd->rasterState.GetAddressOf());
+
 	/////////////////////////////////////////////////////////////////////////////////////////
 	//Set all buffers
 
@@ -85,23 +100,34 @@ ERenderStatus D3D11Render::createDrawCommand(HDrawCmd& hDraw, const SDrawCommand
 		case (EVertexTopology::eTopologyLineList): { d3dCmd->topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; break; }
 		case (EVertexTopology::eTopologyLineStrip): { d3dCmd->topology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP; break; }
 		case (EVertexTopology::eTopologyPointList): { d3dCmd->topology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; break; }
+		case (EVertexTopology::eTopologyPatchList2): { d3dCmd->topology = D3D11_PRIMITIVE_TOPOLOGY_2_CONTROL_POINT_PATCHLIST; break; }
+		case (EVertexTopology::eTopologyPatchList3): { d3dCmd->topology = D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST; break; }
+		case (EVertexTopology::eTopologyPatchList4): { d3dCmd->topology = D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST; break; }
 		default: { d3dCmd->topology = D3D11_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED; }
 	}
-
+	
 	/////////////////////////////////////////////////////////////////////////////////////////
 
-	//Iterate over each texture unit description and create an SRV for each texture resource
+	//Set an SRV for every active texture unit
 	for (uint32 i = 0; i < cmdDesc.eMaxTextureSlots; i++)
 	{
 		const STextureUnit& unit = cmdDesc.textureUnits[i];
 
-		if (unit.texture)
+		if (D3D11Texture* tex = D3D11Texture::upcast(unit.texture))
 		{
-			tsassert(!createTextureUnit(
-				m_device.Get(),
-				d3dCmd->shaderResourceViews[i].GetAddressOf(),
-				unit
-			));
+			d3dCmd->shaderResourceViews[i] = tex->getView(unit.arrayIndex, unit.arrayCount, unit.textureType);
+		}
+	}
+
+	//Set texture samplers
+	for (uint32 i = 0; i < cmdDesc.eMaxTextureSamplerSlots; i++)
+	{
+		if (cmdDesc.textureSamplers[i].enabled)
+		{
+			m_stateManager.demandSamplerState(
+				cmdDesc.textureSamplers[i],
+				d3dCmd->shaderSamplerStates[i].GetAddressOf()
+			);
 		}
 	}
 
@@ -118,7 +144,8 @@ ERenderStatus D3D11Render::createDrawCommand(HDrawCmd& hDraw, const SDrawCommand
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	
-	hDraw = (HDrawCmd)reinterpret_cast<HDrawCmd&>(d3dCmd);
+	hDraw = D3D11DrawCommand::downcast(d3dCmd);
+
 	return eOk;
 }
 
@@ -128,102 +155,6 @@ void D3D11Render::destroyDrawCommand(HDrawCmd hDraw)
 	{
 		delete d;
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-int createTextureUnit(ID3D11Device* device, ID3D11ShaderResourceView** srv, const STextureUnit& unit)
-{
-	switch (unit.textureType)
-	{
-		case eTypeTexture1D:
-		{
-			D3D11_TEXTURE1D_DESC desc;
-			if (auto tex = reinterpret_cast<ID3D11Texture1D*>(unit.texture))
-			{
-				tex->GetDesc(&desc);
-
-				D3D11_SHADER_RESOURCE_VIEW_DESC viewdesc;
-				ZeroMemory(&viewdesc, sizeof(viewdesc));
-				viewdesc.Format = desc.Format;
-				viewdesc.ViewDimension = (desc.ArraySize > 1) ? D3D11_SRV_DIMENSION_TEXTURE1DARRAY : D3D11_SRV_DIMENSION_TEXTURE1D;
-				viewdesc.Texture1DArray.MipLevels = desc.MipLevels;
-				viewdesc.Texture1DArray.ArraySize = unit.arrayCount;
-				viewdesc.Texture1DArray.FirstArraySlice = unit.arrayIndex;
-				viewdesc.Texture1DArray.MostDetailedMip = 0;
-
-				return device->CreateShaderResourceView(tex, &viewdesc, srv);
-			}
-
-			break;
-		}
-
-		case eTypeTexture2D:
-		{
-			D3D11_TEXTURE2D_DESC desc;
-			if (auto tex = reinterpret_cast<ID3D11Texture2D*>(unit.texture))
-			{
-				tex->GetDesc(&desc);
-
-				D3D11_SHADER_RESOURCE_VIEW_DESC viewdesc;
-				ZeroMemory(&viewdesc, sizeof(viewdesc));
-				viewdesc.Format = desc.Format;
-				viewdesc.ViewDimension = (desc.ArraySize > 1) ? D3D11_SRV_DIMENSION_TEXTURE2DARRAY : D3D11_SRV_DIMENSION_TEXTURE2D;
-				viewdesc.Texture2DArray.MipLevels = desc.MipLevels;
-				viewdesc.Texture2DArray.ArraySize = unit.arrayCount;
-				viewdesc.Texture2DArray.FirstArraySlice = unit.arrayIndex;
-				viewdesc.Texture2DArray.MostDetailedMip = 0;
-
-				return device->CreateShaderResourceView(tex, &viewdesc, srv);
-			}
-
-			break;
-		}
-
-		case eTypeTexture3D:
-		{
-			D3D11_TEXTURE3D_DESC desc;
-			if (auto tex = reinterpret_cast<ID3D11Texture3D*>(unit.texture))
-			{
-				tex->GetDesc(&desc);
-
-				D3D11_SHADER_RESOURCE_VIEW_DESC viewdesc;
-				ZeroMemory(&viewdesc, sizeof(viewdesc));
-				viewdesc.Format = desc.Format;
-				viewdesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-				viewdesc.Texture3D.MipLevels = desc.MipLevels;
-				viewdesc.Texture3D.MostDetailedMip = 0;
-
-				return device->CreateShaderResourceView(tex, &viewdesc, srv);
-			}
-
-			break;
-		}
-
-		case eTypeTextureCube:
-		{
-			D3D11_TEXTURE2D_DESC desc;
-			if (auto tex = reinterpret_cast<ID3D11Texture2D*>(unit.texture))
-			{
-				tex->GetDesc(&desc);
-
-				D3D11_SHADER_RESOURCE_VIEW_DESC viewdesc;
-				ZeroMemory(&viewdesc, sizeof(viewdesc));
-				viewdesc.Format = desc.Format;
-				viewdesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-				viewdesc.Texture2DArray.MipLevels = desc.MipLevels;
-				viewdesc.Texture2DArray.ArraySize = unit.arrayCount;
-				viewdesc.Texture2DArray.FirstArraySlice = unit.arrayIndex;
-				viewdesc.Texture2DArray.MostDetailedMip = 0;
-
-				return device->CreateShaderResourceView(tex, &viewdesc, srv);
-			}
-
-			break;
-		}
-	}
-
-	return -1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -246,9 +177,14 @@ int createInputLayout(ID3D11Device* device, D3D11Shader* vertexShader, const SVe
 		elements[i].InstanceDataStepRate = 0;
 
 		if (attrib[i].channel == EVertexAttributeChannel::eChannelPerVertex)
+		{
 			elements[i].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
+		}
 		else if (attrib[i].channel == EVertexAttributeChannel::eChannelPerInstance)
+		{
 			elements[i].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_INSTANCE_DATA;
+			elements[i].InstanceDataStepRate = 1;
+		}
 
 		//todo: matrix
 		switch (attrib[i].type)
@@ -261,6 +197,35 @@ int createInputLayout(ID3D11Device* device, D3D11Shader* vertexShader, const SVe
 			case eAttribUint32: { elements[i].Format = DXGI_FORMAT_R32_UINT; break; }
 			case eAttribRGB: {}
 			case eAttribRGBA: { elements[i].Format = DXGI_FORMAT_R8G8B8A8_UNORM; break; }
+			case eAttribMatrix:
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					elements[j + i].AlignedByteOffset = attrib[i].byteOffset + (j * sizeof(Vector));
+					elements[j + i].InputSlot = attrib[i].bufferSlot;
+					elements[j + i].SemanticName = attrib[i].semanticName;
+
+					elements[j + i].SemanticIndex = j;
+					elements[j + i].InstanceDataStepRate = 0;
+
+					if (attrib[i].channel == EVertexAttributeChannel::eChannelPerVertex)
+					{
+						elements[j + i].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
+					}
+					else if (attrib[i].channel == EVertexAttributeChannel::eChannelPerInstance)
+					{
+						elements[j + i].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_INSTANCE_DATA;
+						elements[j + i].InstanceDataStepRate = 1;
+					}
+
+					elements[j + i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+				}
+
+				i += 3;
+				attribCount += 3;
+
+				break;
+			}
 			default: { elements[i].Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN; }
 		}
 

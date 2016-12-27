@@ -60,13 +60,14 @@ namespace ts
 		Path rootpath;
 	};
 
-	class IRender;
+	struct IRender;
 	
-	class CRenderModule
+	class GraphicsSystem
 	{
 	private:
 
 		IRender* m_api = nullptr;
+		IRenderContext* m_context = nullptr;
 
 		CTextureManager m_textureManager;
 		CShaderManager m_shaderManager;
@@ -74,22 +75,23 @@ namespace ts
 		int TSGRAPHICS_API loadApi(ERenderApiID id);
 		int TSGRAPHICS_API unloadApi();
 
-		SRenderModuleConfiguration m_config;
+		SGraphicsSystemConfig m_config;
 
 	public:
 
-		TSGRAPHICS_API CRenderModule(const SRenderModuleConfiguration&);
-		TSGRAPHICS_API ~CRenderModule();
+		TSGRAPHICS_API GraphicsSystem(const SGraphicsSystemConfig&);
+		TSGRAPHICS_API ~GraphicsSystem();
 
-		CRenderModule(const CRenderModule&) = delete;
-		CRenderModule& operator=(const CRenderModule&) = delete;
+		GraphicsSystem(const GraphicsSystem&) = delete;
+		GraphicsSystem& operator=(const GraphicsSystem&) = delete;
 		
 		CTextureManager& getTextureManager() { return m_textureManager; }
 		CShaderManager& getShaderManager() { return m_shaderManager; }
 		IRender* const getApi() const { return m_api; }
+		IRenderContext* const getContext() const { return m_context; }
 
 		TSGRAPHICS_API void setDisplayConfiguration(EDisplayMode displaymode, uint32 width = 0, uint32 height = 0, SMultisampling sampling = SMultisampling(0));
-		TSGRAPHICS_API void getConfiguration(SRenderModuleConfiguration& cfg) { cfg = m_config; }
+		TSGRAPHICS_API void getConfiguration(SGraphicsSystemConfig& cfg) { cfg = m_config; }
 
 		TSGRAPHICS_API void drawBegin(const Vector& vec);
 		TSGRAPHICS_API void drawEnd();
