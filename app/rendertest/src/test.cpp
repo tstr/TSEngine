@@ -18,16 +18,18 @@ char g_cubeShaderCode[] = R"(
 	//TextureCube tex : register(t0);
 	Texture2D tex : register(t0);
 	Texture2D texDisp : register(t1);
+	Texture2D texNorm : register(t2);
 	SamplerState texSampler : register(s0);
 
 	cbuffer uniforms : register(b0)
 	{
+		matrix world;
 		matrix view;
 		matrix projection;
-		uint   u_resW;
-		uint   u_resH;
-		float  u_time;
+		float4 u_lightdir;
+		float  u_tessScale;
 		float  u_tessFactor;
+		float  u_time;
 	}
 
 	struct VSinput
@@ -35,83 +37,124 @@ char g_cubeShaderCode[] = R"(
 		float4 pos : POSITION;
 		float3 normal : NORMAL;
 		float2 texcoord : TEXCOORD;
-		matrix world : WORLD;
+		float3 tangent : TANGENT;
 	};
 	
 	struct PSinput
 	{
 		float4 pos : SV_POSITION;
 		float3 normal : NORMAL;
+		float3 tangent : TANGENT;
 		float2 texcoord : TEXCOORD;
+		float tessFactor : TESSFACTOR;
 	};
-	
+
 	PSinput VS(VSinput input)
 	{
 		PSinput output = (PSinput)0;
+		
 		input.pos.w = 1;
-		output.pos = mul(input.pos, input.world);
-		output.normal = mul(input.normal, (float3x3)input.world);
+		output.pos = mul(input.pos, world);
+		output.normal = mul(input.normal, (float3x3)world);
+		output.tangent = mul(input.tangent, (float3x3)world);
 		output.texcoord = input.texcoord;
+		
+		//output.pos = mul(output.pos, view);
+		//output.pos = mul(output.pos, projection);
+		//output.normal = mul(output.normal, (float3x3)view);
+		//output.tangent = mul(output.tangent, (float3x3)view);
+
+		output.tessFactor = u_tessFactor;
+		
+		output.normal = normalize(output.normal);
+		output.tangent = normalize(output.tangent);
+		
 		return output;
 	}
 
-	float4 PS(PSinput input) : SV_TARGET
-	{
-		//float4 colour = tex.Sample(texSampler, input.cubepos);
-		float4 colour = tex.Sample(texSampler, input.texcoord);
-		return colour;
-		//return colour * float4((input.pos.z / input.pos.w).xxx, 1);
-	}
-	
 	struct HSconstOutput 
 	{
 		float edges[3] : SV_TessFactor;
 		float inside : SV_InsideTessFactor;
 	};
 
-	HSconstOutput ConstantHS( InputPatch<PSinput, 3> ip, uint PatchID : SV_PrimitiveID ) 
+	HSconstOutput PatchHS( InputPatch<PSinput, 3> patch, uint PatchID : SV_PrimitiveID ) 
 	{
 		HSconstOutput output; 
+		output.edges[0] = 0.5f*(patch[1].tessFactor + patch[2].tessFactor);
+		output.edges[1] = 0.5f*(patch[2].tessFactor + patch[0].tessFactor);
+		output.edges[2] = 0.5f*(patch[0].tessFactor + patch[1].tessFactor);
+		output.inside  = output.edges[0];
+		/*
 		output.edges[0] = u_tessFactor;
 		output.edges[1] = u_tessFactor;
 		output.edges[2]= u_tessFactor; 
 		output.inside = u_tessFactor;
+		*/
 		return output; 
 	}
 	
 	[domain("tri")] 
-	[partitioning("integer")]
+	//[partitioning("integer")]
+	[partitioning("fractional_odd")]
 	[outputtopology("triangle_cw")]		//triangle topology with clockwise winding
 	[outputcontrolpoints(3)] 
-	[patchconstantfunc("ConstantHS")]
-	PSinput HS( InputPatch<PSinput, 3> p, uint i : SV_OutputControlPointID, uint PatchID : SV_PrimitiveID ) 
-	{ 
-		PSinput output; 
-		output = p[i];
-		return output; 
+	[patchconstantfunc("PatchHS")]
+	PSinput HS( InputPatch<PSinput, 3> patch, uint i : SV_OutputControlPointID, uint PatchID : SV_PrimitiveID ) 
+	{
+		return patch[i]; 
 	}
 
 	[domain("tri")] 
 	PSinput DS( HSconstOutput input, float3 UVW : SV_DomainLocation, const OutputPatch<PSinput, 3> quad ) 
 	{
-		PSinput output; 
+		PSinput output = (PSinput)0; 
 		
 		//Convert positions and normals to world space
 		output.pos = UVW.x * quad[0].pos + UVW.y * quad[1].pos + UVW.z * quad[2].pos; 
 		output.texcoord= UVW.x * quad[0].texcoord + UVW.y * quad[1].texcoord + UVW.z * quad[2].texcoord;
 		output.normal = UVW.x * quad[0].normal + UVW.y * quad[1].normal + UVW.z * quad[2].normal;
-
-		float disp = texDisp.SampleLevel(texSampler, output.texcoord, 0).r;
-		output.pos += (float4(-output.normal, 0) * disp * 0.2);
-
+		output.tangent = UVW.x * quad[0].tangent + UVW.y * quad[1].tangent + UVW.z * quad[2].tangent;
+		
+		float disp = u_tessScale * texDisp.SampleLevel(texSampler, output.texcoord, 0).r;
+		output.pos += (float4(output.normal, 0) * disp);
+		
 		//Convert positions and normals to viewspace
 		output.pos = mul(output.pos, view);
 		output.normal = mul(output.normal, (float3x3)view);
-
+		output.tangent = mul(output.tangent, (float3x3)view);
+		
 		//Convert position to clip space
 		output.pos = mul(output.pos, projection);
 
 		return output;
+	}
+	
+	float4 PS(PSinput input) : SV_TARGET
+	{
+		//float3 normal = (texNorm.Sample(texSampler, input.texcoord).rgb * 2.0f) - 1;
+		//normal = mul(normal, world);
+		//normal = normalize(normal);
+
+		float3 normal = normalize(input.normal);
+		float3 tangent = normalize(input.tangent);
+		float3 bitangent = normalize(cross(normal, tangent));
+		bitangent = normalize(bitangent);
+		float3x3 tbn = float3x3(tangent, bitangent, normal); //transforms tangent=>view space
+		
+		float3 tangentNormal = texNorm.Sample(texSampler, input.texcoord).rgb;
+		tangentNormal = normalize(tangentNormal * 2 - 1); //convert 0~1 to -1~+1.
+		
+		//tbn = transpose(tbn); //inverse matrix - tangent to view
+		normal = normalize(mul(tangentNormal ,tbn));
+		
+
+		float f = abs(dot(normal, u_lightdir.xyz));
+		f = lerp(0.2f, 1.0f, f);
+
+		float4 colour = tex.Sample(texSampler, input.texcoord);
+		
+		return float4(colour.rgb * f, colour.a);
 	}
 	
 	)";
@@ -174,13 +217,13 @@ private:
 	HBuffer hConstants;
 	HBuffer hVertexBuffer;
 	HBuffer hIndexBuffer;
-	HBuffer hTexcoordBuffer;
-	HBuffer hNormalBuffer;
-	HBuffer hMatrixBuffer;
+
 	HTexture hTex;
 	HTexture hTexDisp;
-	HDrawCmd hDraw;
+	HTexture hTexNorm;
 	HTexture hCube;
+
+	HDrawCmd hDraw;
 	
 	ShaderId vShader; //vertex shader
 	ShaderId pShader; //pixel shader
@@ -189,12 +232,21 @@ private:
 
 	struct Constants
 	{
+		Matrix world;
 		Matrix view;
 		Matrix projection;
-		uint32 resW = 0;
-		uint32 resH = 0;
-		float time = 0.0f;
+		Vector lightDir;
+		float tessScale = 1.0f;
 		float tessFactor = 1.0f;
+		float time = 0.0f;
+	};
+
+	struct Vertex
+	{
+		Vector position;
+		Vector normal;
+		Vector texcoord;
+		Vector tangent;
 	};
 
 public:
@@ -229,50 +281,45 @@ public:
 		if (auto r = api->createResourceBuffer(hConstants, desc))
 			tswarn("buffer fail : %", r);
 
+		/*
 		//Vertex buffer
 		vector<Index> indices;
 		vector<Vector> vertices;
 		vector<Vector> texcoords;
 		vector<Vector> normals;
 		generateCubeMesh(Vector(0.5f, 0.5f, 0.5f), indices, vertices, texcoords, normals);
+		*/
+
+		Vertex vertices[] =
+		{
+			//				Position		Normal			Texcoord			Tangent			
+			Vertex{ Vector(-1, -1, 0), Vector(0, 0, -1), Vector(0, 1), Vector(-1, 0, 0) }, //bottom left
+			Vertex{ Vector(-1, +1, 0), Vector(0, 0, -1), Vector(0, 0), Vector(-1, 0, 0) }, //top left
+			Vertex{ Vector(+1, +1, 0), Vector(0, 0, -1), Vector(1, 0), Vector(-1, 0, 0) }, //top right
+			Vertex{ Vector(+1, -1, 0), Vector(0, 0, -1), Vector(1, 1), Vector(-1, 0, 0) }, //bottom right
+		};
+
+		Index indices[] =
+		{
+			0, 1, 2,
+			0, 2, 3
+		};
+
+		uint32 indexCount = (uint32)ARRAYSIZE(indices);
+		uint32 vertexCount = (uint32)ARRAYSIZE(vertices);
 
 		//Position vertex buffer
 		SBufferResourceData vdesc;
-		vdesc.memory = &vertices[0];
-		vdesc.size = (uint32)vertices.size() * sizeof(Vector);
+		vdesc.memory = vertices;
+		vdesc.size = (uint32)vertexCount * sizeof(Vertex);
 		vdesc.usage = eBufferTypeVertex;
 		if (auto r = api->createResourceBuffer(hVertexBuffer, vdesc))
 			tswarn("buffer fail : %", r);
 
-		//Texcoord vertex buffer
-		SBufferResourceData tdesc;
-		tdesc.memory = &texcoords[0];
-		tdesc.size = (uint32)texcoords.size() * sizeof(Vector);
-		tdesc.usage = eBufferTypeVertex;
-		if (auto r = api->createResourceBuffer(hTexcoordBuffer, tdesc))
-			tswarn("buffer fail : %", r);
-
-		//Normal vertex buffer
-		SBufferResourceData ndesc;
-		ndesc.memory = &normals[0];
-		ndesc.size = (uint32)normals.size() * sizeof(Vector);
-		ndesc.usage = eBufferTypeVertex;
-		if (auto r = api->createResourceBuffer(hNormalBuffer, ndesc))
-			tswarn("buffer fail : %", r);
-
-		//Matrix buffer
-		Matrix matrices[4];
-		SBufferResourceData mdesc;
-		mdesc.memory = matrices;
-		mdesc.size = (uint32)sizeof(Matrix) * 4;
-		mdesc.usage = eBufferTypeVertex;
-		if (auto r = api->createResourceBuffer(hMatrixBuffer, mdesc))
-			tswarn("buffer fail : %", r);
-
 		//Index buffer
 		SBufferResourceData idesc;
-		idesc.memory = &indices[0];
-		idesc.size = (uint32)indices.size() * sizeof(Index);
+		idesc.memory = indices;
+		idesc.size = (uint32)indexCount * sizeof(Index);
 		idesc.usage = eBufferTypeIndex;
 		if (auto r = api->createResourceBuffer(hIndexBuffer, idesc))
 			tswarn("buffer fail : %", r);
@@ -312,18 +359,26 @@ public:
 
 		//*
 		CTexture2D tex;
-		if (!gfx->getTextureManager().loadTexture2D("cubetexture.png", tex))
+		if (!gfx->getTextureManager().loadTexture2D("logo_D.png", tex))
 		{
 			tswarn("tex fail");
 		}
 		hTex = tex.getHandle();
 
 		CTexture2D texDisp;
-		if (!gfx->getTextureManager().loadTexture2D("cubetexture_disp.png", texDisp))
+		if (!gfx->getTextureManager().loadTexture2D("logo_H.png", texDisp))
 		{
 			tswarn("tex fail");
 		}
 		hTexDisp = texDisp.getHandle();
+
+		CTexture2D texNorm;
+		if (!gfx->getTextureManager().loadTexture2D("logo_N.png", texNorm))
+		{
+			tswarn("tex fail");
+		}
+		hTexNorm = texNorm.getHandle();
+		
 		//*/
 
 		/*
@@ -367,72 +422,71 @@ public:
 
 		SDrawCommand drawCmd;
 
-		drawCmd.mode = EDrawMode::eDrawIndexedInstanced;
+		//drawCmd.mode = EDrawMode::eDrawIndexedInstanced;
+		drawCmd.mode = EDrawMode::eDrawIndexed;
 		drawCmd.constantBuffers[0] = hConstants;
-		//drawCmd.vertexCount = 6;
 		drawCmd.vertexStart = 0;
-		drawCmd.vertexTopology = eTopologyPatchList3;//EVertexTopology::eTopologyTriangleList;
+		drawCmd.vertexTopology = eTopologyPatchList3;
+		//drawCmd.vertexTopology = eTopologyTriangleList;
 
 		drawCmd.shaderVertex = gfx->getShaderManager().getShaderHandle(vShader);
 		drawCmd.shaderPixel = gfx->getShaderManager().getShaderHandle(pShader);
 		drawCmd.shaderHull = gfx->getShaderManager().getShaderHandle(hShader);
 		drawCmd.shaderDomain = gfx->getShaderManager().getShaderHandle(dShader);
 
+		//drawCmd.vertexBuffers[0] = hVertexBuffer;
+		//drawCmd.vertexBuffers[1] = hTexcoordBuffer;
+		//drawCmd.vertexBuffers[2] = hNormalBuffer;
+		//drawCmd.indexBuffer = hIndexBuffer;
+
 		drawCmd.vertexBuffers[0] = hVertexBuffer;
-		drawCmd.vertexBuffers[1] = hTexcoordBuffer;
-		drawCmd.vertexBuffers[2] = hNormalBuffer;
+		drawCmd.vertexOffsets[0] = 0;
+		drawCmd.vertexStrides[0] = sizeof(Vertex);
 		drawCmd.indexBuffer = hIndexBuffer;
 
-		drawCmd.vertexOffsets[0] = 0;
-		drawCmd.vertexStrides[0] = sizeof(Vector);
-		drawCmd.vertexOffsets[1] = 0;
-		drawCmd.vertexStrides[1] = sizeof(Vector);
-		drawCmd.vertexOffsets[2] = 0;
-		drawCmd.vertexStrides[2] = sizeof(Vector);
-
-		drawCmd.instanceCount = 4;
-		drawCmd.vertexCount = (uint32)vertices.size();
-		drawCmd.indexCount = (uint32)indices.size();
+		drawCmd.vertexCount = vertexCount;
+		drawCmd.indexCount = indexCount;
 		drawCmd.vertexAttribCount = 4;
 
 		drawCmd.vertexAttribs[0].bufferSlot = 0;
-		drawCmd.vertexAttribs[0].byteOffset = 0;
+		drawCmd.vertexAttribs[0].byteOffset = sizeof(Vector) * 0;
 		drawCmd.vertexAttribs[0].channel = EVertexAttributeChannel::eChannelPerVertex;
 		drawCmd.vertexAttribs[0].semanticName = "POSITION";
 		drawCmd.vertexAttribs[0].type = EVertexAttributeType::eAttribFloat4;
-		drawCmd.vertexAttribs[1].bufferSlot = 1;
-		drawCmd.vertexAttribs[1].byteOffset = 0;
+
+		drawCmd.vertexAttribs[1].bufferSlot = 0;
+		drawCmd.vertexAttribs[1].byteOffset = sizeof(Vector) * 1;
 		drawCmd.vertexAttribs[1].channel = EVertexAttributeChannel::eChannelPerVertex;
-		drawCmd.vertexAttribs[1].semanticName = "TEXCOORD";
-		drawCmd.vertexAttribs[1].type = EVertexAttributeType::eAttribFloat2;
-		drawCmd.vertexAttribs[2].bufferSlot = 2;
-		drawCmd.vertexAttribs[2].byteOffset = 0;
+		drawCmd.vertexAttribs[1].semanticName = "NORMAL";
+		drawCmd.vertexAttribs[1].type = EVertexAttributeType::eAttribFloat3;
+
+		drawCmd.vertexAttribs[2].bufferSlot = 0;
+		drawCmd.vertexAttribs[2].byteOffset = sizeof(Vector) * 2;
 		drawCmd.vertexAttribs[2].channel = EVertexAttributeChannel::eChannelPerVertex;
-		drawCmd.vertexAttribs[2].semanticName = "NORMAL";
-		drawCmd.vertexAttribs[2].type = EVertexAttributeType::eAttribFloat3;
-		drawCmd.vertexBuffers[2] = hMatrixBuffer;
+		drawCmd.vertexAttribs[2].semanticName = "TEXCOORD";
+		drawCmd.vertexAttribs[2].type = EVertexAttributeType::eAttribFloat2;
 
-		drawCmd.vertexAttribs[3].bufferSlot = 3;
-		drawCmd.vertexAttribs[3].byteOffset = 0;
-		drawCmd.vertexAttribs[3].channel = EVertexAttributeChannel::eChannelPerInstance;
-		drawCmd.vertexAttribs[3].semanticName = "WORLD";
-		drawCmd.vertexAttribs[3].type = EVertexAttributeType::eAttribMatrix;
-		drawCmd.vertexBuffers[3] = hMatrixBuffer;
-
-		drawCmd.vertexOffsets[3] = 0;
-		drawCmd.vertexStrides[3] = sizeof(Matrix);
+		drawCmd.vertexAttribs[3].bufferSlot = 0;
+		drawCmd.vertexAttribs[3].byteOffset = sizeof(Vector) * 3;
+		drawCmd.vertexAttribs[3].channel = EVertexAttributeChannel::eChannelPerVertex;
+		drawCmd.vertexAttribs[3].semanticName = "TANGENT";
+		drawCmd.vertexAttribs[3].type = EVertexAttributeType::eAttribFloat3;
 
 		//Texture
 		drawCmd.textureUnits[0].arrayIndex = 0;
 		drawCmd.textureUnits[0].arrayCount = 1;
-		//drawCmd.textureUnits[0].textureType = eTypeTextureCube;
-		//drawCmd.textureUnits[0].texture = hCube;
 		drawCmd.textureUnits[0].textureType = eTypeTexture2D;
 		drawCmd.textureUnits[0].texture = hTex;
+		//drawCmd.textureUnits[0].textureType = eTypeTextureCube;
+		//drawCmd.textureUnits[0].texture = hCube;
 		drawCmd.textureUnits[1].arrayIndex = 0;
 		drawCmd.textureUnits[1].arrayCount = 1;
 		drawCmd.textureUnits[1].textureType = eTypeTexture2D;
 		drawCmd.textureUnits[1].texture = hTexDisp;
+		drawCmd.textureUnits[2].arrayIndex = 0; 
+		drawCmd.textureUnits[2].arrayCount = 1;
+		drawCmd.textureUnits[2].textureType = eTypeTexture2D;
+		drawCmd.textureUnits[2].texture = hTexNorm;
 		//Texture sampler
 		drawCmd.textureSamplers[0].addressU = ETextureAddressMode::eTextureAddressClamp;
 		drawCmd.textureSamplers[0].addressV = ETextureAddressMode::eTextureAddressClamp;
@@ -443,8 +497,9 @@ public:
 		drawCmd.depthState.enableDepth = true;
 		drawCmd.blendState.enable = false;
 		drawCmd.rasterState.enableScissor = false;
-		drawCmd.rasterState.cullMode = eCullBack;
-		drawCmd.rasterState.fillMode = eFillWireframe;
+		drawCmd.rasterState.cullMode = eCullNone;
+		//drawCmd.rasterState.fillMode = eFillWireframe;
+		drawCmd.rasterState.fillMode = eFillSolid;
 
 		if (auto r = api->createDrawCommand(hDraw, drawCmd))
 			tswarn("draw cmd fail : %", r);
@@ -482,45 +537,32 @@ public:
 		vec.x() = max(min(vec.x(), 1), 0);
 		vec.y() = max(min(vec.y(), 1), 0);
 		*/
-
-		//Update instance matrices
-		Vector positions[] = 
-		{
-			Vector(-2.0f, -2.0f, 5.0f),
-			Vector(-2.0f, +2.0f, 5.0f),
-			Vector(+2.0f, -2.0f, 5.0f),
-			Vector(+2.0f, +2.0f, 5.0f)
-		};
-
-		Matrix matrices[4];
-
-		for (int i = 0; i < 4; i++)
-		{
-			//data.worldViewProj[i] = Matrix::fromYawPitchRoll(positions[i] * (Pi / 4));
-			matrices[i] = Matrix::rotationY((float)timecount);
-			matrices[i] = matrices[i] * Matrix::translation(positions[i]);
-			Matrix::transpose(matrices[i]);
-		}
 		
 		//Update shader constants
 		Constants data;
+		//data.world = Matrix::rotationY((float)timecount) * Matrix::translation(0.0f, 0.0f, 2.0f);
+		data.world = Matrix::rotationY((Pi / 3) * sin((float)timecount)) * Matrix::translation(0.0f, 0.0f, 1.5f);
 		data.view = Matrix::identity();
-		data.projection = Matrix::perspectiveFieldOfView(Pi / 2, (float)config.width / config.height, 0.1f, 10.0f);
+		data.projection = Matrix::perspectiveFieldOfView(Pi / 2, (float)config.width / config.height, 0.1f, 20.0f);
+		
+		data.lightDir = Vector(0, -0.5f, -1);
+		data.lightDir = Matrix::transform3D(data.lightDir, data.view);
+		data.lightDir.normalize();
+
+		Matrix::transpose(data.world);
 		Matrix::transpose(data.view);
 		Matrix::transpose(data.projection);
-		//data.pos = vec;
-		data.resW = config.width;
-		data.resH = config.height;
 		data.time = (float)timecount;
+		data.tessScale = 0.05f;
+		data.tessFactor = 50.0f;
 		/*
 		float interp = (float)sin(timecount);
 		interp += 1.0f;
 		interp /= 2.0f;
 		data.tessFactor = ((20.0f - 1.0f) * interp) + 1.0f;
 		*/
-		data.tessFactor = 12.0f;
 
-		context->bufferUpdate(hMatrixBuffer, matrices);
+		//context->bufferUpdate(hMatrixBuffer, matrices);
 		context->bufferUpdate(hConstants, &data);
 		context->draw(target, SViewport(config.width, config.height, 0, 0), SViewport(), hDraw);
 		
@@ -535,12 +577,10 @@ public:
 		api->destroyBuffer(hConstants);
 		api->destroyTexture(hTex);
 		api->destroyTexture(hTexDisp);
+		api->destroyTexture(hTexNorm);
 		//api->destroyTexture(hCube);
 		api->destroyBuffer(hIndexBuffer);
 		api->destroyBuffer(hVertexBuffer);
-		api->destroyBuffer(hTexcoordBuffer);
-		api->destroyBuffer(hNormalBuffer);
-		api->destroyBuffer(hMatrixBuffer);
 		api->destroyDrawCommand(hDraw);
 	}
 };
