@@ -7,6 +7,7 @@
 #include "context.h"
 #include "helpers.h"
 #include "handletarget.h"
+#include "handletexture.h"
 
 using namespace std;
 using namespace ts;
@@ -94,11 +95,11 @@ void D3D11RenderContext::bufferCopy(HBuffer src, HBuffer dest)
 
 void D3D11RenderContext::textureUpdate(HTexture rsc, uint32 index, const void* memory)
 {
-	auto texture = reinterpret_cast<ID3D11Resource*>(rsc);
+	auto texture = D3D11Texture::upcast(rsc);
 
 	if (texture)
 	{
-		m_context->UpdateSubresource(texture, index, nullptr, memory, 0, 0);
+		m_context->UpdateSubresource(texture->getResource().Get(), index, nullptr, memory, 0, 0);
 	}
 	else
 	{
@@ -108,12 +109,12 @@ void D3D11RenderContext::textureUpdate(HTexture rsc, uint32 index, const void* m
 
 void D3D11RenderContext::textureCopy(HTexture src, HTexture dest)
 {
-	auto texsrc = reinterpret_cast<ID3D11Resource*>(src);
-	auto texdest = reinterpret_cast<ID3D11Resource*>(dest);
+	auto texsrc = D3D11Texture::upcast(src);
+	auto texdest = D3D11Texture::upcast(dest);
 
 	if (texsrc && texdest)
 	{
-		m_context->CopyResource(texdest, texsrc);
+		m_context->CopyResource(texdest->getResource().Get(), texsrc->getResource().Get());
 	}
 	else
 	{
@@ -123,12 +124,12 @@ void D3D11RenderContext::textureCopy(HTexture src, HTexture dest)
 
 void D3D11RenderContext::textureResolve(HTexture src, HTexture dest)
 {
-	auto texsrc = reinterpret_cast<ID3D11Resource*>(src);
-	auto texdest = reinterpret_cast<ID3D11Resource*>(dest);
+	auto texsrc = D3D11Texture::upcast(src);
+	auto texdest = D3D11Texture::upcast(dest);
 
 	if (texsrc && texdest)
 	{
-		m_context->ResolveSubresource(texdest, 0, texsrc, 0, DXGI_FORMAT_UNKNOWN);
+		m_context->ResolveSubresource(texdest->getResource().Get(), 0, texsrc->getResource().Get(), 0, DXGI_FORMAT_UNKNOWN);
 	}
 	else
 	{
