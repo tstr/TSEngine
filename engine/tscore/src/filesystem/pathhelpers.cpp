@@ -6,11 +6,14 @@
 
 #include <Windows.h>
 #include <Shlwapi.h>
+#include <Shlobj.h>
+
 #include <fstream>
 
 using namespace std;
 
 #pragma comment(lib, "Shlwapi.lib")
+#pragma comment(lib, "Shell32.lib")
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -55,6 +58,30 @@ namespace ts
 	bool searchFile(const Path& inpath, Path& foundpath, const Path* searchPathArray, size_t searchPathArraySize)
 	{
 		return false;
+	}
+
+	fstream createFile(const Path& name, int flags)
+	{
+		if (!isDirectory(name))
+		{
+			string sbuf(name.getParent().str());
+			for (char& c : sbuf)
+			{
+				if (c == '/')
+				{
+					c = '\\';
+				}
+			}
+
+			int err = SHCreateDirectoryExA(nullptr, sbuf.c_str(), nullptr);
+
+			if (err == ERROR_ALREADY_EXISTS || err == ERROR_SUCCESS)
+			{
+				return fstream(name.str(), flags);
+			}
+		}
+
+		return fstream();
 	}
 }
 

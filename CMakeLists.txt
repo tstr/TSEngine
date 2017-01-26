@@ -204,9 +204,13 @@ IF(TS_BUILD_TOOLS)
 
 	#engine tools
 	ADD_SUBDIRECTORY(tools/modelbuild)
+	ADD_SUBDIRECTORY(tools/shaderc)
+	ADD_SUBDIRECTORY(tools/texbuild)
 	
 	SET_TARGET_PROPERTIES(
 		modelbuild
+		shaderc
+		texbuild
 		PROPERTIES FOLDER tools
 	)
 	
