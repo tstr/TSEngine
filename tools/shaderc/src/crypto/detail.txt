@@ -1,0 +1,1 @@
+md5 and sha256 implementations were taken from this repository: https://github.com/B-Con/crypto-algorithms
