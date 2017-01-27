@@ -288,11 +288,21 @@ namespace ts
 			return !this->operator==(str);
 		}
 
+		inline bool operator<(const StaticString<n>& str) const
+		{
+			return strcmp(m_chars, str.m_chars) < 0;
+		}
+
+		inline bool operator>(const StaticString<n>& str) const
+		{
+			return strcmp(m_chars, str.m_chars) > 0;
+		}
+
 		//methods
 
 		inline bool compare(const StaticString<n>& str) const
 		{
-			return strcmp(str.m_chars, this->m_chars);
+			return strcmp(str.m_chars, this->m_chars) == 0;
 		}
 
 		inline void set(const std::string& str, size_t offset = 0)
