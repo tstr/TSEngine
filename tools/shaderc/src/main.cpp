@@ -62,6 +62,26 @@ using namespace ts;
 
 int main(int argc, char** argv)
 {
+	char str[] = R"(
+		
+		shader Shader0 { stage vertex { file = "test.vs"; }}
+		
+		shader Shader1
+		{
+			stage vertex
+			{
+				file = "shader.vs";
+			}
+
+			stage pixel
+			{
+				file = "shader.ps";
+			}
+		}
+	)";
+
+	CShaderDefImporter importer(str, strlen(str));
+
 	CShaderCompileEngine compileEngine(
 		"C:/Users/Tom/Documents/Tom/git/TSEngine/tools/shaderc",
 		"C:/Users/Tom/Documents/Tom/git/TSEngine/tools/shaderc/bin"

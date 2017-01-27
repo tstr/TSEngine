@@ -44,7 +44,7 @@ public:
 
 	ts::uint32 getShaderCount() const;
 	void getShaderInfo(ts::uint32 idx, SShaderInfo& info) const;
-	void findShaderInfo(const char* shaderName) const;
+	void findShaderInfo(const char* shaderName, SShaderInfo& info) const;
 
 };
 
