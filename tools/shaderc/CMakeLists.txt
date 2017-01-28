@@ -19,8 +19,9 @@ SET (shaderc_src
 	src/backend/hlsl.h
 	src/backend/hlsl.cpp
 	
-	src/frontend/importer.h
-	src/frontend/importer.cpp
+	src/frontend/tree.h
+	src/frontend/parser.h
+	src/frontend/parser.cpp
 	
 	src/common.h
 	src/compiler.h
@@ -44,9 +45,14 @@ INSTALL(
 
 assign_source_groups(${shaderc_src})
 
-target_link_libraries(
+TARGET_LINK_LIBRARIES(
 	shaderc PRIVATE
-	tsgraphics
+	tscore
+)
+
+ADD_TEST(
+	NAME TestShaderc
+	COMMAND $<TARGET_FILE:shaderc> -t "${CMAKE_CURRENT_SOURCE_DIR}/test/manifest.shm" -s "${CMAKE_CURRENT_SOURCE_DIR}/test/shaders/" -o "${CMAKE_CURRENT_BINARY_DIR}/test/bin/"
 )
 
 #####################################################################################################################

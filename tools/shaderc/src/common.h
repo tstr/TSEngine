@@ -14,9 +14,8 @@
 struct SShaderStageInfo
 {
 	ts::Path sourceFile;
-	const char* entryPoint = nullptr;
-	const ts::SPreprocessorMacro* macros = nullptr;
-	size_t macroCount = 0;
+	std::string entryPoint;
+	std::vector<ts::SPreprocessorMacro> macros;
 };
 
 struct SShaderInfo
@@ -26,6 +25,17 @@ struct SShaderInfo
 	SShaderStageInfo domainStage;
 	SShaderStageInfo geometryStage;
 	SShaderStageInfo pixelStage;
+};
+
+enum EShaderStage
+{
+	eShaderStageUnknown,
+	eShaderStageVertex,
+	eShaderStagePixel,
+	eShaderStageGeometry,
+	eShaderStageHull,
+	eShaderStageDomain,
+	eShaderStageCompute
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

@@ -3,7 +3,7 @@
 
 	usage:
 		
-		shaderc -t manifest.tsc -o shaders/bin/
+		shaderc -t manifest.shm -o shaders/bin/ -s shaders/
 
 		-t : target manifest, specifies list of shaders to compile and how to compile them
 		-s : location of shader source files
@@ -31,10 +31,10 @@
 				shader.ps
 				...
 
-			manifest.tshc
+			manifest.shm
 
 
-	manifest.tshc example:
+	manifest.shm example:
 		
 		shader Shader
 		{
@@ -53,53 +53,123 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "compiler.h"
-#include "frontend/importer.h"
+#include "frontend/parser.h"
+
+#include <tscore/filesystem/path.h>
+#include <tscore/filesystem/pathhelpers.h>
+
+#include <iostream>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
 using namespace ts;
 
+bool parseCLIargs(int argc, char** argv, Path& manifest, Path& outputDir, Path& sourceDir);
+
 int main(int argc, char** argv)
 {
-	char str[] = R"(
-		
-		shader Shader0 { stage vertex { file = "test.vs"; }}
-		
-		shader Shader1
-		{
-			stage vertex
-			{
-				file = "shader.vs";
-			}
+	Path manifestPath;
+	Path outputDir;
+	Path sourceDir;
 
-			stage pixel
-			{
-				file = "shader.ps";
-			}
-		}
-	)";
+	//Get CLI parameters
+	if (!parseCLIargs(argc, argv, manifestPath, outputDir, sourceDir))
+	{
+		return EXIT_FAILURE;
+	}
 
-	CShaderDefImporter importer(str, strlen(str));
+	if (!isFile(manifestPath))
+	{
+		cerr << "Shader manifest file does not exist: \"" << manifestPath.str() << "\"\n";
+		return EXIT_FAILURE;
+	}
+
+	if (!isDirectory(sourceDir))
+	{
+		cerr << "Shader source directory does not exist: \"" << sourceDir.str() << "\"\n";
+		return EXIT_FAILURE;
+	}
+
+	// existence of output directory does not neeed to be validated
+	// it can be created on the fly
+
+	//Parse manifest
+	CShaderInfoParser parser(manifestPath);
+
+	if (!parser)
+	{
+		cerr << "Failed to create CShaderInfoParser\n";
+		return EXIT_FAILURE;
+	}
 
 	CShaderCompileEngine compileEngine(
-		"C:/Users/Tom/Documents/Tom/git/TSEngine/tools/shaderc",
-		"C:/Users/Tom/Documents/Tom/git/TSEngine/tools/shaderc/bin"
+		sourceDir,
+		outputDir
 	);
 
-	SShaderInfo inf;
-	inf.vertexStage.sourceFile = "shader.vs";
-	inf.vertexStage.entryPoint = "VS";
-	inf.vertexStage.macroCount = 0;
-	inf.vertexStage.macros = nullptr;
-	inf.pixelStage.sourceFile = "shader.ps";
-	inf.pixelStage.entryPoint = "PS";
-	inf.pixelStage.macroCount = 0;
-	inf.pixelStage.macros = nullptr;
+	//Compile shaders listed in manifest
+	for (uint32 i = 0; i < parser.getShaderCount(); i++)
+	{
+		SShaderInfo inf;
+		string name;
 
-	compileEngine.compileShader("shader", inf);
+		parser.getShaderInfo(i, name, inf);
+
+		if (int err = compileEngine.compileShader(name.c_str(), inf))
+		{
+			return EXIT_FAILURE;
+		}
+	}
 
 	return EXIT_SUCCESS;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool parseCLIargs(int argc, char** argv, Path& manifest, Path& outputDir, Path& sourceDir)
+{
+	char curArg = 0;
+
+	for (int i = 1; i < argc; i++)
+	{
+		string arg(trim(argv[i]));
+
+		if (arg[0] == '-')
+		{
+			curArg = arg[1];
+		}
+		else
+		{
+			switch (curArg)
+			{
+			case 't':
+			{
+				manifest = arg;
+				curArg = 0;
+				break;
+			}
+			case 'o':
+			{
+				outputDir = arg;
+				curArg = 0;
+				break;
+			}
+			case 's':
+			{
+				sourceDir = arg;
+				curArg = 0;
+				break;
+			}
+			default:
+			{
+				cerr << "Invalid argument specified: " << arg << "\n";
+			}
+			};
+		}
+	}
+
+	return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
