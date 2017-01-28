@@ -198,7 +198,14 @@ SET_TARGET_PROPERTIES(
 
 ################################################################################################
 
+OPTION(TS_TEST "enable tests" OFF)
 OPTION(TS_BUILD_TOOLS "build tools" ON)
+
+IF(TS_TEST)
+	
+	enable_testing()
+	
+ENDIF()
 
 IF(TS_BUILD_TOOLS)
 

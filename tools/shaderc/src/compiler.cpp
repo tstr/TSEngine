@@ -7,7 +7,6 @@
 #include "compiler.h"
 #include "preprocessor.h"
 #include <tscore/filesystem/pathhelpers.h>
-#include <tsgraphics/api/renderapi.h>
 
 //Hash function
 #include "crypto/md5.h"
@@ -21,6 +20,10 @@
 
 using namespace std;
 using namespace ts;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// File structures
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma pack(push, 1)
 struct MD5Hash
@@ -44,17 +47,8 @@ struct SShaderObjectHeader
 };
 #pragma pack(pop)
 
-/*
-void WriteMD5Hash(ostream& output, MD5Hash hash)
-{
-	char hashStr[33] = { 0 };
-	snprintf(hashStr, 32, "%llx%llx", hash.a, hash.b);
-	output << hashStr;
-}
-*/
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+//Compile engine implementation
 struct CShaderCompileEngine::Impl
 {
 	Path m_sourceDir;
@@ -86,7 +80,7 @@ struct CShaderCompileEngine::Impl
 		stringstream srcStream;
 		
 		//Preprocess the file
-		if (EPreprocessorStatus e = preprocessFile(src, srcStream, shader.macros, (uint)shader.macroCount, &m_sourceDir, 1))
+		if (EPreprocessorStatus e = preprocessFile(src, srcStream, (shader.macros.empty()) ? nullptr : &shader.macros[0], (uint)shader.macros.size(), &m_sourceDir, 1))
 		{
 			cerr << "Preprocessor error\n";
 			return -1;
@@ -96,21 +90,22 @@ struct CShaderCompileEngine::Impl
 		{
 			MD5_CTX ctx;
 			md5_init(&ctx);
+			md5_update(&ctx, (const BYTE*)shader.entryPoint.c_str(), shader.entryPoint.size());
 			md5_update(&ctx, (const BYTE*)srcStream.str().c_str(), srcStream.str().size());
 			md5_final(&ctx, (BYTE*)&shaderHash);
 		}
 
 		//Compile with hlsl backend
-		return compileStage(m_hlsl, shaderHash, srcStream.str().c_str(), shader.entryPoint, stage);
+		return compileStage(m_hlsl, shaderHash, srcStream.str().c_str(), shader.entryPoint.c_str(), stage);
 	}
 
 private:
 
 	int compileStage(IShaderBackend& backend, MD5Hash hash, const char* code, const char* entrypoint, EShaderStage stage)
 	{
-		//Format 128bit hash
-		char hashStr[33] = { 0 };
-		snprintf(hashStr, 32, "%llx%llx", hash.a, hash.b);
+		//Format 128bit hash - 32 hex chars
+		char hashStr[32] = { 0 };
+		snprintf(hashStr, sizeof(hashStr) - 1, "%llx%llx", hash.a, hash.b);
 
 		MemoryBuffer bytecode;
 		if (!backend.compile(code, bytecode, entrypoint, stage))
@@ -119,7 +114,7 @@ private:
 		}
 
 		char idStr[9] = { 0 };
-		snprintf(idStr, 8, "%x", backend.getId());
+		snprintf(idStr, sizeof(idStr) - 1, "%02x", backend.getId());
 
 		Path cacheFile = m_outputDir;
 		cacheFile.addDirectories("cache");

@@ -1,0 +1,15 @@
+
+shader Shader
+{
+	stage vertex
+	{
+		file = "shader.vs";
+		entrypoint = "VS";
+	}
+
+	stage pixel
+	{
+		file = "shader.ps";
+		entrypoint = "PS";
+	}
+}
