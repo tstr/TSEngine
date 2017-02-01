@@ -2,3 +2,4 @@
 #Only ignore the build folder
 
 /build
+/assets/shaders/bin

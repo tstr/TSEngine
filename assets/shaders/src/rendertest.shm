@@ -1,0 +1,27 @@
+
+shader TestShader
+{
+	stage vertex
+	{
+		file = "rendertest/testshader.fx";
+		entrypoint = "VS";
+	}
+	
+	stage pixel
+	{
+		file = "rendertest/testshader.fx";
+		entrypoint = "PS";
+	}
+	
+	stage hull
+	{
+		file = "rendertest/testshader.fx";
+		entrypoint = "HS";
+	}
+	
+	stage domain
+	{
+		file = "rendertest/testshader.fx";
+		entrypoint = "DS";
+	}
+}

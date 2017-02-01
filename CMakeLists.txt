@@ -199,7 +199,7 @@ SET_TARGET_PROPERTIES(
 ################################################################################################
 
 OPTION(TS_TEST "enable tests" OFF)
-OPTION(TS_BUILD_TOOLS "build tools" ON)
+#OPTION(TS_BUILD_TOOLS "build tools" ON)
 
 IF(TS_TEST)
 	
@@ -207,20 +207,29 @@ IF(TS_TEST)
 	
 ENDIF()
 
-IF(TS_BUILD_TOOLS)
+#engine tools
+ADD_SUBDIRECTORY(tools/modelbuild)
+ADD_SUBDIRECTORY(tools/shaderc)
+ADD_SUBDIRECTORY(tools/texbuild)
 
-	#engine tools
-	ADD_SUBDIRECTORY(tools/modelbuild)
-	ADD_SUBDIRECTORY(tools/shaderc)
-	ADD_SUBDIRECTORY(tools/texbuild)
-	
-	SET_TARGET_PROPERTIES(
-		modelbuild
-		shaderc
-		texbuild
-		PROPERTIES FOLDER tools
-	)
-	
-ENDIF()
+SET_TARGET_PROPERTIES(
+	modelbuild
+	shaderc
+	texbuild
+	PROPERTIES FOLDER tools
+)
+
+################################################################################################
+#	Automatic shader compilation
+
+ADD_SUBDIRECTORY(assets/shaders)
+
+set_target_properties(
+	PrecompileShaders
+	PROPERTIES FOLDER applications
+)
+
+ADD_DEPENDENCIES(sceneviewer PrecompileShaders)
+ADD_DEPENDENCIES(rendertest PrecompileShaders)
 
 ################################################################################################
