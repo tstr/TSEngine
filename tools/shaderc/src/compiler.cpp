@@ -104,7 +104,7 @@ private:
 	int compileStage(IShaderBackend& backend, MD5Hash hash, const char* code, const char* entrypoint, EShaderStage stage)
 	{
 		//Format 128bit hash - 32 hex chars
-		char hashStr[32] = { 0 };
+		char hashStr[33] = { 0 };
 		snprintf(hashStr, sizeof(hashStr) - 1, "%llx%llx", hash.a, hash.b);
 
 		MemoryBuffer bytecode;
