@@ -19,12 +19,6 @@ using namespace ts;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Hash
-{
-	uint64 a;
-	uint64 b;
-};
-
 //Internal implementation
 struct CShaderManager::Manager
 {
@@ -133,10 +127,12 @@ enum EShaderBackend : uint8
 
 //File structures
 #pragma pack(push, 1)
-struct MD5Hash
+struct SHA256Hash
 {
 	uint64 a = 0;
 	uint64 b = 0;
+	uint64 c = 0;
+	uint64 d = 0;
 
 	operator bool() const
 	{
@@ -149,21 +145,21 @@ struct SShaderObjectHeader
 	//TSHO
 	uint32 tag;
 
-	MD5Hash stageVertex;
-	MD5Hash stageHull;
-	MD5Hash stageDomain;
-	MD5Hash stageGeometry;
-	MD5Hash stagePixel;
+	SHA256Hash stageVertex;
+	SHA256Hash stageHull;
+	SHA256Hash stageDomain;
+	SHA256Hash stageGeometry;
+	SHA256Hash stagePixel;
 };
 #pragma pack(pop)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-string hashToStr(MD5Hash hash)
+string hashToStr(SHA256Hash hash)
 {
 	//Format 128bit hash - 32 hex chars
-	char hashStr[33] = { 0 };
-	snprintf(hashStr, sizeof(hashStr) - 1, "%llx%llx", hash.a, hash.b);
+	char hashStr[sizeof(SHA256Hash) * 2 + 1] = { 0 };
+	snprintf(hashStr, sizeof(hashStr) - 1, "%llx%llx%llx%llx", hash.a, hash.b, hash.c, hash.d);
 
 	return hashStr;
 }
@@ -175,7 +171,7 @@ string idToStr(EShaderBackend id)
 	return idStr;
 }
 
-EShaderManagerStatus loadShaderStage(IRender* api, Path cacheDir, MD5Hash stageHash, HShader& shader, EShaderStage stage)
+EShaderManagerStatus loadShaderStage(IRender* api, Path cacheDir, SHA256Hash stageHash, HShader& shader, EShaderStage stage)
 {
 	cacheDir.addDirectories(hashToStr(stageHash));
 	shader = HSHADER_NULL;

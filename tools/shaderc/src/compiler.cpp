@@ -9,7 +9,7 @@
 #include <tscore/filesystem/pathhelpers.h>
 
 //Hash function
-#include "crypto/md5.h"
+#include "crypto/sha256.h"
 
 //Shader backends
 #include "backend/hlsl.h"
@@ -26,10 +26,12 @@ using namespace ts;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma pack(push, 1)
-struct MD5Hash
+struct SHA256Hash
 {
 	uint64 a = 0;
 	uint64 b = 0;
+	uint64 c = 0;
+	uint64 d = 0;
 };
 
 struct SShaderObjectHeader
@@ -39,11 +41,11 @@ struct SShaderObjectHeader
 	byte tag2 = 'H';
 	byte tag3 = 'O';
 
-	MD5Hash stageVertex;
-	MD5Hash stageHull;
-	MD5Hash stageDomain;
-	MD5Hash stageGeometry;
-	MD5Hash stagePixel;
+	SHA256Hash stageVertex;
+	SHA256Hash stageHull;
+	SHA256Hash stageDomain;
+	SHA256Hash stageGeometry;
+	SHA256Hash stagePixel;
 };
 #pragma pack(pop)
 
@@ -57,14 +59,14 @@ struct CShaderCompileEngine::Impl
 	//Compiler backends
 	HLSLCompiler m_hlsl;
 
-	int processStage(const SShaderStageInfo& shader, EShaderStage stage, MD5Hash& shaderHash)
+	int processStage(const SShaderStageInfo& shader, EShaderStage stage, SHA256Hash& shaderHash)
 	{
 		if ((string)shader.sourceFile.str() == "")
 		{
 			return 0; //return ok if the filepath is purposely left empty
 		}
 
-		shaderHash = MD5Hash();
+		shaderHash = SHA256Hash();
 
 		//Resolve location
 		Path src = m_sourceDir;
@@ -88,11 +90,11 @@ struct CShaderCompileEngine::Impl
 		
 		//Create hash of preprocessed file
 		{
-			MD5_CTX ctx;
-			md5_init(&ctx);
-			md5_update(&ctx, (const BYTE*)shader.entryPoint.c_str(), shader.entryPoint.size());
-			md5_update(&ctx, (const BYTE*)srcStream.str().c_str(), srcStream.str().size());
-			md5_final(&ctx, (BYTE*)&shaderHash);
+			SHA256_CTX ctx;
+			sha256_init(&ctx);
+			sha256_update(&ctx, (const BYTE*)shader.entryPoint.c_str(), shader.entryPoint.size());
+			sha256_update(&ctx, (const BYTE*)srcStream.str().c_str(), srcStream.str().size());
+			sha256_final(&ctx, (BYTE*)&shaderHash);
 		}
 
 		//Compile with hlsl backend
@@ -101,11 +103,11 @@ struct CShaderCompileEngine::Impl
 
 private:
 
-	int compileStage(IShaderBackend& backend, MD5Hash hash, const char* code, const char* entrypoint, EShaderStage stage)
+	int compileStage(IShaderBackend& backend, SHA256Hash hash, const char* code, const char* entrypoint, EShaderStage stage)
 	{
 		//Format 128bit hash - 32 hex chars
-		char hashStr[33] = { 0 };
-		snprintf(hashStr, sizeof(hashStr) - 1, "%llx%llx", hash.a, hash.b);
+		char hashStr[sizeof(SHA256Hash) * 2 + 1] = { 0 };
+		snprintf(hashStr, sizeof(hashStr) - 1, "%llx%llx%llx%llx", hash.a, hash.b, hash.c, hash.d);
 
 		MemoryBuffer bytecode;
 		if (!backend.compile(code, bytecode, entrypoint, stage))
