@@ -12,8 +12,6 @@
 #include <tscore/strings.h>
 
 #include <vector>
-#include <unordered_map>
-#include <mutex>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -24,10 +22,29 @@ namespace ts
 
 	enum EShaderManagerFlags
 	{
-		eShaderManagerFlag_Null		 = (0),
+		eShaderManagerFlag_Null		 = (0 << 0),
 		eShaderManagerFlag_Debug 	 = (1 << 0),
-		eShaderManagerFlag_Recompile = (1 << 1),
+		eShaderManagerFlag_NoPreload = (1 << 1),
 		eShaderManagerFlag_FileWatch = (1 << 2),
+	};
+
+	enum EShaderManagerStatus
+	{
+		eShaderManagerStatus_Ok				 = 0,
+		eShaderManagerStatus_Fail			 = 1,
+		eShaderManagerStatus_NullManager	 = 2,
+		eShaderManagerStatus_ProgramNotFound = 3,
+		eShaderManagerStatus_StageNotFound   = 4,
+		eShaderManagerStatus_CorruptShader	 = 5
+	};
+
+	struct SShaderProgram
+	{
+		HShader shVertex = HSHADER_NULL;
+		HShader shDomain = HSHADER_NULL;
+		HShader shHull = HSHADER_NULL;
+		HShader shGeometry = HSHADER_NULL;
+		HShader shPixel = HSHADER_NULL;
 	};
 
 	typedef uint64 ShaderId;
@@ -36,46 +53,32 @@ namespace ts
 	{
 	private:
 
-		IShaderCompiler* m_shaderCompiler = nullptr;
-		GraphicsSystem* m_graphics = nullptr;
-		
-		Path m_sourcePath;
-		Path m_cachePath;
-		uint m_flags = 0;
+		struct Manager;
+		Manager* pManage = nullptr;
 
-		uint64 m_idcounter = 0;
-
-		struct SShaderInstance
-		{
-			HShader hShader;
-			SShaderCompileConfig config;
-		};
-
-		std::vector<SShaderInstance> m_shaderInstanceMap;		 //Maps shader id's to shader resource proxies
-		std::unordered_multimap<Path, ShaderId> m_shaderFileMap; //Maps shader file paths to shader id's
-		std::unordered_map<std::string, std::string> m_shaderMacroMap;
-		
 	public:
 		
-		TSGRAPHICS_API CShaderManager(GraphicsSystem* module, uint flags, const Path& sourcepath = "", const Path& cachepath = "");
-		~CShaderManager() { clear(); }
+		CShaderManager() {}
+		CShaderManager(const CShaderManager&) = delete;
 
-		TSGRAPHICS_API void clear();
+		TSGRAPHICS_API CShaderManager(GraphicsSystem* system, const Path& shaderPath, uint flags);
+		TSGRAPHICS_API ~CShaderManager();
 
-		GraphicsSystem* const getModule() const { return m_graphics; }
+		TSGRAPHICS_API CShaderManager(CShaderManager&& rhs);
+		TSGRAPHICS_API CShaderManager& operator=(CShaderManager&& rhs);
 		
-		uint getFlags() const { return m_flags; }
-		void setFlags(uint f) { m_flags = f; }
+		TSGRAPHICS_API void clear();
+		
+		
+		TSGRAPHICS_API GraphicsSystem* const getSystem() const;
+		TSGRAPHICS_API void setLoadPath(const Path& shaderpath);
 
-		TSGRAPHICS_API void addMacro(const std::string& macroname, const std::string& macrovalue);
+		TSGRAPHICS_API uint getFlags() const;
+		TSGRAPHICS_API void setFlags(uint f);
 
-		void setSourcepath(const Path& sourcepath) { m_sourcePath = sourcepath; }
-		void setCachepath(const Path& cachepath) { m_cachePath = cachepath; }
 
-		TSGRAPHICS_API HShader getShaderHandle(ShaderId id);
-
-		TSGRAPHICS_API bool createShaderFromString(ShaderId& id, const char* code, const char* entrypoint, EShaderStage stage);
-		TSGRAPHICS_API bool createShaderFromFile(ShaderId& id, const Path& codefile, const char* entrypoint, EShaderStage stage);
+		TSGRAPHICS_API EShaderManagerStatus load(const char* shaderName, SShaderProgram& program);
+		EShaderManagerStatus load(const std::string& shaderName, SShaderProgram& program) { return this->load(shaderName.c_str(), program); }
 	};
 }
 

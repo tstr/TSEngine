@@ -21,7 +21,6 @@ namespace ts
 	struct IRender;
 	struct IRenderContext;
 	struct IAdapterFactory;
-	struct IShaderCompiler;
 	struct SDrawCommand;
 	
 	//Resource handles
@@ -416,18 +415,6 @@ namespace ts
 		virtual bool enumAdapter(uint32 idx, SRenderAdapterDesc& desc) const = 0;
 	};
 	
-	struct SShaderCompileConfig
-	{
-		const char* entrypoint = nullptr;
-		EShaderStage stage;
-		bool debuginfo = false;
-	};
-	
-	struct IShaderCompiler
-	{
-		virtual bool compile(const char* code, const SShaderCompileConfig& options, MemoryBuffer& bytecode) = 0;
-	};
-	
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	namespace abi
@@ -436,9 +423,6 @@ namespace ts
 		{
 			int createRenderApi(IRender** api, const SRenderApiConfig& cfg);
 			void destroyRenderApi(IRender* api);
-			
-			int createShaderCompiler(IShaderCompiler** compiler);
-			void destroyShaderCompiler(IShaderCompiler* compiler);
 			
 			int createAdapterFactory(IAdapterFactory** adapterFactory);
 			void destroyAdapterFactory(IAdapterFactory* adapterFactory);

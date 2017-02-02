@@ -83,6 +83,33 @@ namespace ts
 
 		return fstream();
 	}
+
+	bool findPaths(const Path& path, std::vector<Path>& paths)
+	{
+		WIN32_FIND_DATA findInfo;
+
+		HANDLE hFind = FindFirstFileA(path.str(), &findInfo);
+
+		if (INVALID_HANDLE_VALUE == hFind)
+		{
+			return false;
+		}
+
+		do
+		{
+			paths.push_back(findInfo.cFileName);
+
+		} while (FindNextFileA(hFind, &findInfo) != 0);
+
+		if (GetLastError() != ERROR_NO_MORE_FILES)
+		{
+			return false;
+		}
+
+		FindClose(hFind);
+
+		return true;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
