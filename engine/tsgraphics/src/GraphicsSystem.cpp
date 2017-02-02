@@ -14,8 +14,7 @@ using namespace ts;
 
 GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg) :
 	m_config(cfg),
-	m_textureManager(this),
-	m_shaderManager(this, 0)
+	m_textureManager(this)
 {
 	if (int err = loadApi(cfg.apiEnum))
 		tserror("Unable to load graphics api (id:%)(error:%)", cfg.apiEnum, err);
@@ -25,10 +24,9 @@ GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg) :
 	m_textureManager.setRootpath(m_config.rootpath);
 
 	Path sourcepath(m_config.rootpath);
-	sourcepath.addDirectories("shaders");
-	m_shaderManager.setSourcepath(sourcepath);
+	sourcepath.addDirectories("shaders/bin");
 
-	m_shaderManager.setFlags(m_shaderManager.getFlags() | eShaderManagerFlag_Debug);
+	m_shaderManager = CShaderManager(this, sourcepath, eShaderManagerFlag_Debug);
 }
 
 GraphicsSystem::~GraphicsSystem()

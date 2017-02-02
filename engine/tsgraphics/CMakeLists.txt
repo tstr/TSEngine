@@ -49,7 +49,6 @@ SET(tsgraphics_api_d3d11_src
 	src/api/d3d11/StateManager.cpp
 	src/api/d3d11/StateManager.h
 	
-	src/api/d3d11/HLSLShaderCompiler.cpp
 	src/api/d3d11/Adapter.cpp
 )
 
@@ -60,10 +59,7 @@ SET(tsgraphics_src
 	src/GraphicsSystem.cpp
 	src/GraphicsSystemLoader.cpp
 	src/TextureManager.cpp
-	
-	src/shader/ShaderManager.cpp
-	src/shader/Preprocessor.h
-	src/shader/Preprocessor.cpp
+	src/ShaderManager.cpp
 	
 	src/Buffer.cpp
 	

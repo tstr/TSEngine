@@ -6,6 +6,7 @@
 
 #include "path.h"
 #include <fstream>
+#include <vector>
 
 namespace ts
 {
@@ -22,4 +23,6 @@ namespace ts
 	//Creates a filestream object and/or directory tree
 	std::fstream TSCORE_API createFile(const Path& path, int flags);
 	inline std::fstream createFile(const std::string& path, int flags) { return createFile(Path(path.c_str()), flags); }
+
+	bool TSCORE_API findPaths(const Path& path, std::vector<Path>& paths);
 }
