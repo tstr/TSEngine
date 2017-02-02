@@ -10,6 +10,7 @@
 #include <comdef.h>
 #include <wrl/client.h>
 #include <iostream>
+#include <cassert>
 
 template<typename t>
 using ComPtr = Microsoft::WRL::ComPtr<t>;
