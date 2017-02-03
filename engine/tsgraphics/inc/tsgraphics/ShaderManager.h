@@ -8,6 +8,7 @@
 #include <tsgraphics/api/renderapi.h>
 #include <tsgraphics/api/rendercommon.h>
 
+#include <tscore/ptr.h>
 #include <tscore/filesystem/path.h>
 #include <tscore/strings.h>
 
@@ -35,7 +36,7 @@ namespace ts
 		eShaderManagerStatus_NullManager	 = 2,
 		eShaderManagerStatus_ProgramNotFound = 3,
 		eShaderManagerStatus_StageNotFound   = 4,
-		eShaderManagerStatus_CorruptShader	 = 5
+		eShaderManagerStatus_StageCorrupt	 = 5
 	};
 
 	struct SShaderProgram
@@ -54,21 +55,18 @@ namespace ts
 	private:
 
 		struct Manager;
-		Manager* pManage = nullptr;
+		OpaquePtr<Manager> pManage;
 
 	public:
+
+		OPAQUE_PTR(CShaderManager, pManage)
 		
 		CShaderManager() {}
-		CShaderManager(const CShaderManager&) = delete;
 
 		TSGRAPHICS_API CShaderManager(GraphicsSystem* system, const Path& shaderPath, uint flags);
 		TSGRAPHICS_API ~CShaderManager();
-
-		TSGRAPHICS_API CShaderManager(CShaderManager&& rhs);
-		TSGRAPHICS_API CShaderManager& operator=(CShaderManager&& rhs);
 		
 		TSGRAPHICS_API void clear();
-		
 		
 		TSGRAPHICS_API GraphicsSystem* const getSystem() const;
 		TSGRAPHICS_API void setLoadPath(const Path& shaderpath);
