@@ -53,22 +53,13 @@ CShaderManager::~CShaderManager()
 	if (pManage)
 	{
 		clear();
-
-		delete pManage;
-		pManage = nullptr;
+		pManage.reset();
 	}
 }
 
-CShaderManager::CShaderManager(CShaderManager&& rhs)
-{
-	swap(pManage, rhs.pManage);
-}
-
-CShaderManager& CShaderManager::operator=(CShaderManager&& rhs)
-{
-	swap(pManage, rhs.pManage);
-	return *this;
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Clears shader cache and deallocates
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void CShaderManager::clear()
 {
@@ -194,7 +185,7 @@ EShaderManagerStatus loadShaderStage(IRender* api, Path cacheDir, SHA256Hash sta
 	
 	if (ERenderStatus status = api->createShader(shader, &buffer[0], (uint32)buffer.size(), stage))
 	{
-		return eShaderManagerStatus_CorruptShader;
+		return eShaderManagerStatus_StageCorrupt;
 	}
 
 	return eShaderManagerStatus_Ok;
@@ -227,7 +218,7 @@ EShaderManagerStatus CShaderManager::Manager::loadFromFile(const Path& fileName,
 	//Validate header
 	if (header.tag != 'OHST')
 	{
-		return eShaderManagerStatus_CorruptShader;
+		return eShaderManagerStatus_StageCorrupt;
 	}
 
 	//Determine location of shader programs based in render api selected
