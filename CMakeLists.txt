@@ -8,6 +8,15 @@ PROJECT (tse)
 
 ################################################################################################
 
+OPTION(TS_TEST "enable tests" OFF)
+#OPTION(TS_BUILD_TOOLS "build tools" ON)
+
+IF(TS_TEST)
+	
+	enable_testing()
+	
+ENDIF()
+
 if("${PROJECT_BINARY_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
 	message(FATAL_ERROR "In-source builds are not permitted")
 endif()
@@ -198,15 +207,6 @@ SET_TARGET_PROPERTIES(
 
 ################################################################################################
 
-OPTION(TS_TEST "enable tests" OFF)
-#OPTION(TS_BUILD_TOOLS "build tools" ON)
-
-IF(TS_TEST)
-	
-	enable_testing()
-	
-ENDIF()
-
 #engine tools
 ADD_SUBDIRECTORY(tools/modelbuild)
 ADD_SUBDIRECTORY(tools/shaderc)
@@ -217,6 +217,11 @@ SET_TARGET_PROPERTIES(
 	shaderc
 	texbuild
 	PROPERTIES FOLDER tools
+)
+
+SET_TARGET_PROPERTIES(
+	TestShaderc
+	PROPERTIES FOLDER tests
 )
 
 ################################################################################################

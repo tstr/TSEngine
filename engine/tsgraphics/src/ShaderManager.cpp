@@ -18,6 +18,65 @@ using namespace std;
 using namespace ts;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Shader loader
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+enum EShaderBackend : uint8
+{
+	eBackendHLSL_SM5 = 1,
+	eBackendHLSL_SM5_1 = 2,
+	eBackendHLSL_SM6 = 3,
+	eBackendSPIRV = 4,
+};
+
+//File structures
+#pragma pack(push, 1)
+struct SHA256Hash
+{
+	uint64 a = 0;
+	uint64 b = 0;
+	uint64 c = 0;
+	uint64 d = 0;
+
+	operator bool() const
+	{
+		return a || b;
+	}
+
+	bool operator<(const SHA256Hash& rhs) const
+	{
+		return tie(a, b, c, d) < tie(rhs.a, rhs.b, rhs.c, rhs.d);
+	}
+
+	bool operator==(const SHA256Hash& rhs) const
+	{
+		return tie(a, b, c, d) == tie(rhs.a, rhs.b, rhs.c, rhs.d);
+	}
+
+	//Returns number of characters needed to represent the hash as a string excluding the null terminator
+	constexpr static size_t charCount()
+	{
+		return sizeof(SHA256Hash) * 2;
+	}
+};
+
+typedef SHA256Hash Hash;
+
+//Shader object file header
+struct SShaderObjectHeader
+{
+	//TSHO
+	uint32 tag;
+
+	Hash stageVertex;
+	Hash stageHull;
+	Hash stageDomain;
+	Hash stageGeometry;
+	Hash stagePixel;
+};
+#pragma pack(pop)
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Internal implementation
 struct CShaderManager::Manager
@@ -28,10 +87,14 @@ struct CShaderManager::Manager
 
 	vector<SShaderProgram> programs;
 	map<string, ShaderId> programMap;
+	map<Hash, HShader> programStageMap;
 
 	uint flags = 0;
 
-	EShaderManagerStatus loadFromFile(const Path& shaderFile, SShaderProgram& program);
+	//Finds shader stage in cache directory and loads it
+	EShaderManagerStatus loadShaderStage(Path cacheDir, Hash stageHash, HShader& shader, EShaderStage stage);
+	//Finds shader program in given file
+	EShaderManagerStatus loadProgram(const string& shaderName, SShaderProgram& program);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,51 +168,11 @@ void CShaderManager::setLoadPath(const Path& shaderpath)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	Shader loader
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-enum EShaderBackend : uint8
-{
-	eBackendHLSL_SM5 = 1,
-	eBackendHLSL_SM5_1 = 2,
-	eBackendHLSL_SM6 = 3,
-	eBackendSPIRV = 4,
-};
-
-//File structures
-#pragma pack(push, 1)
-struct SHA256Hash
-{
-	uint64 a = 0;
-	uint64 b = 0;
-	uint64 c = 0;
-	uint64 d = 0;
-
-	operator bool() const
-	{
-		return a || b;
-	}
-};
-
-struct SShaderObjectHeader
-{
-	//TSHO
-	uint32 tag;
-
-	SHA256Hash stageVertex;
-	SHA256Hash stageHull;
-	SHA256Hash stageDomain;
-	SHA256Hash stageGeometry;
-	SHA256Hash stagePixel;
-};
-#pragma pack(pop)
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-string hashToStr(SHA256Hash hash)
+string hashToStr(Hash hash)
 {
 	//Format 128bit hash - 32 hex chars
-	char hashStr[sizeof(SHA256Hash) * 2 + 1] = { 0 };
+	char hashStr[Hash::charCount() + 1] = { 0 };
 	snprintf(hashStr, sizeof(hashStr) - 1, "%llx%llx%llx%llx", hash.a, hash.b, hash.c, hash.d);
 
 	return hashStr;
@@ -162,30 +185,52 @@ string idToStr(EShaderBackend id)
 	return idStr;
 }
 
-EShaderManagerStatus loadShaderStage(IRender* api, Path cacheDir, SHA256Hash stageHash, HShader& shader, EShaderStage stage)
+EShaderManagerStatus CShaderManager::Manager::loadShaderStage(Path cacheDir, Hash stageHash, HShader& hShader, EShaderStage stage)
 {
-	cacheDir.addDirectories(hashToStr(stageHash));
-	shader = HSHADER_NULL;
+	auto it = programStageMap.find(stageHash);
 
-	if (!isFile(cacheDir))
+	//If the stage has not already been loaded
+	if (it == programStageMap.end())
 	{
-		return eShaderManagerStatus_StageNotFound;
+		//Search for shader in cache directory
+		cacheDir.addDirectories(hashToStr(stageHash));
+		hShader = HSHADER_NULL;
+
+		if (!isFile(cacheDir))
+		{
+			return eShaderManagerStatus_StageNotFound;
+		}
+
+		//Read stage file into buffer
+		ifstream stageFile(cacheDir.str(), ios::binary);
+
+		vector<char> buffer;
+
+		stageFile.seekg(0, ios::end);
+		const streampos fileSize = stageFile.tellg();
+		buffer.resize(fileSize);
+
+		stageFile.seekg(0, ios::beg);
+		stageFile.read(&buffer[0], fileSize);
+
+		//Create shader instance
+		if (ERenderStatus status = system->getApi()->createShader(hShader, &buffer[0], (uint32)buffer.size(), stage))
+		{
+			return eShaderManagerStatus_StageCorrupt;
+		}
+
+		//Cache shader stage
+		programStageMap[stageHash] = hShader;
 	}
-
-	ifstream stageFile(cacheDir.str(), ios::binary);
-
-	vector<char> buffer;
-
-	stageFile.seekg(0, ios::end);
-	streampos fileSize = stageFile.tellg();
-	buffer.resize(fileSize);
-
-	stageFile.seekg(0, ios::beg);
-	stageFile.read(&buffer[0], fileSize);
-	
-	if (ERenderStatus status = api->createShader(shader, &buffer[0], (uint32)buffer.size(), stage))
+	else
 	{
-		return eShaderManagerStatus_StageCorrupt;
+		//Set stage to shader instane found in cache
+		hShader = it->second;
+
+		if (hShader == HSHADER_NULL)
+		{
+			return eShaderManagerStatus_StageNotFound;
+		}
 	}
 
 	return eShaderManagerStatus_Ok;
@@ -194,94 +239,103 @@ EShaderManagerStatus loadShaderStage(IRender* api, Path cacheDir, SHA256Hash sta
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Manager methods
 
-EShaderManagerStatus CShaderManager::Manager::loadFromFile(const Path& fileName, SShaderProgram& program)
+EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderName, SShaderProgram& program)
 {
 	Path shaderFile = shaderPath;
-	shaderFile.addDirectories(fileName);
+	shaderFile.addDirectories(shaderName + ".tsh");
 
-	if (!isFile(shaderFile))
+	auto it = programMap.find(shaderName);
+
+	if (it == programMap.end())
 	{
-		return eShaderManagerStatus_ProgramNotFound;
+		if (!isFile(shaderFile))
+		{
+			return eShaderManagerStatus_ProgramNotFound;
+		}
+
+		ifstream file(shaderFile.str(), ios::binary);
+
+		//Read header
+		SShaderObjectHeader header;
+		file.read((char*)&header, sizeof(SShaderObjectHeader));
+
+		if (file.fail())
+		{
+			return eShaderManagerStatus_Fail;
+		}
+
+		//Validate header
+		if (header.tag != 'OHST')
+		{
+			return eShaderManagerStatus_StageCorrupt;
+		}
+
+		//Determine location of shader programs based in render api selected
+
+		SGraphicsSystemConfig config;
+		system->getConfiguration(config);
+
+		EShaderBackend backendId;
+		switch (config.apiEnum)
+		{
+		case eRenderApiD3D11:
+			backendId = EShaderBackend::eBackendHLSL_SM5;
+			break;
+		default:
+			backendId = (EShaderBackend)0;
+		}
+
+		Path cacheDir = shaderPath;
+		cacheDir.addDirectories("cache");
+		cacheDir.addDirectories(idToStr(backendId));
+
+		if (!isDirectory(cacheDir))
+		{
+			tswarn("a shader cache directory could not be found for this Renderer configuration (%)", config.apiEnum);
+			return eShaderManagerStatus_StageNotFound;
+		}
+
+		//Load each stage if their hashes are not null
+
+		if (header.stageVertex)
+		{
+			if (auto err = loadShaderStage(cacheDir, header.stageVertex, program.shVertex, EShaderStage::eShaderStageVertex))
+				return err;
+		}
+
+		if (header.stageHull)
+		{
+			if (auto err = loadShaderStage(cacheDir, header.stageHull, program.shHull, EShaderStage::eShaderStageHull))
+				return err;
+		}
+
+		if (header.stageDomain)
+		{
+			if (auto err = loadShaderStage(cacheDir, header.stageDomain, program.shDomain, EShaderStage::eShaderStageDomain))
+				return err;
+		}
+
+		if (header.stageGeometry)
+		{
+			if (auto err = loadShaderStage(cacheDir, header.stageGeometry, program.shGeometry, EShaderStage::eShaderStageGeometry))
+				return err;
+		}
+
+		if (header.stagePixel)
+		{
+			if (auto err = loadShaderStage(cacheDir, header.stagePixel, program.shPixel, EShaderStage::eShaderStagePixel))
+				return err;
+		}
+
+		ShaderId idx = programs.size();
+		programs.push_back(program);
+		programMap.insert(make_pair(shaderName, idx));
 	}
-
-	ifstream file(shaderFile.str(), ios::binary);
-
-	//Read header
-	SShaderObjectHeader header;
-	file.read((char*)&header, sizeof(SShaderObjectHeader));
-
-	if (file.fail())
+	else
 	{
-		return eShaderManagerStatus_Fail;
+		ShaderId idx = it->second;
+		program = programs.at(idx);
 	}
-
-	//Validate header
-	if (header.tag != 'OHST')
-	{
-		return eShaderManagerStatus_StageCorrupt;
-	}
-
-	//Determine location of shader programs based in render api selected
-
-	SGraphicsSystemConfig config;
-	system->getConfiguration(config);
-
-	EShaderBackend backendId;
-	switch (config.apiEnum)
-	{
-	case eRenderApiD3D11:
-		backendId = EShaderBackend::eBackendHLSL_SM5;
-		break;
-	default:
-		backendId = (EShaderBackend)0;
-	}
-
-	Path cacheDir = shaderPath;
-	cacheDir.addDirectories("cache");
-	cacheDir.addDirectories(idToStr(backendId));
-
-	if (!isDirectory(cacheDir))
-	{
-		tswarn("a shader cache directory could not be found for this Renderer configuration (%)", config.apiEnum);
-		return eShaderManagerStatus_StageNotFound;
-	}
-
-	//Load each stage if their hashes are not null
-
-	if (header.stageVertex)
-	{
-		if (auto err = loadShaderStage(system->getApi(), cacheDir, header.stageVertex, program.shVertex, EShaderStage::eShaderStageVertex))
-			return err;
-	}
-
-	if (header.stageHull)
-	{
-		if (auto err = loadShaderStage(system->getApi(), cacheDir, header.stageHull, program.shHull, EShaderStage::eShaderStageHull))
-			return err;
-	}
-
-	if (header.stageDomain)
-	{
-		if (auto err = loadShaderStage(system->getApi(), cacheDir, header.stageDomain, program.shDomain, EShaderStage::eShaderStageDomain))
-			return err;
-	}
-
-	if (header.stageGeometry)
-	{
-		if (auto err = loadShaderStage(system->getApi(), cacheDir, header.stageGeometry, program.shGeometry, EShaderStage::eShaderStageGeometry))
-			return err;
-	}
-
-	if (header.stagePixel)
-	{
-		if (auto err = loadShaderStage(system->getApi(), cacheDir, header.stagePixel, program.shPixel, EShaderStage::eShaderStagePixel))
-			return err;
-	}
-
-	string name = fileName.str();
-	name.erase(name.find_last_of('.'));
-
-	programs.push_back(program);
 
 	return eShaderManagerStatus_Ok;
 }
@@ -295,7 +349,7 @@ EShaderManagerStatus CShaderManager::load(const char* shaderName, SShaderProgram
 		return eShaderManagerStatus_NullManager;
 	}
 	
-	return pManage->loadFromFile((string)shaderName + ".tsh", program);
+	return pManage->loadProgram(shaderName, program);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
