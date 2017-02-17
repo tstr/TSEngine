@@ -16,27 +16,27 @@ namespace ts
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		//Pipeline states
-		ComPtr<ID3D11BlendState> blendState;
-		ComPtr<ID3D11RasterizerState> rasterState;
-		ComPtr<ID3D11DepthStencilState> depthState;
+		ID3D11BlendState* blendState			= nullptr;
+		ID3D11RasterizerState* rasterState		= nullptr;
+		ID3D11DepthStencilState* depthState		= nullptr;
 		
 		//Shaders
-		ComPtr<ID3D11VertexShader> shaderVertex;
-		ComPtr<ID3D11PixelShader> shaderPixel;
-		ComPtr<ID3D11GeometryShader> shaderGeometry;
-		ComPtr<ID3D11HullShader> shaderHull;
-		ComPtr<ID3D11DomainShader> shaderDomain;
+		ID3D11VertexShader* shaderVertex		= nullptr;
+		ID3D11PixelShader* shaderPixel			= nullptr;
+		ID3D11GeometryShader* shaderGeometry	= nullptr;
+		ID3D11HullShader* shaderHull			= nullptr;
+		ID3D11DomainShader* shaderDomain		= nullptr;
 		
 		//Textures
-		ComPtr<ID3D11ShaderResourceView> shaderResourceViews[SDrawCommand::eMaxTextureSlots];
-		ComPtr<ID3D11SamplerState> shaderSamplerStates[SDrawCommand::eMaxTextureSamplerSlots];
+		ID3D11ShaderResourceView* shaderResourceViews[SDrawCommand::eMaxTextureSlots] = { nullptr };
+		ID3D11SamplerState* shaderSamplerStates[SDrawCommand::eMaxTextureSamplerSlots] = { nullptr };
 		
 		//Buffers
-		ComPtr<ID3D11Buffer> indexBuffer;
-		ComPtr<ID3D11Buffer> constantBuffers[SDrawCommand::eMaxConstantBuffers];
-		ComPtr<ID3D11Buffer> vertexBuffers[SDrawCommand::eMaxVertexBuffers];
-		uint32 vertexStrides[SDrawCommand::eMaxVertexBuffers];
-		uint32 vertexOffsets[SDrawCommand::eMaxVertexBuffers];
+		ID3D11Buffer* indexBuffer = nullptr;
+		ID3D11Buffer* constantBuffers[SDrawCommand::eMaxConstantBuffers] = { nullptr };
+		ID3D11Buffer* vertexBuffers[SDrawCommand::eMaxVertexBuffers] = { nullptr };
+		uint32 vertexStrides[SDrawCommand::eMaxVertexBuffers] = { 0 };
+		uint32 vertexOffsets[SDrawCommand::eMaxVertexBuffers] = { 0 };
 		
 		ComPtr<ID3D11InputLayout> inputLayout;
 		D3D11_PRIMITIVE_TOPOLOGY topology;

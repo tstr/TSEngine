@@ -62,9 +62,17 @@ ERenderStatus D3D11Render::createDrawCommand(HDrawCmd& hDraw, const SDrawCommand
 	/////////////////////////////////////////////////////////////////////////////////////////
 	//Render states
 	
-	m_stateManager.demandDepthState(cmdDesc.depthState, d3dCmd->depthState.GetAddressOf());
-	m_stateManager.demandBlendState(cmdDesc.blendState, d3dCmd->blendState.GetAddressOf());
-	m_stateManager.demandRasterizerState(cmdDesc.rasterState, d3dCmd->rasterState.GetAddressOf());
+	ComPtr<ID3D11DepthStencilState> depthState;
+	ComPtr<ID3D11BlendState> blendState;
+	ComPtr<ID3D11RasterizerState> rasterState;
+
+	m_stateManager.demandDepthState(cmdDesc.depthState, depthState.GetAddressOf());
+	m_stateManager.demandBlendState(cmdDesc.blendState, blendState.GetAddressOf());
+	m_stateManager.demandRasterizerState(cmdDesc.rasterState, rasterState.GetAddressOf());
+
+	d3dCmd->depthState = depthState.Get();
+	d3dCmd->blendState = blendState.Get();
+	d3dCmd->rasterState = rasterState.Get();
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	//Set all buffers
@@ -115,7 +123,7 @@ ERenderStatus D3D11Render::createDrawCommand(HDrawCmd& hDraw, const SDrawCommand
 
 		if (D3D11Texture* tex = D3D11Texture::upcast(unit.texture))
 		{
-			d3dCmd->shaderResourceViews[i] = tex->getView(unit.arrayIndex, unit.arrayCount, unit.textureType);
+			d3dCmd->shaderResourceViews[i] = tex->getView(unit.arrayIndex, unit.arrayCount, unit.textureType).Get();
 		}
 	}
 
@@ -124,10 +132,14 @@ ERenderStatus D3D11Render::createDrawCommand(HDrawCmd& hDraw, const SDrawCommand
 	{
 		if (cmdDesc.textureSamplers[i].enabled)
 		{
+			ComPtr<ID3D11SamplerState> sampler;
+
 			m_stateManager.demandSamplerState(
 				cmdDesc.textureSamplers[i],
-				d3dCmd->shaderSamplerStates[i].GetAddressOf()
+				sampler.GetAddressOf()
 			);
+
+			d3dCmd->shaderSamplerStates[i] = sampler.Get();
 		}
 	}
 

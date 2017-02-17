@@ -48,22 +48,22 @@ void D3D11RenderContext::draw(
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//Set shaders
-	m_context->VSSetShader(command->shaderVertex.Get(), nullptr, 0);
-	m_context->PSSetShader(command->shaderPixel.Get(), nullptr, 0);
-	m_context->GSSetShader(command->shaderGeometry.Get(), nullptr, 0);
-	m_context->DSSetShader(command->shaderDomain.Get(), nullptr, 0);
-	m_context->HSSetShader(command->shaderHull.Get(), nullptr, 0);
+	m_context->VSSetShader(command->shaderVertex, nullptr, 0);
+	m_context->PSSetShader(command->shaderPixel, nullptr, 0);
+	m_context->GSSetShader(command->shaderGeometry, nullptr, 0);
+	m_context->DSSetShader(command->shaderDomain, nullptr, 0);
+	m_context->HSSetShader(command->shaderHull, nullptr, 0);
 
 	//Set states
-	m_context->RSSetState(command->rasterState.Get());
+	m_context->RSSetState(command->rasterState);
 	const float blendfactor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	m_context->OMSetBlendState(command->blendState.Get(), blendfactor, UINT_MAX);
-	m_context->OMSetDepthStencilState(command->depthState.Get(), 0);
+	m_context->OMSetBlendState(command->blendState, blendfactor, UINT_MAX);
+	m_context->OMSetDepthStencilState(command->depthState, 0);
 
 	//Bind textures
 	for (int i = 0; i < SDrawCommand::eMaxTextureSlots; i++)
 	{
-		auto srv = command->shaderResourceViews[i].Get();
+		auto srv = command->shaderResourceViews[i];
 		m_context->PSSetShaderResources(i, 1, &srv);
 		m_context->DSSetShaderResources(i, 1, &srv);
 	}
@@ -71,19 +71,19 @@ void D3D11RenderContext::draw(
 	//Bind texture samples
 	for (int i = 0; i < SDrawCommand::eMaxTextureSamplerSlots; i++)
 	{
-		auto sampler = command->shaderSamplerStates[i].Get();
+		auto sampler = command->shaderSamplerStates[i];
 		m_context->PSSetSamplers(i, 1, &sampler);
 		m_context->DSSetSamplers(i, 1, &sampler);
 	}
 
 
 	//Bind index buffer
-	m_context->IASetIndexBuffer(command->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	m_context->IASetIndexBuffer(command->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	//Bind vertex buffers
 	for (int i = 0; i < SDrawCommand::eMaxVertexBuffers; i++)
 	{
-		auto v = command->vertexBuffers[i].Get();
+		auto v = command->vertexBuffers[i];
 		uint32 offset = command->vertexOffsets[i];
 		uint32 stride = command->vertexStrides[i];
 
@@ -93,7 +93,7 @@ void D3D11RenderContext::draw(
 	//Bind constant buffers
 	for (int i = 0; i < SDrawCommand::eMaxConstantBuffers; i++)
 	{
-		ID3D11Buffer* u = command->constantBuffers[0].Get();
+		ID3D11Buffer* u = command->constantBuffers[0];
 		m_context->VSSetConstantBuffers(i, 1, &u);
 		m_context->PSSetConstantBuffers(i, 1, &u);
 		m_context->GSSetConstantBuffers(i, 1, &u);
