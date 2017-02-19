@@ -5,8 +5,7 @@
 #pragma once
 
 #include <tsgraphics/abi.h>
-#include <tsgraphics/api/renderapi.h>
-#include <tsgraphics/api/rendercommon.h>
+#include <tsgraphics/api/RenderDef.h>
 
 #include <tscore/ptr.h>
 #include <tscore/debug/assert.h>

@@ -171,7 +171,7 @@ CEngineEnv::CEngineEnv(const SEngineStartupParams& params)
 	graphicscfg.windowHandle = m_window->nativeHandle();
 	graphicscfg.width = width;
 	graphicscfg.height = height;
-	graphicscfg.apiEnum = ERenderApiID::eRenderApiD3D11;
+	graphicscfg.apiid = EGraphicsAPIID::eGraphicsAPI_D3D11;
 	graphicscfg.displaymode = (EDisplayMode)(displaymode + 1);
 	graphicscfg.rootpath = assetpath;
 	graphicscfg.multisampling.count = samplecount;

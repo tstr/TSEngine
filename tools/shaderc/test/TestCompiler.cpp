@@ -17,7 +17,7 @@
 #include <thread>
 
 #include <tsgraphics/api/RenderApi.h>
-#include <tsgraphics/api/RenderCommon.h>
+#include <tsgraphics/api/RenderDef.h>
 #include <tsgraphics/GraphicsSystem.h>
 
 #include <tscore/filesystem/path.h>
@@ -186,7 +186,7 @@ int main(int argc, char** argv)
 
 	//Configure system
 	SGraphicsSystemConfig config;
-	config.apiEnum = eRenderApiD3D11;		//For now just test in D3D11 configuration
+	config.apiid = eGraphicsAPI_D3D11;		//For now just test in D3D11 configuration
 	config.displaymode = eDisplayWindowed;
 	config.height = 1;
 	config.width = 1;
@@ -199,12 +199,12 @@ int main(int argc, char** argv)
 	GraphicsSystem system(config);
 	print("System initialized.");
 
-	SShaderProgram program;
-
+	ShaderId programId = 0;
+	
 	print("Beginning shader verification...");
 
 	//Try and load a shader
-	if (EShaderManagerStatus status = system.getShaderManager().load("Shader", program))
+	if (EShaderManagerStatus status = system.getShaderManager().load("Shader", programId))
 	{
 		print("ERROR: Shader failed to verify (" + to_string(status) + ")");
 		return (int)status;

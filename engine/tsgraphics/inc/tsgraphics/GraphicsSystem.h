@@ -14,8 +14,7 @@
 #include <tscore/maths.h>
 #include <tscore/system/thread.h>
 
-#include <tsgraphics/api/renderapi.h>
-#include <tsgraphics/api/rendercommon.h>
+#include <tsgraphics/api/RenderDef.h>
 
 #include <tsgraphics/ShaderManager.h>
 #include <tsgraphics/TextureManager.h>
@@ -25,10 +24,10 @@
 
 namespace ts
 {
-	enum ERenderApiID
+	enum EGraphicsAPIID
 	{
-		eRenderApiNull	= 0,
-		eRenderApiD3D11 = 1
+		eGraphicsAPI_Null  = 0,
+		eGraphicsAPI_D3D11 = 1
 	};
 
 	enum EDisplayMode
@@ -51,13 +50,14 @@ namespace ts
 		EDisplayMode displaymode = eDisplayWindowed;
 
 		//Graphics API id
-		ERenderApiID apiEnum = ERenderApiID::eRenderApiNull;
+		EGraphicsAPIID apiid = EGraphicsAPIID::eGraphicsAPI_Null;
 
 		//Root asset loading path for textures/shaders/models
 		Path rootpath;
 	};
 
 	struct IRender;
+	struct IRenderContext;
 	
 	class GraphicsSystem
 	{
@@ -70,7 +70,7 @@ namespace ts
 		CShaderManager m_shaderManager;
 		CMeshManager m_meshManager;
 
-		int TSGRAPHICS_API loadApi(ERenderApiID id);
+		int TSGRAPHICS_API loadApi(EGraphicsAPIID id);
 		int TSGRAPHICS_API unloadApi();
 
 		SGraphicsSystemConfig m_config;

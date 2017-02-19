@@ -34,6 +34,7 @@ set(tscore_inc
 	inc/tscore/strings.h
 	inc/tscore/delegate.h
 	inc/tscore/ptr.h
+	inc/tscore/table.h
 )
 
 SET(tscore_src

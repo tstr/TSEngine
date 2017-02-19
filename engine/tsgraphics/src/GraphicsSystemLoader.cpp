@@ -6,13 +6,15 @@
 #include <tsgraphics/graphicssystem.h>
 #include <tscore/debug/log.h>
 
+#include <tsgraphics/api/RenderApi.h>
+
 using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////s
 
-int GraphicsSystem::loadApi(ERenderApiID id)
+int GraphicsSystem::loadApi(EGraphicsAPIID id)
 {
-	if (id != eRenderApiD3D11)
+	if (id != eGraphicsAPI_D3D11)
 	{
 		tswarn("API's other than direct3d 11 are not supported at the moment.");
 		return false;

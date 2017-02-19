@@ -5,6 +5,8 @@
 #include <tsgraphics/graphicssystem.h>
 #include <tsgraphics/texturemanager.h>
 
+#include <tsgraphics/api/RenderApi.h>
+
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 #include <tscore/filesystem/pathhelpers.h>
