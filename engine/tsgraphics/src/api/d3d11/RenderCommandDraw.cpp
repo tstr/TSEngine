@@ -183,7 +183,7 @@ int createInputLayout(ID3D11Device* device, D3D11Shader* vertexShader, const SVe
 	{
 		elements[i].AlignedByteOffset = attrib[i].byteOffset;
 		elements[i].InputSlot = attrib[i].bufferSlot;
-		elements[i].SemanticName = attrib[i].semanticName;
+		elements[i].SemanticName = attrib[i].semanticName.str();
 
 		elements[i].SemanticIndex = 0;
 		elements[i].InstanceDataStepRate = 0;
@@ -215,7 +215,7 @@ int createInputLayout(ID3D11Device* device, D3D11Shader* vertexShader, const SVe
 				{
 					elements[j + i].AlignedByteOffset = attrib[i].byteOffset + (j * sizeof(Vector));
 					elements[j + i].InputSlot = attrib[i].bufferSlot;
-					elements[j + i].SemanticName = attrib[i].semanticName;
+					elements[j + i].SemanticName = attrib[i].semanticName.str();
 
 					elements[j + i].SemanticIndex = j;
 					elements[j + i].InstanceDataStepRate = 0;

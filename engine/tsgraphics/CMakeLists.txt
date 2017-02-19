@@ -9,16 +9,12 @@ set(tsgraphics_inc
 	inc/tsgraphics/GraphicsSystem.h
 	inc/tsgraphics/TextureManager.h
 	inc/tsgraphics/ShaderManager.h
+	inc/tsgraphics/MeshManager.h
 	
 	inc/tsgraphics/api/RenderApi.h
 	inc/tsgraphics/api/RenderCommon.h
-	
-	inc/tsgraphics/indexbuffer.h
-	inc/tsgraphics/vertexbuffer.h
-	inc/tsgraphics/uniformbuffer.h
-	inc/tsgraphics/buffercommon.h
-	inc/tsgraphics/colour.h
 
+	inc/tsgraphics/Colour.h
 	inc/tsgraphics/model/modeldefs.h
 )
 
@@ -60,8 +56,8 @@ SET(tsgraphics_src
 	src/GraphicsSystemLoader.cpp
 	src/TextureManager.cpp
 	src/ShaderManager.cpp
-	
-	src/Buffer.cpp
+	src/MeshManager.cpp
+	src/VertexBuilder.cpp
 	
 	src/platform/Nvoptimus.cpp
 	src/platform/Borderless.h

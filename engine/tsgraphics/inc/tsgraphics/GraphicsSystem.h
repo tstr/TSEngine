@@ -17,12 +17,9 @@
 #include <tsgraphics/api/renderapi.h>
 #include <tsgraphics/api/rendercommon.h>
 
-#include <tsgraphics/shadermanager.h>
-#include <tsgraphics/texturemanager.h>
-
-#include "indexbuffer.h"
-#include "vertexbuffer.h"
-#include "uniformbuffer.h"
+#include <tsgraphics/ShaderManager.h>
+#include <tsgraphics/TextureManager.h>
+#include <tsgraphics/MeshManager.h>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -71,6 +68,7 @@ namespace ts
 
 		CTextureManager m_textureManager;
 		CShaderManager m_shaderManager;
+		CMeshManager m_meshManager;
 
 		int TSGRAPHICS_API loadApi(ERenderApiID id);
 		int TSGRAPHICS_API unloadApi();
@@ -87,6 +85,8 @@ namespace ts
 		
 		CTextureManager& getTextureManager() { return m_textureManager; }
 		CShaderManager& getShaderManager() { return m_shaderManager; }
+		CMeshManager& getMeshManager() { return m_meshManager; }
+
 		IRender* const getApi() const { return m_api; }
 		IRenderContext* const getContext() const { return m_context; }
 
