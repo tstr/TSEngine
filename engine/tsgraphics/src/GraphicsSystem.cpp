@@ -4,6 +4,7 @@
 
 #include <tsgraphics/graphicssystem.h>
 #include <tscore/debug/log.h>
+#include <tsgraphics/api/RenderApi.h>
 
 #include "platform/borderless.h"
 
@@ -16,8 +17,8 @@ GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg) :
 	m_config(cfg),
 	m_textureManager(this)
 {
-	if (int err = loadApi(cfg.apiEnum))
-		tserror("Unable to load graphics api (id:%)(error:%)", cfg.apiEnum, err);
+	if (int err = loadApi(cfg.apiid))
+		tserror("Unable to load graphics api (id:%)(error:%)", cfg.apiid, err);
 
 	m_api->createContext(&m_context);
 

@@ -5,6 +5,7 @@
 #include <tsengine.h>
 #include <tscore/debug/log.h>
 #include <tsgraphics/GraphicsSystem.h>
+#include <tsgraphics/api/RenderApi.h>
 #include <tsengine/input/inputmodule.h>
 
 using namespace std;

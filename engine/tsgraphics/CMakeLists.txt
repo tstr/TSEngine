@@ -12,7 +12,7 @@ set(tsgraphics_inc
 	inc/tsgraphics/MeshManager.h
 	
 	inc/tsgraphics/api/RenderApi.h
-	inc/tsgraphics/api/RenderCommon.h
+	inc/tsgraphics/api/RenderDef.h
 
 	inc/tsgraphics/Colour.h
 	inc/tsgraphics/model/modeldefs.h

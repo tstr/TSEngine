@@ -5,6 +5,9 @@
 #include <tsgraphics/GraphicsSystem.h>
 #include <tsgraphics/MeshManager.h>
 
+#include <tsgraphics/api/RenderApi.h>
+#include <tscore/table.h>
+
 #include <map>
 #include <vector>
 
@@ -17,7 +20,7 @@ using namespace ts;
 struct CMeshManager::Impl
 {
 	GraphicsSystem* system = nullptr;
-	vector<SMeshInstance> meshPool;
+	Table<SMeshInstance, MeshId> meshPool;
 
 	void clearPool()
 	{
@@ -28,7 +31,7 @@ struct CMeshManager::Impl
 
 		IRender* api = system->getApi();
 
-		for (SMeshInstance& inst : meshPool)
+		for (SMeshInstance& inst : meshPool.getArray())
 		{
 			if (inst.indexBuffer != HBUFFER_NULL)
 			{
@@ -119,9 +122,7 @@ EMeshStatus CMeshManager::createMesh(SVertexMesh& mesh, MeshId& id)
 
 	inst.vertexAttributeCount = (uint32)mesh.vertexAttributes.size();
 
-	pManage->meshPool.push_back(inst);
-
-	id = (MeshId)pManage->meshPool.size();
+	pManage->meshPool.create(inst, id);
 
 	return eMeshStatus_Ok;
 }
@@ -130,12 +131,11 @@ EMeshStatus CMeshManager::getMeshInstance(MeshId id, SMeshInstance& inst)
 {
 	size_t idx = (size_t)id - 1;
 
-	if (idx >= pManage->meshPool.size() || !pManage)
+
+	if (!pManage || !pManage->meshPool.get(id, inst))
 	{
 		return eMeshStatus_Fail;
 	}
-
-	inst = pManage->meshPool.at(idx);
 
 	return eMeshStatus_Ok;
 }

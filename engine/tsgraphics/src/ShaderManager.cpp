@@ -7,6 +7,8 @@
 #include <tsgraphics/graphicsSystem.h>
 #include <tsgraphics/shadermanager.h>
 
+#include <tsgraphics/api/RenderApi.h>
+
 #include <tscore/filesystem/pathhelpers.h>
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
@@ -276,9 +278,9 @@ EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderNa
 		system->getConfiguration(config);
 
 		EShaderBackend backendId;
-		switch (config.apiEnum)
+		switch (config.apiid)
 		{
-		case eRenderApiD3D11:
+		case eGraphicsAPI_D3D11:
 			backendId = EShaderBackend::eBackendHLSL_SM5;
 			break;
 		default:
@@ -291,7 +293,7 @@ EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderNa
 
 		if (!isDirectory(cacheDir))
 		{
-			tswarn("a shader cache directory could not be found for this Renderer configuration (%)", config.apiEnum);
+			tswarn("a shader cache directory could not be found for this Renderer configuration (%)", config.apiid);
 			return eShaderManagerStatus_StageNotFound;
 		}
 
