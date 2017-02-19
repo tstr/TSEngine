@@ -285,10 +285,12 @@ namespace ts
 		eChannelPerInstance
 	};
 
+	typedef StaticString<32> VertexAttributeString;
+
 	struct SVertexAttribute
 	{
 		uint32 bufferSlot = 0;
-		const char* semanticName = "";
+		VertexAttributeString semanticName;
 		uint32 byteOffset = 0;
 		EVertexAttributeType type = EVertexAttributeType::eAttribUnknown;
 		EVertexAttributeChannel channel = EVertexAttributeChannel::eChannelPerVertex;

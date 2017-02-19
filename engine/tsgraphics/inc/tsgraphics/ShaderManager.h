@@ -13,6 +13,7 @@
 #include <tscore/strings.h>
 
 #include <vector>
+#include <array>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -39,16 +40,24 @@ namespace ts
 		eShaderManagerStatus_StageCorrupt	 = 5
 	};
 
-	struct SShaderProgram
+	struct SShaderSignature
 	{
-		HShader shVertex = HSHADER_NULL;
-		HShader shDomain = HSHADER_NULL;
-		HShader shHull = HSHADER_NULL;
-		HShader shGeometry = HSHADER_NULL;
-		HShader shPixel = HSHADER_NULL;
+		std::array<VertexAttributeString, SDrawCommand::eMaxVertexAttributes> inputAttributes;
+		uint32 outputTargetCount = 0;
 	};
 
-	typedef uint64 ShaderId;
+	struct SShaderProgram
+	{
+		HShader hVertex = HSHADER_NULL;
+		HShader hDomain = HSHADER_NULL;
+		HShader hHull = HSHADER_NULL;
+		HShader hGeometry = HSHADER_NULL;
+		HShader hPixel = HSHADER_NULL;
+
+		SShaderSignature signature;
+	};
+
+	typedef uint32 ShaderId;
 	
 	class CShaderManager
 	{
@@ -74,9 +83,10 @@ namespace ts
 		TSGRAPHICS_API uint getFlags() const;
 		TSGRAPHICS_API void setFlags(uint f);
 
-
-		TSGRAPHICS_API EShaderManagerStatus load(const char* shaderName, SShaderProgram& program);
-		EShaderManagerStatus load(const std::string& shaderName, SShaderProgram& program) { return this->load(shaderName.c_str(), program); }
+		TSGRAPHICS_API EShaderManagerStatus load(const char* shaderName, ShaderId& id);
+		EShaderManagerStatus load(const std::string& shaderName, ShaderId& id) { return this->load(shaderName.c_str(), id); }
+		
+		TSGRAPHICS_API EShaderManagerStatus getProgram(ShaderId id, SShaderProgram& prog);
 	};
 }
 

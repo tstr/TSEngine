@@ -94,7 +94,7 @@ struct CShaderManager::Manager
 	//Finds shader stage in cache directory and loads it
 	EShaderManagerStatus loadShaderStage(Path cacheDir, Hash stageHash, HShader& shader, EShaderStage stage);
 	//Finds shader program in given file
-	EShaderManagerStatus loadProgram(const string& shaderName, SShaderProgram& program);
+	EShaderManagerStatus loadProgram(const string& shaderName, ShaderId& id);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,11 +132,11 @@ void CShaderManager::clear()
 
 		for (SShaderProgram& p : pManage->programs)
 		{
-			if (p.shVertex)   gfx->getApi()->destroyShader(p.shVertex);
-			if (p.shHull)     gfx->getApi()->destroyShader(p.shHull);
-			if (p.shDomain)   gfx->getApi()->destroyShader(p.shDomain);
-			if (p.shGeometry) gfx->getApi()->destroyShader(p.shGeometry);
-			if (p.shPixel)    gfx->getApi()->destroyShader(p.shPixel);
+			if (p.hVertex)   gfx->getApi()->destroyShader(p.hVertex);
+			if (p.hHull)     gfx->getApi()->destroyShader(p.hHull);
+			if (p.hDomain)   gfx->getApi()->destroyShader(p.hDomain);
+			if (p.hGeometry) gfx->getApi()->destroyShader(p.hGeometry);
+			if (p.hPixel)    gfx->getApi()->destroyShader(p.hPixel);
 		}
 
 		pManage->programs.clear();
@@ -239,7 +239,7 @@ EShaderManagerStatus CShaderManager::Manager::loadShaderStage(Path cacheDir, Has
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Manager methods
 
-EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderName, SShaderProgram& program)
+EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderName, ShaderId& id)
 {
 	Path shaderFile = shaderPath;
 	shaderFile.addDirectories(shaderName + ".tsh");
@@ -296,45 +296,45 @@ EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderNa
 		}
 
 		//Load each stage if their hashes are not null
+		SShaderProgram program;
 
 		if (header.stageVertex)
 		{
-			if (auto err = loadShaderStage(cacheDir, header.stageVertex, program.shVertex, EShaderStage::eShaderStageVertex))
+			if (auto err = loadShaderStage(cacheDir, header.stageVertex, program.hVertex, EShaderStage::eShaderStageVertex))
 				return err;
 		}
 
 		if (header.stageHull)
 		{
-			if (auto err = loadShaderStage(cacheDir, header.stageHull, program.shHull, EShaderStage::eShaderStageHull))
+			if (auto err = loadShaderStage(cacheDir, header.stageHull, program.hHull, EShaderStage::eShaderStageHull))
 				return err;
 		}
 
 		if (header.stageDomain)
 		{
-			if (auto err = loadShaderStage(cacheDir, header.stageDomain, program.shDomain, EShaderStage::eShaderStageDomain))
+			if (auto err = loadShaderStage(cacheDir, header.stageDomain, program.hDomain, EShaderStage::eShaderStageDomain))
 				return err;
 		}
 
 		if (header.stageGeometry)
 		{
-			if (auto err = loadShaderStage(cacheDir, header.stageGeometry, program.shGeometry, EShaderStage::eShaderStageGeometry))
+			if (auto err = loadShaderStage(cacheDir, header.stageGeometry, program.hGeometry, EShaderStage::eShaderStageGeometry))
 				return err;
 		}
 
 		if (header.stagePixel)
 		{
-			if (auto err = loadShaderStage(cacheDir, header.stagePixel, program.shPixel, EShaderStage::eShaderStagePixel))
+			if (auto err = loadShaderStage(cacheDir, header.stagePixel, program.hPixel, EShaderStage::eShaderStagePixel))
 				return err;
 		}
 
-		ShaderId idx = programs.size();
 		programs.push_back(program);
-		programMap.insert(make_pair(shaderName, idx));
+		id = (uint32)programs.size(); //ShaderId is equal to the index of the shader instance + 1 ie. the new size of the program cache
+		programMap.insert(make_pair(shaderName, id));
 	}
 	else
 	{
-		ShaderId idx = it->second;
-		program = programs.at(idx);
+		id = it->second;
 	}
 
 	return eShaderManagerStatus_Ok;
@@ -342,14 +342,33 @@ EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderNa
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-EShaderManagerStatus CShaderManager::load(const char* shaderName, SShaderProgram& program)
+EShaderManagerStatus CShaderManager::load(const char* shaderName, ShaderId& id)
 {
 	if (!pManage)
 	{
 		return eShaderManagerStatus_NullManager;
 	}
 	
-	return pManage->loadProgram(shaderName, program);
+	return pManage->loadProgram(shaderName, id);
+}
+
+EShaderManagerStatus CShaderManager::getProgram(ShaderId id, SShaderProgram& prog)
+{
+	if (!pManage)
+	{
+		return eShaderManagerStatus_NullManager;
+	}
+
+	uint32 idx = id - 1;
+
+	if (idx >= (uint32)pManage->programs.size())
+	{
+		return eShaderManagerStatus_ProgramNotFound;
+	}
+
+	prog = pManage->programs.at(idx);
+
+	return eShaderManagerStatus_Ok;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

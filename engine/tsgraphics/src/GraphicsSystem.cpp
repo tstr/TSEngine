@@ -27,6 +27,7 @@ GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg) :
 	sourcepath.addDirectories("shaders/bin");
 
 	m_shaderManager = CShaderManager(this, sourcepath, eShaderManagerFlag_Debug);
+	m_meshManager = CMeshManager(this);
 }
 
 GraphicsSystem::~GraphicsSystem()
@@ -36,6 +37,7 @@ GraphicsSystem::~GraphicsSystem()
 
 	//Destroy all cached shaders
 	m_shaderManager.clear();
+	m_meshManager.clear();
 
 	unloadApi();
 }

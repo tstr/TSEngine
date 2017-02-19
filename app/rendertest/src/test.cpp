@@ -28,13 +28,11 @@ private:
 	double timecount = 0.0;
 
 	HBuffer hConstants;
-	HBuffer hVertexBuffer;
-	HBuffer hIndexBuffer;
-
-	HTexture hTex;
-	HTexture hTexDisp;
-	HTexture hTexNorm;
-	HTexture hCube;
+	
+	HTexture hTex		= HTEXTURE_NULL;
+	HTexture hTexDisp	= HTEXTURE_NULL;
+	HTexture hTexNorm	= HTEXTURE_NULL;
+	HTexture hCube		= HTEXTURE_NULL;
 
 	HDrawCmd hDraw;
 	
@@ -73,12 +71,15 @@ public:
 		GraphicsSystem* gfx = m_env.getGraphics();
 		IRender* api = gfx->getApi();
 
+		ShaderId programId = 0;
 		SShaderProgram program;
-		if (EShaderManagerStatus s = gfx->getShaderManager().load("TestCube", program))
+		if (EShaderManagerStatus s = gfx->getShaderManager().load("TestCube", programId))
 		{
 			tserror("Unable to load shader \"TestShader\" : %", s);
 			return -1;
 		}
+
+		gfx->getShaderManager().getProgram(programId, program);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Create buffers
@@ -99,16 +100,55 @@ public:
 		vector<Vector> vertices;
 		vector<Vector> texcoords;
 		vector<Vector> normals;
-		generateCubeMesh(Vector(0.5f, 0.5f, 0.5f), indices, vertices, texcoords, normals);
-		*/
 
-		Vertex vertices[] =
+		generateCubeMesh(Vector(0.5f, 0.5f, 0.5f), indices, vertices, texcoords, normals);
+
+		//Create mesh
+		CVertexBuilder vertexBuilder;
+		SVertexMesh meshData;
+		vertexBuilder.begin((uint32)vertices.size(), (uint32)indices.size());
+		vertexBuilder.setAttributeStream("POSITION", vertices,  eAttribFloat3);
+		vertexBuilder.setAttributeStream("NORMAL",   normals,   eAttribFloat3);
+		vertexBuilder.setAttributeStream("TEXCOORD", texcoords, eAttribFloat2);
+		vertexBuilder.setAttributeStream("TANGENT",  normals,	eAttribFloat3);
+		vertexBuilder.setIndexStream(indices);
+		vertexBuilder.end(meshData);
+
+		meshData.vertexTopology = eTopologyTriangleList;
+
+		//*/
+
+		//*
+		Vector attributePositions[] =
 		{
-			//				Position		Normal			Texcoord			Tangent			
-			Vertex{ Vector(-1, -1, 0), Vector(0, 0, -1), Vector(0, 1), Vector(-1, 0, 0) }, //bottom left
-			Vertex{ Vector(-1, +1, 0), Vector(0, 0, -1), Vector(0, 0), Vector(-1, 0, 0) }, //top left
-			Vertex{ Vector(+1, +1, 0), Vector(0, 0, -1), Vector(1, 0), Vector(-1, 0, 0) }, //top right
-			Vertex{ Vector(+1, -1, 0), Vector(0, 0, -1), Vector(1, 1), Vector(-1, 0, 0) }, //bottom right
+			Vector(-1, -1, 0), //bottom left
+			Vector(-1, +1, 0), //top left
+			Vector(+1, +1, 0), //top right
+			Vector(+1, -1, 0), //bottom right
+		};
+
+		Vector attributeNormals[] =
+		{
+			Vector(0, 0, -1),
+			Vector(0, 0, -1),
+			Vector(0, 0, -1),
+			Vector(0, 0, -1),
+		};
+
+		Vector attributeTexcoords[] =
+		{
+			Vector(0, 1),
+			Vector(0, 0),
+			Vector(1, 0),
+			Vector(1, 1),
+		};
+
+		Vector attributeTangents[] =
+		{
+			Vector(-1, 0, 0),
+			Vector(-1, 0, 0),
+			Vector(-1, 0, 0),
+			Vector(-1, 0, 0),
 		};
 
 		Index indices[] =
@@ -117,30 +157,28 @@ public:
 			0, 2, 3
 		};
 
-		uint32 indexCount = (uint32)ARRAYSIZE(indices);
-		uint32 vertexCount = (uint32)ARRAYSIZE(vertices);
-
-		//Position vertex buffer
-		SBufferResourceData vdesc;
-		vdesc.memory = vertices;
-		vdesc.size = (uint32)vertexCount * sizeof(Vertex);
-		vdesc.usage = eBufferTypeVertex;
-		if (auto r = api->createResourceBuffer(hVertexBuffer, vdesc))
-			tswarn("buffer fail : %", r);
-
-		//Index buffer
-		SBufferResourceData idesc;
-		idesc.memory = indices;
-		idesc.size = (uint32)indexCount * sizeof(Index);
-		idesc.usage = eBufferTypeIndex;
-		if (auto r = api->createResourceBuffer(hIndexBuffer, idesc))
-			tswarn("buffer fail : %", r);
+		//Create mesh
+		CVertexBuilder vertexBuilder;
+		SVertexMesh meshData;
+		vertexBuilder.begin((uint32)ARRAYSIZE(attributePositions), (uint32)ARRAYSIZE(indices));
+		vertexBuilder.setAttributeStream("POSITION", (const ts::byte*)(attributePositions), sizeof(Vector), eAttribFloat3);
+		vertexBuilder.setAttributeStream("NORMAL",   (const ts::byte*)(attributeNormals),	sizeof(Vector), eAttribFloat3);
+		vertexBuilder.setAttributeStream("TEXCOORD", (const ts::byte*)(attributeTexcoords), sizeof(Vector), eAttribFloat2);
+		vertexBuilder.setAttributeStream("TANGENT",  (const ts::byte*)(attributeTangents),	sizeof(Vector), eAttribFloat3);
+		vertexBuilder.setIndexStream(indices);
+		vertexBuilder.end(meshData);
+		//*/
+		
+		MeshId id;
+		SMeshInstance meshInst;
+		gfx->getMeshManager().createMesh(meshData, id);
+		gfx->getMeshManager().getMeshInstance(id, meshInst);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Create texture resources
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		/*
+		//*
 		Vector texColours[] =
 		{
 			Vector(1, 0, 0, 1), Vector(0, 1, 0, 1), Vector(0, 0, 1, 1),
@@ -169,27 +207,36 @@ public:
 		}
 		//*/
 
-		//*
+		/*
 		CTexture2D tex;
 		if (!gfx->getTextureManager().loadTexture2D("logo_D.png", tex))
 		{
 			tswarn("tex fail");
 		}
-		hTex = tex.getHandle();
+		else
+		{
+			hTex = tex.getHandle();
+		}
 
 		CTexture2D texDisp;
 		if (!gfx->getTextureManager().loadTexture2D("logo_H.png", texDisp))
 		{
 			tswarn("tex fail");
 		}
-		hTexDisp = texDisp.getHandle();
+		else
+		{
+			hTexDisp = texDisp.getHandle();
+		}
 
 		CTexture2D texNorm;
 		if (!gfx->getTextureManager().loadTexture2D("logo_N.png", texNorm))
 		{
 			tswarn("tex fail");
 		}
-		hTexNorm = texNorm.getHandle();
+		else
+		{
+			hTexNorm = texNorm.getHandle();
+		}
 		
 		//*/
 
@@ -241,48 +288,38 @@ public:
 		drawCmd.vertexTopology = eTopologyPatchList3;
 		//drawCmd.vertexTopology = eTopologyTriangleList;
 		
-		drawCmd.shaderVertex = program.shVertex;
-		drawCmd.shaderPixel = program.shPixel;
-		drawCmd.shaderHull = program.shHull;
-		drawCmd.shaderDomain = program.shDomain;
+		drawCmd.shaderVertex =	program.hVertex;
+		drawCmd.shaderPixel  =	program.hPixel;
+		drawCmd.shaderHull   =	program.hHull;
+		drawCmd.shaderDomain =	program.hDomain;
 		
 		//drawCmd.vertexBuffers[0] = hVertexBuffer;
 		//drawCmd.vertexBuffers[1] = hTexcoordBuffer;
 		//drawCmd.vertexBuffers[2] = hNormalBuffer;
 		//drawCmd.indexBuffer = hIndexBuffer;
 
-		drawCmd.vertexBuffers[0] = hVertexBuffer;
+		//drawCmd.vertexBuffers[0] = hVertexBuffer;
+		//drawCmd.vertexOffsets[0] = 0;
+		//drawCmd.vertexStrides[0] = meshData.vertexStride;
+		//drawCmd.indexBuffer = hIndexBuffer;
+
+		//drawCmd.vertexCount = vertexCount;
+		//drawCmd.indexCount = indexCount;
+		//drawCmd.vertexAttribCount = 4;
+
+		drawCmd.vertexBuffers[0] = meshInst.vertexBuffers[0];
 		drawCmd.vertexOffsets[0] = 0;
-		drawCmd.vertexStrides[0] = sizeof(Vertex);
-		drawCmd.indexBuffer = hIndexBuffer;
+		drawCmd.vertexStrides[0] = meshInst.vertexStrides[0];
+		drawCmd.indexBuffer = meshInst.indexBuffer;
 
-		drawCmd.vertexCount = vertexCount;
-		drawCmd.indexCount = indexCount;
-		drawCmd.vertexAttribCount = 4;
+		drawCmd.vertexCount = meshInst.vertexCount;
+		drawCmd.indexCount = meshInst.indexCount;
+		drawCmd.vertexAttribCount = meshInst.vertexAttributeCount;
 
-		drawCmd.vertexAttribs[0].bufferSlot = 0;
-		drawCmd.vertexAttribs[0].byteOffset = sizeof(Vector) * 0;
-		drawCmd.vertexAttribs[0].channel = EVertexAttributeChannel::eChannelPerVertex;
-		drawCmd.vertexAttribs[0].semanticName = "POSITION";
-		drawCmd.vertexAttribs[0].type = EVertexAttributeType::eAttribFloat4;
-
-		drawCmd.vertexAttribs[1].bufferSlot = 0;
-		drawCmd.vertexAttribs[1].byteOffset = sizeof(Vector) * 1;
-		drawCmd.vertexAttribs[1].channel = EVertexAttributeChannel::eChannelPerVertex;
-		drawCmd.vertexAttribs[1].semanticName = "NORMAL";
-		drawCmd.vertexAttribs[1].type = EVertexAttributeType::eAttribFloat3;
-
-		drawCmd.vertexAttribs[2].bufferSlot = 0;
-		drawCmd.vertexAttribs[2].byteOffset = sizeof(Vector) * 2;
-		drawCmd.vertexAttribs[2].channel = EVertexAttributeChannel::eChannelPerVertex;
-		drawCmd.vertexAttribs[2].semanticName = "TEXCOORD";
-		drawCmd.vertexAttribs[2].type = EVertexAttributeType::eAttribFloat2;
-
-		drawCmd.vertexAttribs[3].bufferSlot = 0;
-		drawCmd.vertexAttribs[3].byteOffset = sizeof(Vector) * 3;
-		drawCmd.vertexAttribs[3].channel = EVertexAttributeChannel::eChannelPerVertex;
-		drawCmd.vertexAttribs[3].semanticName = "TANGENT";
-		drawCmd.vertexAttribs[3].type = EVertexAttributeType::eAttribFloat3;
+		for (int i = 0; i < meshData.vertexAttributes.size(); i++)
+		{
+			drawCmd.vertexAttribs[i] = meshData.vertexAttributes[i];
+		}
 
 		//Texture
 		drawCmd.textureUnits[0].arrayIndex = 0;
@@ -303,7 +340,8 @@ public:
 		drawCmd.textureSamplers[0].addressU = ETextureAddressMode::eTextureAddressClamp;
 		drawCmd.textureSamplers[0].addressV = ETextureAddressMode::eTextureAddressClamp;
 		drawCmd.textureSamplers[0].addressW = ETextureAddressMode::eTextureAddressClamp;
-		drawCmd.textureSamplers[0].filtering = eTextureFilterTrilinear;
+		//drawCmd.textureSamplers[0].filtering = eTextureFilterTrilinear;
+		drawCmd.textureSamplers[0].filtering = eTextureFilterPoint;
 		drawCmd.textureSamplers[0].enabled = true;
 		//Render states
 		drawCmd.depthState.enableDepth = true;
@@ -391,8 +429,6 @@ public:
 		api->destroyTexture(hTexDisp);
 		api->destroyTexture(hTexNorm);
 		//api->destroyTexture(hCube);
-		api->destroyBuffer(hIndexBuffer);
-		api->destroyBuffer(hVertexBuffer);
 		api->destroyDrawCommand(hDraw);
 	}
 };
