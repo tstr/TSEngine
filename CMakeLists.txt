@@ -181,6 +181,11 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/cfg")
 #	Projects
 ################################################################################################
 
+set(SAMPLES_FOLDER samples)
+set(ENGINE_FOLDER engine)
+set(TOOL_FOLDER tools)
+set(TEST_FOLDER tests)
+
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 #Sample applications
@@ -190,7 +195,7 @@ ADD_SUBDIRECTORY(samples/rendertest)
 SET_TARGET_PROPERTIES(
 	sceneviewer
 	rendertest
-	PROPERTIES FOLDER samples
+	PROPERTIES FOLDER ${SAMPLES_FOLDER}
 )
 
 #engine components
@@ -202,7 +207,7 @@ SET_TARGET_PROPERTIES(
 	tscore
 	tsengine
 	tsgraphics
-	PROPERTIES FOLDER engine
+	PROPERTIES FOLDER ${ENGINE_FOLDER}
 )
 
 ################################################################################################
@@ -216,7 +221,7 @@ SET_TARGET_PROPERTIES(
 	modelbuild
 	shaderc
 	texbuild
-	PROPERTIES FOLDER tools
+	PROPERTIES FOLDER ${TOOL_FOLDER}
 )
 
 SET_TARGET_PROPERTIES(
@@ -231,7 +236,7 @@ ADD_SUBDIRECTORY(assets/shaders)
 
 set_target_properties(
 	PrecompileShaders
-	PROPERTIES FOLDER applications
+	PROPERTIES FOLDER ${SAMPLES_FOLDER}
 )
 
 ADD_DEPENDENCIES(sceneviewer PrecompileShaders)
