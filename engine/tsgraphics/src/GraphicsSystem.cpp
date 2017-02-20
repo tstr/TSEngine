@@ -1,5 +1,5 @@
 /*
-	Graphics module source
+	Main Graphics Subsystem source
 */
 
 #include <tsgraphics/graphicssystem.h>
@@ -11,51 +11,110 @@
 using namespace std;
 using namespace ts;
 
-/////////////////////////////////////////////////////////////////////////////////////////////////s
-
-GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg) :
-	m_config(cfg),
-	m_textureManager(this)
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//	Internal implementation
+/////////////////////////////////////////////////////////////////////////////////////////////////
+struct GraphicsSystem::System
 {
-	if (int err = loadApi(cfg.apiid))
-		tserror("Unable to load graphics api (id:%)(error:%)", cfg.apiid, err);
+	GraphicsSystem* system;
+	SGraphicsSystemConfig systemConfig;
 
-	m_api->createContext(&m_context);
+	CTextureManager textureManager;
+	CShaderManager shaderManager;
+	CMeshManager meshManager;
 
-	m_textureManager.setRootpath(m_config.rootpath);
+	IRenderContext* context;
 
-	Path sourcepath(m_config.rootpath);
+	System(GraphicsSystem* system, const SGraphicsSystemConfig& cfg) :
+		system(system),
+		systemConfig(cfg),
+		textureManager(system),
+		context(nullptr)
+	{
+
+	}
+
+	~System()
+	{
+
+	}
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg)
+{
+	//Configure low level render api
+	SRenderApiConfig apicfg;
+	apicfg.adapterIndex = 0; //hard code the adapter for now
+	apicfg.display.resolutionH = cfg.height;
+	apicfg.display.resolutionW = cfg.width;
+	apicfg.display.fullscreen = (cfg.displaymode == EDisplayMode::eDisplayFullscreen);
+	apicfg.display.multisampleCount = cfg.multisampling.count;
+	apicfg.windowHandle = cfg.windowHandle;
+
+#ifdef _DEBUG
+	apicfg.flags |= ERenderApiFlags::eFlagDebug;
+#endif
+
+	//Initialize low level render API
+	this->init(cfg.apiid, apicfg);
+
+	//Allocate internal implementation
+	pSystem.reset(new System(this, cfg));
+
+	//Initialize texture/shader/mesh managers
+	pSystem->textureManager.setRootpath(cfg.rootpath);
+
+	Path sourcepath(cfg.rootpath);
 	sourcepath.addDirectories("shaders/bin");
 
-	m_shaderManager = CShaderManager(this, sourcepath, eShaderManagerFlag_Debug);
-	m_meshManager = CMeshManager(this);
+	pSystem->shaderManager = CShaderManager(this, sourcepath, eShaderManagerFlag_Debug);
+	pSystem->meshManager = CMeshManager(this);
+	
+	//Create main render context
+	getApi()->createContext(&pSystem->context);
 }
 
 GraphicsSystem::~GraphicsSystem()
 {
-	m_api->destroyContext(m_context);
-	m_context = nullptr;
+	if (pSystem)
+	{
+		getApi()->destroyContext(pSystem->context);
+		pSystem->context = nullptr;
 
-	//Destroy all cached shaders
-	m_shaderManager.clear();
-	m_meshManager.clear();
+		//Destroy all cached shaders
+		pSystem->shaderManager.clear();
+		pSystem->meshManager.clear();
 
-	unloadApi();
+		//Release all resources before deinitialization (causes memory leak otherwise)
+		pSystem.reset();
+
+		//Deinitialize low level render api
+		this->deinit();
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 void GraphicsSystem::setDisplayConfiguration(EDisplayMode displaymode, uint32 w, uint32 h, SMultisampling sampling)
 {
+	if (!pSystem)
+	{
+		return;
+	}
+
+	auto& config = pSystem->systemConfig;
+
 	SDisplayConfig display;
-	m_api->getDisplayConfiguration(display);
+	getApi()->getDisplayConfiguration(display);
 
 	//Update multisample count
 	if (sampling.count)
 	{
-		if (m_config.multisampling.count != sampling.count)
+		if (config.multisampling.count != sampling.count)
 		{
-			m_config.multisampling = sampling;
+			config.multisampling = sampling;
 			display.multisampleCount = sampling.count;
 		}
 	}
@@ -63,14 +122,14 @@ void GraphicsSystem::setDisplayConfiguration(EDisplayMode displaymode, uint32 w,
 	//Update fullscreen state
 	if (displaymode)
 	{
-		if (m_config.displaymode != displaymode)
+		if (config.displaymode != displaymode)
 		{
-			intptr winhandle = m_config.windowHandle;
+			intptr winhandle = config.windowHandle;
 
 			if (displaymode == eDisplayFullscreen)
 			{
 				//Exit borderless if previous mode was borderless
-				if (m_config.displaymode == eDisplayBorderless)
+				if (config.displaymode == eDisplayBorderless)
 					exitBorderless(winhandle);
 
 				//Enter fullscreen
@@ -79,7 +138,7 @@ void GraphicsSystem::setDisplayConfiguration(EDisplayMode displaymode, uint32 w,
 			else if (displaymode == eDisplayBorderless)
 			{
 				//Exit fullscreen if the previous mode was fullscreen
-				if (m_config.displaymode == eDisplayFullscreen)
+				if (config.displaymode == eDisplayFullscreen)
 					display.fullscreen = false;
 				
 				//Enter borderless fullscreen
@@ -88,48 +147,91 @@ void GraphicsSystem::setDisplayConfiguration(EDisplayMode displaymode, uint32 w,
 			else if (displaymode == eDisplayWindowed) //Windowed mode
 			{
 				//Exit fullscreen if the previous mode was fullscreen
-				if (m_config.displaymode == eDisplayFullscreen)
+				if (config.displaymode == eDisplayFullscreen)
 					display.fullscreen = false;
 				//Exit borderless if previous mode was borderless
-				else if (m_config.displaymode == eDisplayBorderless)
+				else if (config.displaymode == eDisplayBorderless)
 					exitBorderless(winhandle);
 
 				//Do nothing
 			}
 
-			m_config.displaymode = displaymode;
+			config.displaymode = displaymode;
 		}
 	}
 
 	//Update resolution
 	if (w || h)
 	{
-		w = (w) ? w : m_config.width;
-		h = (h) ? h : m_config.height;
+		w = (w) ? w : config.width;
+		h = (h) ? h : config.height;
 
-		if (m_config.width != w || m_config.height != h)
+		if (config.width != w || config.height != h)
 		{
 			display.resolutionH = h;
 			display.resolutionW = w;
 
-			m_config.width = w;
-			m_config.height = h;
+			config.width = w;
+			config.height = h;
 		}
 	}
 
-	m_api->setDisplayConfiguration(display);
+	getApi()->setDisplayConfiguration(display);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//	Getters
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+void GraphicsSystem::getConfiguration(SGraphicsSystemConfig& cfg)
+{
+	if (pSystem)
+	{
+		cfg = pSystem->systemConfig;
+	}
+}
+
+CTextureManager* GraphicsSystem::getTextureManager()
+{
+	return &pSystem->textureManager;
+}
+
+CShaderManager* GraphicsSystem::getShaderManager()
+{
+	return &pSystem->shaderManager;
+}
+
+CMeshManager* GraphicsSystem::getMeshManager()
+{
+	return &pSystem->meshManager;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 void GraphicsSystem::drawBegin(const Vector& colour)
 {
-	m_api->drawBegin(colour);
+	if (pSystem)
+	{
+		getApi()->drawBegin(colour);
+	}
 }
 
 void GraphicsSystem::drawEnd()
 {
-	m_api->drawEnd(&m_context, 1);
+	if (pSystem)
+	{
+		getApi()->drawEnd(&pSystem->context, 1);
+	}
+}
+
+IRenderContext* const GraphicsSystem::getContext() const
+{
+	if (pSystem)
+	{
+		return pSystem->context;
+	}
+
+	return nullptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

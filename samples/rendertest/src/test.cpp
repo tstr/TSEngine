@@ -74,13 +74,13 @@ public:
 
 		ShaderId programId = 0;
 		SShaderProgram program;
-		if (EShaderManagerStatus s = gfx->getShaderManager().load("TestCube", programId))
+		if (EShaderManagerStatus s = gfx->getShaderManager()->load("TestCube", programId))
 		{
 			tserror("Unable to load shader \"TestShader\" : %", s);
 			return -1;
 		}
 
-		gfx->getShaderManager().getProgram(programId, program);
+		gfx->getShaderManager()->getProgram(programId, program);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Create buffers
@@ -172,8 +172,8 @@ public:
 		
 		MeshId id;
 		SMeshInstance meshInst;
-		gfx->getMeshManager().createMesh(meshData, id);
-		gfx->getMeshManager().getMeshInstance(id, meshInst);
+		gfx->getMeshManager()->createMesh(meshData, id);
+		gfx->getMeshManager()->getMeshInstance(id, meshInst);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Create texture resources

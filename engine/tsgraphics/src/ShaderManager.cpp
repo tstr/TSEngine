@@ -4,9 +4,7 @@
 	todo: implement actual lifetime management of shader resources - at the moment shader resources cannot be released
 */
 
-#include <tsgraphics/graphicsSystem.h>
 #include <tsgraphics/shadermanager.h>
-
 #include <tsgraphics/api/RenderApi.h>
 
 #include <tscore/filesystem/pathhelpers.h>
@@ -83,7 +81,7 @@ struct SShaderObjectHeader
 //Internal implementation
 struct CShaderManager::Manager
 {
-	GraphicsSystem* system = nullptr;
+	GraphicsCore* system = nullptr;
 
 	Path shaderPath;
 
@@ -103,7 +101,7 @@ struct CShaderManager::Manager
 //	ctor/dtor
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CShaderManager::CShaderManager(GraphicsSystem* system, const Path& shaderpath, uint flags) :
+CShaderManager::CShaderManager(GraphicsCore* system, const Path& shaderpath, uint flags) :
 	pManage(new Manager())
 {
 	tsassert(system);
@@ -149,7 +147,7 @@ void CShaderManager::clear()
 //	Properties
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-GraphicsSystem* const CShaderManager::getSystem() const
+GraphicsCore* const CShaderManager::getSystem() const
 {
 	return pManage->system;
 }
@@ -273,12 +271,10 @@ EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderNa
 		}
 
 		//Determine location of shader programs based in render api selected
-
-		SGraphicsSystemConfig config;
-		system->getConfiguration(config);
+		const EGraphicsAPIID apiid = system->getApiID();
 
 		EShaderBackend backendId;
-		switch (config.apiid)
+		switch (apiid)
 		{
 		case eGraphicsAPI_D3D11:
 			backendId = EShaderBackend::eBackendHLSL_SM5;
@@ -293,7 +289,7 @@ EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderNa
 
 		if (!isDirectory(cacheDir))
 		{
-			tswarn("a shader cache directory could not be found for this Renderer configuration (%)", config.apiid);
+			tswarn("a shader cache directory could not be found for this Renderer configuration (%)", apiid);
 			return eShaderManagerStatus_StageNotFound;
 		}
 

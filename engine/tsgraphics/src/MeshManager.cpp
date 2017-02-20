@@ -2,7 +2,6 @@
 	Mesh manager source
 */
 
-#include <tsgraphics/GraphicsSystem.h>
 #include <tsgraphics/MeshManager.h>
 
 #include <tsgraphics/api/RenderApi.h>
@@ -19,7 +18,7 @@ using namespace ts;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct CMeshManager::Impl
 {
-	GraphicsSystem* system = nullptr;
+	GraphicsCore* system = nullptr;
 	Table<SMeshInstance, MeshId> meshPool;
 
 	void clearPool()
@@ -52,8 +51,8 @@ struct CMeshManager::Impl
 		meshPool.clear();
 	}
 
-	Impl(GraphicsSystem* sys) :
-		system(sys)
+	Impl(GraphicsCore* core) :
+		system(core)
 	{
 
 	}
@@ -66,7 +65,7 @@ struct CMeshManager::Impl
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CMeshManager::CMeshManager(GraphicsSystem* system) :
+CMeshManager::CMeshManager(GraphicsCore* system) :
 	pManage(new Impl(system))
 {
 
