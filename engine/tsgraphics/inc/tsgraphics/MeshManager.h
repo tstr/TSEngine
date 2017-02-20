@@ -5,7 +5,7 @@
 #pragma once
 
 #include <tsgraphics/abi.h>
-#include <tsgraphics/api/RenderDef.h>
+#include <tsgraphics/GraphicsCore.h>
 
 #include <tscore/ptr.h>
 #include <tscore/debug/assert.h>
@@ -18,11 +18,7 @@
 
 namespace ts
 {
-	class GraphicsSystem;
-
 	typedef uint32 Index;
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/*
 		Vertex Mesh
@@ -129,7 +125,7 @@ namespace ts
 
 		CMeshManager() {}
 
-		TSGRAPHICS_API CMeshManager(GraphicsSystem* system);
+		TSGRAPHICS_API CMeshManager(GraphicsCore* system);
 		TSGRAPHICS_API ~CMeshManager();
 
 		TSGRAPHICS_API EMeshStatus createMesh(SVertexMesh& mesh, MeshId& id);

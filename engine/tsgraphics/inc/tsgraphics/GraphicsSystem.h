@@ -1,7 +1,7 @@
 /*
-	Render Module header
+	Graphics System header
 
-	The rendering module is responsible for controlling the rendering pipeline and it's resources
+	The graphics subsystem is responsible for controlling interactions between other systems and the low level render api
 */
 
 #pragma once
@@ -9,12 +9,11 @@
 #include <tsgraphics/abi.h>
 
 #include <tsconfig.h>
+#include <tscore/ptr.h>
 #include <tscore/system/memory.h>
 #include <tscore/filesystem/path.h>
-#include <tscore/maths.h>
-#include <tscore/system/thread.h>
 
-#include <tsgraphics/api/RenderDef.h>
+#include "GraphicsCore.h"
 
 #include <tsgraphics/ShaderManager.h>
 #include <tsgraphics/TextureManager.h>
@@ -24,12 +23,6 @@
 
 namespace ts
 {
-	enum EGraphicsAPIID
-	{
-		eGraphicsAPI_Null  = 0,
-		eGraphicsAPI_D3D11 = 1
-	};
-
 	enum EDisplayMode
 	{
 		eDisplayUnknown	   = 0,
@@ -38,6 +31,9 @@ namespace ts
 		eDisplayFullscreen = 3
 	};
 
+	/*
+		Graphics System configuration structure
+	*/
 	struct SGraphicsSystemConfig
 	{
 		//Handle to display (application window)
@@ -55,46 +51,35 @@ namespace ts
 		//Root asset loading path for textures/shaders/models
 		Path rootpath;
 	};
-
-	struct IRender;
-	struct IRenderContext;
 	
-	class GraphicsSystem
+	/*
+		Main Graphics Subsystem class
+	*/
+	class GraphicsSystem : public GraphicsCore
 	{
 	private:
-
-		IRender* m_api = nullptr;
-		IRenderContext* m_context = nullptr;
-
-		CTextureManager m_textureManager;
-		CShaderManager m_shaderManager;
-		CMeshManager m_meshManager;
-
-		int TSGRAPHICS_API loadApi(EGraphicsAPIID id);
-		int TSGRAPHICS_API unloadApi();
-
-		SGraphicsSystemConfig m_config;
+		
+		struct System;
+		OpaquePtr<System> pSystem;
 
 	public:
+
+		OPAQUE_PTR(GraphicsSystem, pSystem)
 
 		TSGRAPHICS_API GraphicsSystem(const SGraphicsSystemConfig&);
 		TSGRAPHICS_API ~GraphicsSystem();
 
-		GraphicsSystem(const GraphicsSystem&) = delete;
-		GraphicsSystem& operator=(const GraphicsSystem&) = delete;
+		TSGRAPHICS_API CTextureManager* getTextureManager();
+		TSGRAPHICS_API CShaderManager* getShaderManager();
+		TSGRAPHICS_API CMeshManager* getMeshManager();
 		
-		CTextureManager& getTextureManager() { return m_textureManager; }
-		CShaderManager& getShaderManager() { return m_shaderManager; }
-		CMeshManager& getMeshManager() { return m_meshManager; }
-
-		IRender* const getApi() const { return m_api; }
-		IRenderContext* const getContext() const { return m_context; }
-
 		TSGRAPHICS_API void setDisplayConfiguration(EDisplayMode displaymode, uint32 width = 0, uint32 height = 0, SMultisampling sampling = SMultisampling(0));
-		TSGRAPHICS_API void getConfiguration(SGraphicsSystemConfig& cfg) { cfg = m_config; }
+		TSGRAPHICS_API void getConfiguration(SGraphicsSystemConfig& cfg);
 
 		TSGRAPHICS_API void drawBegin(const Vector& vec);
 		TSGRAPHICS_API void drawEnd();
+		
+		TSGRAPHICS_API IRenderContext* const getContext() const;
 	};
 }
 

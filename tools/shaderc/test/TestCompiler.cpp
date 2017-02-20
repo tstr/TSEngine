@@ -204,7 +204,7 @@ int main(int argc, char** argv)
 	print("Beginning shader verification...");
 
 	//Try and load a shader
-	if (EShaderManagerStatus status = system.getShaderManager().load("Shader", programId))
+	if (EShaderManagerStatus status = system.getShaderManager()->load("Shader", programId))
 	{
 		print("ERROR: Shader failed to verify (" + to_string(status) + ")");
 		return (int)status;

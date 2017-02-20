@@ -5,7 +5,7 @@
 #pragma once
 
 #include <tsgraphics/abi.h>
-#include <tsgraphics/api/RenderDef.h>
+#include <tsgraphics/GraphicsCore.h>
 
 #include <tscore/ptr.h>
 #include <tscore/filesystem/path.h>
@@ -18,9 +18,6 @@
 
 namespace ts
 {
-	class GraphicsSystem;
-	class CShaderManager;
-
 	enum EShaderManagerFlags
 	{
 		eShaderManagerFlag_Null		 = (0 << 0),
@@ -71,12 +68,12 @@ namespace ts
 		
 		CShaderManager() {}
 
-		TSGRAPHICS_API CShaderManager(GraphicsSystem* system, const Path& shaderPath, uint flags);
+		TSGRAPHICS_API CShaderManager(GraphicsCore* system, const Path& shaderPath, uint flags);
 		TSGRAPHICS_API ~CShaderManager();
 		
 		TSGRAPHICS_API void clear();
 		
-		TSGRAPHICS_API GraphicsSystem* const getSystem() const;
+		TSGRAPHICS_API GraphicsCore* const getSystem() const;
 		TSGRAPHICS_API void setLoadPath(const Path& shaderpath);
 
 		TSGRAPHICS_API uint getFlags() const;

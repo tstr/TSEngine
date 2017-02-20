@@ -7,6 +7,7 @@ set(tsgraphics_inc
 	inc/tsgraphics/abi.h
 	
 	inc/tsgraphics/GraphicsSystem.h
+	inc/tsgraphics/GraphicsCore.h
 	inc/tsgraphics/TextureManager.h
 	inc/tsgraphics/ShaderManager.h
 	inc/tsgraphics/MeshManager.h
@@ -52,8 +53,8 @@ SET(tsgraphics_src
 	
 	${tsgraphics_api_d3d11_src}
 	
+	src/GraphicsCore.cpp
 	src/GraphicsSystem.cpp
-	src/GraphicsSystemLoader.cpp
 	src/TextureManager.cpp
 	src/ShaderManager.cpp
 	src/MeshManager.cpp
