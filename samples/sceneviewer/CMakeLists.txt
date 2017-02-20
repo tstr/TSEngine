@@ -33,7 +33,7 @@ SET(src_list
 	src/ui/commandconsole.cpp
 )
 
-ADD_EXECUTABLE_TSE(
+ADD_SAMPLE(
 	sceneviewer
 	"${src_list}"
 )

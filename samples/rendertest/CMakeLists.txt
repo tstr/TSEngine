@@ -7,7 +7,7 @@ SET(src_list
 	src/test.cpp
 )
 
-ADD_EXECUTABLE_TSE(
+ADD_SAMPLE(
 	rendertest
 	"${src_list}"
 )

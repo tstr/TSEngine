@@ -66,7 +66,7 @@ SET(tsgraphics_src
 
 SET(tsgraphics_files ${tsgraphics_src} ${tsgraphics_inc})
 
-add_library_tse(
+ADD_ENGINE_LIBRARY(
 	tsgraphics
 	"${tsgraphics_files}"
 )
