@@ -52,7 +52,7 @@ include(GenerateExportHeader)
 SET(TS_BUILD_SHARED_LIBRARIES CACHE BOOL OFF)
 
 #Add a component library
-function(add_library_tse libname libsrcs)
+function(add_engine_library libname libsrcs)
 	
 	set(libtype STATIC)
 	
@@ -94,7 +94,7 @@ function(add_library_tse libname libsrcs)
 endfunction()
 
 #Add a component executable
-function(add_executable_tse libname libsrcs)
+function(add_sample libname libsrcs)
 	
 	ADD_EXECUTABLE(
 		${libname}
@@ -183,14 +183,14 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/cfg")
 
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
-#applications
-ADD_SUBDIRECTORY(app/sceneviewer)
-ADD_SUBDIRECTORY(app/rendertest)
+#Sample applications
+ADD_SUBDIRECTORY(samples/sceneviewer)
+ADD_SUBDIRECTORY(samples/rendertest)
 
 SET_TARGET_PROPERTIES(
 	sceneviewer
 	rendertest
-	PROPERTIES FOLDER applications
+	PROPERTIES FOLDER samples
 )
 
 #engine components

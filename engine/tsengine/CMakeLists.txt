@@ -42,7 +42,7 @@ SET(tsengine_src
 
 SET(tsengine_files ${tsengine_src} ${tsengine_inc})
 
-add_library_tse(
+ADD_ENGINE_LIBRARY(
 	tsengine
 	"${tsengine_files}"
 )

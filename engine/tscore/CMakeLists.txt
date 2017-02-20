@@ -54,7 +54,7 @@ SET(tscore_src
 
 SET(tscore_files ${tscore_src} ${tscore_inc})
 
-add_library_tse(
+ADD_ENGINE_LIBRARY(
 	tscore
 	"${tscore_files}"
 )
