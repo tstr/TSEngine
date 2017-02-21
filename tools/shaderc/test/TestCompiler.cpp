@@ -16,9 +16,9 @@
 #include <iostream>
 #include <thread>
 
+#include <tsgraphics/GraphicsCore.h>
 #include <tsgraphics/api/RenderApi.h>
-#include <tsgraphics/api/RenderDef.h>
-#include <tsgraphics/GraphicsSystem.h>
+#include <tsgraphics/ShaderManager.h>
 
 #include <tscore/filesystem/path.h>
 #include <tscore/filesystem/pathhelpers.h>
@@ -27,6 +27,60 @@
 
 using namespace std;
 using namespace ts;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Graphics Tool System
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class GraphicsToolSystem : public GraphicsCore
+{
+private:
+
+	intptr m_handle = 0;
+	Path m_loadpath;
+	CShaderManager m_shaderManager;
+
+public:
+
+	GraphicsToolSystem(intptr winhandle, const Path& loadpath) :
+		m_handle(winhandle),
+		m_loadpath(loadpath)
+	{
+		m_loadpath.addDirectories("shaders/bin");
+	}
+
+	~GraphicsToolSystem()
+	{
+		this->deinit();
+	}
+
+	void init(EGraphicsAPIID id)
+	{
+		SRenderApiConfig config;
+		config.adapterIndex = 0;
+		config.display.fullscreen = false;
+		config.display.multisampleCount = 1;
+		config.display.resolutionH = 1;
+		config.display.resolutionW = 1;
+		config.flags = eFlagDebug;
+		config.windowHandle = m_handle;
+
+		GraphicsCore::init(id, config);
+
+		m_shaderManager = CShaderManager(this, m_loadpath, eShaderManagerFlag_Debug);
+	}
+
+	void deinit()
+	{
+		if (getApi())
+		{
+			m_shaderManager.clear();
+
+			GraphicsCore::deinit();
+		}
+	}
+
+	CShaderManager* getShaderManager() { return &m_shaderManager; }
+};
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	Helper functions
@@ -184,19 +238,10 @@ int main(int argc, char** argv)
 
 	IRender* api = nullptr;
 
-	//Configure system
-	SGraphicsSystemConfig config;
-	config.apiid = eGraphicsAPI_D3D11;		//For now just test in D3D11 configuration
-	config.displaymode = eDisplayWindowed;
-	config.height = 1;
-	config.width = 1;
-	config.windowHandle = (intptr)hwnd;
-	config.multisampling = 1;
-	config.rootpath = outputPath;
-
 	//Start system
 	print("Initializing Graphics System...");
-	GraphicsSystem system(config);
+	GraphicsToolSystem system((intptr)hwnd, outputPath);
+	system.init(eGraphicsAPI_D3D11);						//For now just test D3D11 configuration
 	print("System initialized.");
 
 	ShaderId programId = 0;
