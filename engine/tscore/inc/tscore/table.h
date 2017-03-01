@@ -232,16 +232,14 @@ namespace ts
 
 		// Get the value of a given table entry
 		// Returns true if the entry exists
-		bool get(Handle_t h, value_t& val) const
+		const value_t& get(Handle_t h) const
 		{
 			if (!m_allocator.exists(h))
 			{
-				return false;
+				return value_t();
 			}
 
-			val = m_table.at(getIdx(h)).value;
-
-			return true;
+			return m_table.at(getIdx(h)).value;
 		}
 
 		void clear()

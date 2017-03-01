@@ -179,7 +179,7 @@ public:
 		// Create texture resources
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		//*
+		/*
 		Vector texColours[] =
 		{
 			Vector(1, 0, 0, 1), Vector(0, 1, 0, 1), Vector(0, 0, 1, 1),
@@ -208,35 +208,40 @@ public:
 		}
 		//*/
 
+		//*
+		TextureId tex = 0;
+		TextureId texDisp = 0;
+		TextureId texNorm = 0;
+
+		STextureProperties texProps;
+		
+		if (auto status = gfx->getTextureManager()->load("cubetexture.png", tex, 0))
+		{
+			tswarn("tex fail (%)", status);
+		}
+		else
+		{
+			gfx->getTextureManager()->getTexHandle(tex, hTex);
+			gfx->getTextureManager()->getTexProperties(tex, texProps);
+		}
+
 		/*
-		CTexture2D tex;
-		if (!gfx->getTextureManager().loadTexture2D("logo_D.png", tex))
+		if (auto status = gfx->getTextureManager()->load("logo_H.png", texDisp, 0))
 		{
-			tswarn("tex fail");
+			tswarn("tex fail (%)", status);
 		}
 		else
 		{
-			hTex = tex.getHandle();
+			gfx->getTextureManager()->getTexHandle(tex, hTexDisp);
 		}
 
-		CTexture2D texDisp;
-		if (!gfx->getTextureManager().loadTexture2D("logo_H.png", texDisp))
+		if (auto status = gfx->getTextureManager()->load("logo_N.png", texNorm, 0))
 		{
-			tswarn("tex fail");
+			tswarn("tex fail (%)", status);
 		}
 		else
 		{
-			hTexDisp = texDisp.getHandle();
-		}
-
-		CTexture2D texNorm;
-		if (!gfx->getTextureManager().loadTexture2D("logo_N.png", texNorm))
-		{
-			tswarn("tex fail");
-		}
-		else
-		{
-			hTexNorm = texNorm.getHandle();
+			gfx->getTextureManager()->getTexHandle(tex, hTexNorm);
 		}
 		
 		//*/
@@ -341,8 +346,8 @@ public:
 		drawCmd.textureSamplers[0].addressU = ETextureAddressMode::eTextureAddressClamp;
 		drawCmd.textureSamplers[0].addressV = ETextureAddressMode::eTextureAddressClamp;
 		drawCmd.textureSamplers[0].addressW = ETextureAddressMode::eTextureAddressClamp;
-		//drawCmd.textureSamplers[0].filtering = eTextureFilterTrilinear;
-		drawCmd.textureSamplers[0].filtering = eTextureFilterPoint;
+		drawCmd.textureSamplers[0].filtering = eTextureFilterTrilinear;
+		//drawCmd.textureSamplers[0].filtering = eTextureFilterPoint;
 		drawCmd.textureSamplers[0].enabled = true;
 		//Render states
 		drawCmd.depthState.enableDepth = true;
@@ -426,9 +431,9 @@ public:
 		IRender* api = gfx->getApi();
 
 		api->destroyBuffer(hConstants);
-		api->destroyTexture(hTex);
-		api->destroyTexture(hTexDisp);
-		api->destroyTexture(hTexNorm);
+		//api->destroyTexture(hTex);
+		//api->destroyTexture(hTexDisp);
+		//api->destroyTexture(hTexNorm);
 		//api->destroyTexture(hCube);
 		api->destroyDrawCommand(hDraw);
 	}
