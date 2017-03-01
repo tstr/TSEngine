@@ -28,7 +28,6 @@ struct GraphicsSystem::System
 	System(GraphicsSystem* system, const SGraphicsSystemConfig& cfg) :
 		system(system),
 		systemConfig(cfg),
-		textureManager(system),
 		context(nullptr)
 	{
 
@@ -64,11 +63,11 @@ GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg)
 	pSystem.reset(new System(this, cfg));
 
 	//Initialize texture/shader/mesh managers
-	pSystem->textureManager.setRootpath(cfg.rootpath);
-
+	
 	Path sourcepath(cfg.rootpath);
 	sourcepath.addDirectories("shaders/bin");
 
+	pSystem->textureManager = CTextureManager(this, cfg.rootpath);
 	pSystem->shaderManager = CShaderManager(this, sourcepath, eShaderManagerFlag_Debug);
 	pSystem->meshManager = CMeshManager(this);
 	
@@ -86,6 +85,7 @@ GraphicsSystem::~GraphicsSystem()
 		//Destroy all cached shaders
 		pSystem->shaderManager.clear();
 		pSystem->meshManager.clear();
+		pSystem->textureManager.clear();
 
 		//Release all resources before deinitialization (causes memory leak otherwise)
 		pSystem.reset();

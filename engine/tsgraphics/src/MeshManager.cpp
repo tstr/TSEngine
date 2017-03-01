@@ -128,13 +128,12 @@ EMeshStatus CMeshManager::createMesh(SVertexMesh& mesh, MeshId& id)
 
 EMeshStatus CMeshManager::getMeshInstance(MeshId id, SMeshInstance& inst)
 {
-	size_t idx = (size_t)id - 1;
-
-
-	if (!pManage || !pManage->meshPool.get(id, inst))
+	if (!pManage)
 	{
 		return eMeshStatus_Fail;
 	}
+
+	inst = pManage->meshPool.get(id);
 
 	return eMeshStatus_Ok;
 }

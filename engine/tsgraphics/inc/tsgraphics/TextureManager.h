@@ -5,7 +5,7 @@
 #pragma once
 
 #include <tsgraphics/abi.h>
-#include <tsgraphics/api/RenderDef.h>
+#include <tsgraphics/GraphicsCore.h>
 
 #include <tscore/filesystem/path.h>
 
@@ -13,94 +13,66 @@
 
 namespace ts
 {
-	class GraphicsSystem;
-	class CTextureManager;
+	typedef uint32 TextureId;
+	typedef uint32 Texel;
 
-	class CTextureCube;
-
-	//Texture class encapsulates the a texture resource and a texture view which can be bound to the pipeline
-	class CTexture2D
+	struct STextureProperties
 	{
-	private:
+		Texel width = 0;
+		Texel height = 0;
+		Texel depth = 0;
 
-		CTextureManager* m_manager = nullptr;
-		HTexture m_hTex;
-
-		//Properties
-		uint32 m_width = 0;
-		uint32 m_height = 0;
-
-		ETextureFormat m_texformat;
-
-	public:
-
-		CTexture2D() {}
-		TSGRAPHICS_API CTexture2D(
-			CTextureManager* manager,
-			const STextureResourceData& data,
-			const STextureResourceDesc& desc
-		);
-
-		HTexture getHandle() const { return m_hTex; }
-
-		uint32 getWidth() const { return m_width; }
-		uint32 getHeight() const { return m_height; }
-		ETextureFormat getFormat() const { return m_texformat; }
+		uint32 arraySize = 0;
+		uint32 mipLevels = 0;
+		
+		ETextureFormat format;
+		ETextureResourceType type;
 	};
 	
-	//Texture cube class
-	class CTextureCube
+	enum ETextureLoadFlags
 	{
-	private:
-
-		CTextureManager* m_manager = nullptr;
-
-		HTexture m_hTex;
-
-		//Properties
-		uint32 m_facewidth = 0;
-		uint32 m_faceheight = 0;
-
-		ETextureFormat m_texformat;
-
-	public:
-
-		CTextureCube() {}
-		TSGRAPHICS_API CTextureCube(
-			CTextureManager* manager,
-			const STextureResourceData* data,
-			const STextureResourceDesc& desc
-		);
-
-		HTexture getHandle() const { return m_hTex; }
-
-		uint32 getWidth() const { return m_facewidth; }
-		uint32 getHeight() const { return m_faceheight; }
-		ETextureFormat getFormat() const { return m_texformat; }
+		eTextureLoadFlag_None    = 0,
+		eTextureLoadFlag_GenMips = 1
 	};
 
-	//Texture manager class which is responsible for controlling the lifetime of textures and loading them from disk
+	enum ETextureManagerStatus
+	{
+		eTextureManagerStatus_Ok			 = 0,
+		eTextureManagerStatus_Fail			 = 1,
+		eTextureManagerStatus_NullManager	 = 2,
+		eTextureManagerStatus_FileNotFound	 = 3,
+		eTextureManagerStatus_FileCorrupt	 = 4,
+		eTextureManagerStatus_InvalidOptions = 5,
+	};
+
 	class CTextureManager
 	{
 	private:
 
-		GraphicsSystem* m_graphics = nullptr;
-		Path m_rootpath;
-		
-		uintptr_t m_token = 0;
+		struct Manager;
+		OpaquePtr<Manager> pManage;
 
 	public:
 
-		TSGRAPHICS_API CTextureManager(GraphicsSystem* system, const Path& rootpath = "");
+		OPAQUE_PTR(CTextureManager, pManage)
+
+		CTextureManager() {}
+
+		TSGRAPHICS_API CTextureManager(GraphicsCore* system, const Path& rootpath);
 		TSGRAPHICS_API ~CTextureManager();
 
-		GraphicsSystem* const getSystem() const { return m_graphics; }
+		TSGRAPHICS_API void setRootpath(const Path& texturepath);
+		TSGRAPHICS_API Path getRootpath() const;
+		
+		TSGRAPHICS_API ETextureManagerStatus load(const Path& path, TextureId& id, int flags);
+		TSGRAPHICS_API ETextureManagerStatus create(TextureId& id, const STextureResourceData* data, const STextureResourceDesc& desc);
 
-		void setRootpath(const Path& rootpath) { m_rootpath = rootpath; }
-		Path getRootpath() const { return m_rootpath; }
+		TSGRAPHICS_API void getTexPath(TextureId id, Path& path);
+		TSGRAPHICS_API void getTexProperties(TextureId id, STextureProperties& props);
+		TSGRAPHICS_API void getTexHandle(TextureId id, HTexture& hTex);
 
-		bool TSGRAPHICS_API loadTexture2D(const Path& file, CTexture2D& texture);
-		bool TSGRAPHICS_API loadTextureCube(const Path& file, CTextureCube& texture);
+		TSGRAPHICS_API void destroy(TextureId id);
+		TSGRAPHICS_API void clear();
 	};
 }
 

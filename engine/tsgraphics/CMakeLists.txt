@@ -55,8 +55,13 @@ SET(tsgraphics_src
 	
 	src/GraphicsCore.cpp
 	src/GraphicsSystem.cpp
-	src/TextureManager.cpp
+	
 	src/ShaderManager.cpp
+	
+	src/TextureManager.cpp
+	src/TextureImporter.h
+	src/TextureImporter.cpp
+	
 	src/MeshManager.cpp
 	src/VertexBuilder.cpp
 	
