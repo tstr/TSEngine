@@ -117,7 +117,7 @@ namespace ts
 		//Statistics
 		void getDrawStatistics(SRenderStatistics& stats) override;
 
-		void drawBegin(const Vector& vec) override;
+		void drawBegin() override;
 		void drawEnd(IRenderContext** contexts, uint32 numContexts) override;
 	};
 	
