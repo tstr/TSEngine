@@ -10,6 +10,8 @@ set(tscore_inc
 	inc/tscore/debug/profiling.h
 	inc/tscore/debug/log.h
 
+	inc/tscore/alloc/Linear.h
+
 	inc/tscore/system/memory.h
 	inc/tscore/system/thread.h
 	inc/tscore/system/error.h

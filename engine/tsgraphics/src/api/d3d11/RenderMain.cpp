@@ -235,14 +235,11 @@ void D3D11Render::destroyContext(IRenderContext* context)
 //	Pipeline methods
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Render::drawBegin(const Vector& vec)
+void D3D11Render::drawBegin()
 {
 	//Sets drawing status to active
 	//If status was already marked as active then show error
 	tsassert(!m_drawActive.exchange(true));
-
-	m_displayTarget.clearRenderTargets(m_immediateContext.Get(), vec);
-	m_displayTarget.clearDepthStencil(m_immediateContext.Get(), 1.0f);
 }
 
 void D3D11Render::drawEnd(IRenderContext** contexts, uint32 numContexts)

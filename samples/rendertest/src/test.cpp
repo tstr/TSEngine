@@ -8,6 +8,8 @@
 #include <tsgraphics/api/RenderApi.h>
 #include <tsengine/input/inputmodule.h>
 
+#include <tsgraphics/CommandQueue.h>
+
 using namespace std;
 using namespace ts;
 
@@ -63,9 +65,14 @@ private:
 		Vector tangent;
 	};
 
+	CommandQueue cmdQueue;
+
 public:
 	
-	RenderTest(CEngineEnv& env) : m_env(env) {}
+	RenderTest(CEngineEnv& env) :
+		m_env(env),
+		cmdQueue(16)
+	{}
 
 	int onInit() override
 	{
@@ -359,7 +366,7 @@ public:
 
 		if (auto r = api->createDrawCommand(hDraw, drawCmd))
 			tswarn("draw cmd fail : %", r);
-		
+
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		return 0;
@@ -419,8 +426,16 @@ public:
 		*/
 
 		//context->bufferUpdate(hMatrixBuffer, matrices);
-		context->bufferUpdate(hConstants, &data);
-		context->draw(target, SViewport(config.width, config.height, 0, 0), SViewport(), hDraw);
+		//context->bufferUpdate(hConstants, &data);
+		//context->draw(target, SViewport(config.width, config.height, 0, 0), SViewport(), hDraw);
+
+		CommandBatch* batch = cmdQueue.createBatch();
+		cmdQueue.addCommand(batch, CommandBufferUpdate(hConstants), data);
+		cmdQueue.addCommand(batch, CommandDraw(target, hDraw, SViewport(config.width, config.height, 0, 0), SViewport()));
+		cmdQueue.submitBatch(-1, batch);
+
+		cmdQueue.sort();
+		cmdQueue.dispatch(context);
 		
 		context->finish();
 	}

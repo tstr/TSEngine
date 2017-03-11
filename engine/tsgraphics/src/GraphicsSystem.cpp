@@ -212,7 +212,13 @@ void GraphicsSystem::drawBegin(const Vector& colour)
 {
 	if (pSystem)
 	{
-		getApi()->drawBegin(colour);
+		getApi()->drawBegin();
+
+		HTarget display = HTARGET_NULL;
+		getApi()->getDisplayTarget(display);
+
+		getContext()->clearRenderTarget(display, colour);
+		getContext()->clearDepthTarget(display, 1.0f);
 	}
 }
 

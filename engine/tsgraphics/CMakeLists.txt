@@ -11,7 +11,8 @@ set(tsgraphics_inc
 	inc/tsgraphics/TextureManager.h
 	inc/tsgraphics/ShaderManager.h
 	inc/tsgraphics/MeshManager.h
-	
+	inc/tsgraphics/CommandQueue.h
+
 	inc/tsgraphics/api/RenderApi.h
 	inc/tsgraphics/api/RenderDef.h
 
@@ -55,13 +56,14 @@ SET(tsgraphics_src
 	
 	src/GraphicsCore.cpp
 	src/GraphicsSystem.cpp
+
+	src/CommandQueue.cpp
+	src/CommandDispatchers.cpp
 	
 	src/ShaderManager.cpp
-	
 	src/TextureManager.cpp
 	src/TextureImporter.h
 	src/TextureImporter.cpp
-	
 	src/MeshManager.cpp
 	src/VertexBuilder.cpp
 	

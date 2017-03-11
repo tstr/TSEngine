@@ -47,7 +47,7 @@ namespace ts
 		
 		virtual void getDrawStatistics(SRenderStatistics& stats) = 0;
 		
-		virtual void drawBegin(const Vector& vec) = 0;
+		virtual void drawBegin() = 0;
 		virtual void drawEnd(IRenderContext** contexts, uint32 numContexts) = 0;
 	};
 
