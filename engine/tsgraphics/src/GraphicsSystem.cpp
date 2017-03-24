@@ -2,8 +2,10 @@
 	Main Graphics Subsystem source
 */
 
-#include <tsgraphics/graphicssystem.h>
 #include <tscore/debug/log.h>
+
+#include <tsgraphics/GraphicsSystem.h>
+#include <tsgraphics/GraphicsContext.h>
 #include <tsgraphics/api/RenderApi.h>
 
 #include "platform/borderless.h"
@@ -21,7 +23,6 @@ struct GraphicsSystem::System
 
 	CTextureManager textureManager;
 	CShaderManager shaderManager;
-	CMeshManager meshManager;
 
 	IRenderContext* context;
 
@@ -69,8 +70,7 @@ GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg)
 
 	pSystem->textureManager = CTextureManager(this, cfg.rootpath);
 	pSystem->shaderManager = CShaderManager(this, sourcepath, eShaderManagerFlag_Debug);
-	pSystem->meshManager = CMeshManager(this);
-	
+
 	//Create main render context
 	getApi()->createContext(&pSystem->context);
 }
@@ -84,7 +84,6 @@ GraphicsSystem::~GraphicsSystem()
 
 		//Destroy all cached shaders
 		pSystem->shaderManager.clear();
-		pSystem->meshManager.clear();
 		pSystem->textureManager.clear();
 
 		//Release all resources before deinitialization (causes memory leak otherwise)
@@ -201,43 +200,30 @@ CShaderManager* GraphicsSystem::getShaderManager()
 	return &pSystem->shaderManager;
 }
 
-CMeshManager* GraphicsSystem::getMeshManager()
-{
-	return &pSystem->meshManager;
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void GraphicsSystem::drawBegin(const Vector& colour)
+void GraphicsSystem::execute(GraphicsContext* context)
 {
-	if (pSystem)
+	tsassert(pSystem);
+
+	IRenderContext* rc = pSystem->context;
+
+	getApi()->drawBegin();
+
+	HTarget display = HTARGET_NULL;
+	getApi()->getDisplayTarget(display);
+
+	rc->clearRenderTarget(display, (const Vector&)colours::Azure);
+	rc->clearDepthTarget(display, 1.0f);
+
+	if (CommandQueue* queue = context->render(display))
 	{
-		getApi()->drawBegin();
-
-		HTarget display = HTARGET_NULL;
-		getApi()->getDisplayTarget(display);
-
-		getContext()->clearRenderTarget(display, colour);
-		getContext()->clearDepthTarget(display, 1.0f);
-	}
-}
-
-void GraphicsSystem::drawEnd()
-{
-	if (pSystem)
-	{
-		getApi()->drawEnd(&pSystem->context, 1);
-	}
-}
-
-IRenderContext* const GraphicsSystem::getContext() const
-{
-	if (pSystem)
-	{
-		return pSystem->context;
+		queue->flush(rc);
 	}
 
-	return nullptr;
+	rc->finish();
+
+	getApi()->drawEnd(&rc, 1);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

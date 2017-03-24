@@ -61,48 +61,6 @@ struct SBatchKey
 	}
 };
 
-class BatchKeyPool : private LinearAllocator
-{
-public:
-
-	//Constructs a Command Batch Key pool that can hold a given number of key pairs
-	BatchKeyPool(size_t numBatches) :
-		LinearAllocator(numBatches * sizeof(CommandQueue::SortKey))
-	{}
-
-	//Get number of Command Batch Key pairs in the pool
-	size_t getKeyCount()
-	{
-		auto top = (size_t)LinearAllocator::getTop();
-		auto start = (size_t)LinearAllocator::getStart();
-
-		return (top - start) / sizeof(SBatchKey);
-	}
-
-	//Add a Command Batch Key pair to this pool
-	void addKey(CommandQueue::SortKey key, CommandBatch* batch)
-	{
-		SBatchKey* pair = LinearAllocator::alloc<SBatchKey>(1, 1);
-		pair->batch = batch;
-		pair->key = key;
-	}
-
-	SBatchKey* beginKey()
-	{
-		return (SBatchKey*)LinearAllocator::getStart();
-	}
-
-	SBatchKey* endKey()
-	{
-		return (SBatchKey*)LinearAllocator::getTop();
-	}
-
-	void reset()
-	{
-		LinearAllocator::reset();
-	}
-};
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // CommandQueue implementation
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -240,7 +198,7 @@ void CommandQueue::submitBatch(SortKey key, CommandBatch* batch)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 //Execute the dispatcher of a given command
-static void dispatchCommand(IRenderContext* context, Command* cmd)
+static void executeCommand(IRenderContext* context, Command* cmd)
 {
 	if (cmd != nullptr)
 	{
@@ -251,12 +209,12 @@ static void dispatchCommand(IRenderContext* context, Command* cmd)
 		cmd->dispatchFunc(context, (const void*)extra);
 
 		//Recursively dispatch the next command
-		dispatchCommand(context, cmd->next);
+		executeCommand(context, cmd->next);
 	}
 }
 
 //Execute queued command batches
-void CommandQueue::dispatch(IRenderContext* context)
+void CommandQueue::flush(IRenderContext* context)
 {
 	tsassert(pQueue);
 
@@ -266,7 +224,7 @@ void CommandQueue::dispatch(IRenderContext* context)
 		//Get pointer to command batch
 		CommandBatch* batch = pair->batch;
 		//Recursively execute each command in this batch
-		dispatchCommand(context, batch->first);
+		executeCommand(context, batch->first);
 	}
 
 	//Clear allocators

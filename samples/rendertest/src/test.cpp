@@ -4,11 +4,13 @@
 
 #include <tsengine.h>
 #include <tscore/debug/log.h>
-#include <tsgraphics/GraphicsSystem.h>
-#include <tsgraphics/api/RenderApi.h>
+#include <tsgraphics/GraphicsContext.h>
 #include <tsengine/input/inputmodule.h>
 
 #include <tsgraphics/CommandQueue.h>
+#include <tsgraphics/DrawBuilder.h>
+
+#include <tscore/debug/profiling.h>
 
 using namespace std;
 using namespace ts;
@@ -20,31 +22,19 @@ void generateCubeMesh(Vector halfextents, vector<Index>& indices, vector<Vector>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 class RenderTest :
-	public ts::IApplication,
-	public IInputEventListener
+	public IApplication,
+	public IInputEventListener,
+	public GraphicsContext
 {
 private:
 
-	CEngineEnv& m_env;
+	CEngineEnv& mEnv;
 
 	size_t frame = 0;
 	double timecount = 0.0;
 
 	HBuffer hConstants;
-	
-	HTexture hTex		= HTEXTURE_NULL;
-	HTexture hTexDisp	= HTEXTURE_NULL;
-	HTexture hTexNorm	= HTEXTURE_NULL;
-	HTexture hCube		= HTEXTURE_NULL;
-
 	HDrawCmd hDraw;
-	
-	/*
-	ShaderId vShader; //vertex shader
-	ShaderId pShader; //pixel shader
-	ShaderId dShader;
-	ShaderId hShader;
-	*/
 
 	struct Constants
 	{
@@ -65,29 +55,26 @@ private:
 		Vector tangent;
 	};
 
-	CommandQueue cmdQueue;
-
 public:
 	
 	RenderTest(CEngineEnv& env) :
-		m_env(env),
-		cmdQueue(16)
-	{}
+		mEnv(env),
+		GraphicsContext::GraphicsContext(env.getGraphics())
+	{
+
+	}
 
 	int onInit() override
 	{
-		GraphicsSystem* gfx = m_env.getGraphics();
-		IRender* api = gfx->getApi();
-
+		GraphicsSystem* gfx = mEnv.getGraphics();
+		
 		ShaderId programId = 0;
-		SShaderProgram program;
-		if (EShaderManagerStatus s = gfx->getShaderManager()->load("TestCube", programId))
+		const string programName("TestCube");
+		if (EShaderManagerStatus s = gfx->getShaderManager()->load(programName, programId))
 		{
-			tserror("Unable to load shader \"TestShader\" : %", s);
+			tserror("Unable to load shader \"%\" : %", programName, s);
 			return -1;
 		}
-
-		gfx->getShaderManager()->getProgram(programId, program);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Create buffers
@@ -95,14 +82,15 @@ public:
 
 		//Shader constant buffer
 		Constants data;
-		SBufferResourceData desc;
-		desc.memory = &data;
-		desc.size = sizeof(data);
-		desc.usage = EBufferType::eBufferTypeConstant;
-		if (auto r = api->createResourceBuffer(hConstants, desc))
-			tswarn("buffer fail : %", r);
+		hConstants = getPool()->createConstantBuffer(data);
+		if (hConstants == HBUFFER_NULL)
+			tswarn("buffer fail");
 
-		/*
+		//Create mesh
+		CVertexBuilder vertexBuilder;
+		SVertexMesh meshData;
+
+		//*
 		//Vertex buffer
 		vector<Index> indices;
 		vector<Vector> vertices;
@@ -111,9 +99,6 @@ public:
 
 		generateCubeMesh(Vector(0.5f, 0.5f, 0.5f), indices, vertices, texcoords, normals);
 
-		//Create mesh
-		CVertexBuilder vertexBuilder;
-		SVertexMesh meshData;
 		vertexBuilder.begin((uint32)vertices.size(), (uint32)indices.size());
 		vertexBuilder.setAttributeStream("POSITION", vertices,  eAttribFloat3);
 		vertexBuilder.setAttributeStream("NORMAL",   normals,   eAttribFloat3);
@@ -126,7 +111,7 @@ public:
 
 		//*/
 
-		//*
+		/*
 		Vector attributePositions[] =
 		{
 			Vector(-1, -1, 0), //bottom left
@@ -165,9 +150,6 @@ public:
 			0, 2, 3
 		};
 
-		//Create mesh
-		CVertexBuilder vertexBuilder;
-		SVertexMesh meshData;
 		vertexBuilder.begin((uint32)ARRAYSIZE(attributePositions), (uint32)ARRAYSIZE(indices));
 		vertexBuilder.setAttributeStream("POSITION", (const ts::byte*)(attributePositions), sizeof(Vector), eAttribFloat3);
 		vertexBuilder.setAttributeStream("NORMAL",   (const ts::byte*)(attributeNormals),	sizeof(Vector), eAttribFloat3);
@@ -179,8 +161,8 @@ public:
 		
 		MeshId id;
 		SMeshInstance meshInst;
-		gfx->getMeshManager()->createMesh(meshData, id);
-		gfx->getMeshManager()->getMeshInstance(id, meshInst);
+		getMeshManager()->createMesh(meshData, id);
+		getMeshManager()->getMeshInstance(id, meshInst);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Create texture resources
@@ -225,11 +207,7 @@ public:
 		if (auto status = gfx->getTextureManager()->load("cubetexture.png", tex, 0))
 		{
 			tswarn("tex fail (%)", status);
-		}
-		else
-		{
-			gfx->getTextureManager()->getTexHandle(tex, hTex);
-			gfx->getTextureManager()->getTexProperties(tex, texProps);
+			return -1;
 		}
 
 		/*
@@ -237,20 +215,12 @@ public:
 		{
 			tswarn("tex fail (%)", status);
 		}
-		else
-		{
-			gfx->getTextureManager()->getTexHandle(tex, hTexDisp);
-		}
 
 		if (auto status = gfx->getTextureManager()->load("logo_N.png", texNorm, 0))
 		{
 			tswarn("tex fail (%)", status);
 		}
-		else
-		{
-			gfx->getTextureManager()->getTexHandle(tex, hTexNorm);
-		}
-		
+
 		//*/
 
 		/*
@@ -292,79 +262,45 @@ public:
 		// Create commands
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		SDrawCommand drawCmd;
+		CDrawBuilder drawBuild(mEnv.getGraphics());
 
-		//drawCmd.mode = EDrawMode::eDrawIndexedInstanced;
-		drawCmd.mode = EDrawMode::eDrawIndexed;
-		drawCmd.constantBuffers[0] = hConstants;
-		drawCmd.vertexStart = 0;
-		drawCmd.vertexTopology = eTopologyPatchList3;
-		//drawCmd.vertexTopology = eTopologyTriangleList;
+		drawBuild.setShader(programId);
+		drawBuild.setConstantBuffer(0, hConstants);
+
+		drawBuild.setTexture(0, tex);
+		drawBuild.setTexture(1, texDisp);
+		drawBuild.setTexture(2, texNorm);
 		
-		drawCmd.shaderVertex =	program.hVertex;
-		drawCmd.shaderPixel  =	program.hPixel;
-		drawCmd.shaderHull   =	program.hHull;
-		drawCmd.shaderDomain =	program.hDomain;
-		
-		//drawCmd.vertexBuffers[0] = hVertexBuffer;
-		//drawCmd.vertexBuffers[1] = hTexcoordBuffer;
-		//drawCmd.vertexBuffers[2] = hNormalBuffer;
-		//drawCmd.indexBuffer = hIndexBuffer;
+		drawBuild.setVertexBuffer(0, meshInst.vertexBuffers[0], meshInst.vertexStrides[0], meshInst.vertexOffset[0], meshInst.vertexAttributes, meshInst.vertexAttributeCount);
+		drawBuild.setVertexTopology(eTopologyPatchList3);
+		drawBuild.setIndexBuffer(meshInst.indexBuffer);
 
-		//drawCmd.vertexBuffers[0] = hVertexBuffer;
-		//drawCmd.vertexOffsets[0] = 0;
-		//drawCmd.vertexStrides[0] = meshData.vertexStride;
-		//drawCmd.indexBuffer = hIndexBuffer;
+		STextureSampler sampler;
+		sampler.addressU = ETextureAddressMode::eTextureAddressClamp;
+		sampler.addressV = ETextureAddressMode::eTextureAddressClamp;
+		sampler.addressW = ETextureAddressMode::eTextureAddressClamp;
+		sampler.filtering = eTextureFilterTrilinear;
+		sampler.enabled = true;
+		drawBuild.setTextureSampler(0, sampler);
 
-		//drawCmd.vertexCount = vertexCount;
-		//drawCmd.indexCount = indexCount;
-		//drawCmd.vertexAttribCount = 4;
+		SDepthState depthState;
+		SRasterState rasterState;
+		SBlendState blendState;
 
-		drawCmd.vertexBuffers[0] = meshInst.vertexBuffers[0];
-		drawCmd.vertexOffsets[0] = 0;
-		drawCmd.vertexStrides[0] = meshInst.vertexStrides[0];
-		drawCmd.indexBuffer = meshInst.indexBuffer;
+		depthState.enableDepth = true;
+		blendState.enable = false;
+		rasterState.enableScissor = false;
+		rasterState.cullMode = eCullNone;
+		rasterState.fillMode = eFillWireframe;
+		//rasterState.fillMode = eFillSolid;
 
-		drawCmd.vertexCount = meshInst.vertexCount;
-		drawCmd.indexCount = meshInst.indexCount;
-		drawCmd.vertexAttribCount = meshInst.vertexAttributeCount;
+		drawBuild.setRasterState(rasterState);
+		drawBuild.setBlendState(blendState);
+		drawBuild.setDepthState(depthState);
 
-		for (int i = 0; i < meshData.vertexAttributes.size(); i++)
-		{
-			drawCmd.vertexAttribs[i] = meshData.vertexAttributes[i];
-		}
+		drawBuild.setDrawIndexed(0, 0, meshInst.indexCount);
 
-		//Texture
-		drawCmd.textureUnits[0].arrayIndex = 0;
-		drawCmd.textureUnits[0].arrayCount = 1;
-		drawCmd.textureUnits[0].textureType = eTypeTexture2D;
-		drawCmd.textureUnits[0].texture = hTex;
-		//drawCmd.textureUnits[0].textureType = eTypeTextureCube;
-		//drawCmd.textureUnits[0].texture = hCube;
-		drawCmd.textureUnits[1].arrayIndex = 0;
-		drawCmd.textureUnits[1].arrayCount = 1;
-		drawCmd.textureUnits[1].textureType = eTypeTexture2D;
-		drawCmd.textureUnits[1].texture = hTexDisp;
-		drawCmd.textureUnits[2].arrayIndex = 0; 
-		drawCmd.textureUnits[2].arrayCount = 1;
-		drawCmd.textureUnits[2].textureType = eTypeTexture2D;
-		drawCmd.textureUnits[2].texture = hTexNorm;
-		//Texture sampler
-		drawCmd.textureSamplers[0].addressU = ETextureAddressMode::eTextureAddressClamp;
-		drawCmd.textureSamplers[0].addressV = ETextureAddressMode::eTextureAddressClamp;
-		drawCmd.textureSamplers[0].addressW = ETextureAddressMode::eTextureAddressClamp;
-		drawCmd.textureSamplers[0].filtering = eTextureFilterTrilinear;
-		//drawCmd.textureSamplers[0].filtering = eTextureFilterPoint;
-		drawCmd.textureSamplers[0].enabled = true;
-		//Render states
-		drawCmd.depthState.enableDepth = true;
-		drawCmd.blendState.enable = false;
-		drawCmd.rasterState.enableScissor = false;
-		drawCmd.rasterState.cullMode = eCullNone;
-		//drawCmd.rasterState.fillMode = eFillWireframe;
-		drawCmd.rasterState.fillMode = eFillSolid;
-
-		if (auto r = api->createDrawCommand(hDraw, drawCmd))
+		if (auto r = this->createDraw(drawBuild, hDraw))
 			tswarn("draw cmd fail : %", r);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -372,19 +308,9 @@ public:
 		return 0;
 	}
 
-	void onUpdate(double dt) override
+	CommandQueue* render(HTarget target) override
 	{
-		timecount += dt;
-		tsprofile("% : %s", frame, timecount);
-		frame++;
-
-		GraphicsSystem* gfx = m_env.getGraphics();
-		IRender* api = gfx->getApi();
-		IRenderContext* context = gfx->getContext();
-
-		HTarget target;
-		api->getDisplayTarget(target);
-
+		auto gfx = mEnv.getGraphics();
 		SGraphicsSystemConfig config;
 		gfx->getConfiguration(config);
 
@@ -400,14 +326,14 @@ public:
 		vec.x() = max(min(vec.x(), 1), 0);
 		vec.y() = max(min(vec.y(), 1), 0);
 		*/
-		
+
 		//Update shader constants
 		Constants data;
 		//data.world = Matrix::rotationY((float)timecount) * Matrix::translation(0.0f, 0.0f, 2.0f);
 		data.world = Matrix::rotationY((Pi / 3) * sin((float)timecount)) * Matrix::translation(0.0f, 0.0f, 1.5f);
 		data.view = Matrix::identity();
 		data.projection = Matrix::perspectiveFieldOfView(Pi / 2, (float)config.width / config.height, 0.1f, 20.0f);
-		
+
 		data.lightDir = Vector(0, -0.5f, -1);
 		data.lightDir = Matrix::transform3D(data.lightDir, data.view);
 		data.lightDir.normalize();
@@ -425,32 +351,30 @@ public:
 		data.tessFactor = ((20.0f - 1.0f) * interp) + 1.0f;
 		*/
 
-		//context->bufferUpdate(hMatrixBuffer, matrices);
-		//context->bufferUpdate(hConstants, &data);
-		//context->draw(target, SViewport(config.width, config.height, 0, 0), SViewport(), hDraw);
+		CommandQueue* queue = this->getQueue();
+		CommandBatch* batch = queue->createBatch();
+		queue->addCommand(batch, CommandTargetClear(target, Vector((const float*)colours::AliceBlue), 1.0f));
+		queue->addCommand(batch, CommandBufferUpdate(hConstants), data);
+		queue->addCommand(batch, CommandDraw(target, hDraw, SViewport(config.width, config.height, 0, 0), SViewport()));
+		queue->submitBatch(0, batch);
 
-		CommandBatch* batch = cmdQueue.createBatch();
-		cmdQueue.addCommand(batch, CommandBufferUpdate(hConstants), data);
-		cmdQueue.addCommand(batch, CommandDraw(target, hDraw, SViewport(config.width, config.height, 0, 0), SViewport()));
-		cmdQueue.submitBatch(-1, batch);
+		queue->sort();
 
-		cmdQueue.sort();
-		cmdQueue.dispatch(context);
-		
-		context->finish();
+		return queue;
+	}
+
+	void onUpdate(double dt) override
+	{
+		timecount += dt;
+		//tsprofile("% : %s", frame, timecount);
+		frame++;
+
+		mEnv.getGraphics()->execute(this);
 	}
 
 	void onExit() override
 	{
-		GraphicsSystem* gfx = m_env.getGraphics();
-		IRender* api = gfx->getApi();
 
-		api->destroyBuffer(hConstants);
-		//api->destroyTexture(hTex);
-		//api->destroyTexture(hTexDisp);
-		//api->destroyTexture(hTexNorm);
-		//api->destroyTexture(hCube);
-		api->destroyDrawCommand(hDraw);
 	}
 };
 
