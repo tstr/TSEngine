@@ -17,7 +17,6 @@
 
 #include <tsgraphics/ShaderManager.h>
 #include <tsgraphics/TextureManager.h>
-#include <tsgraphics/MeshManager.h>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -30,6 +29,8 @@ namespace ts
 		eDisplayBorderless = 2,
 		eDisplayFullscreen = 3
 	};
+
+	class GraphicsContext;
 
 	/*
 		Graphics System configuration structure
@@ -66,20 +67,20 @@ namespace ts
 
 		OPAQUE_PTR(GraphicsSystem, pSystem)
 
+		//Initialize/deinitialize system
 		TSGRAPHICS_API GraphicsSystem(const SGraphicsSystemConfig&);
 		TSGRAPHICS_API ~GraphicsSystem();
 
+		//Get resource managers
 		TSGRAPHICS_API CTextureManager* getTextureManager();
 		TSGRAPHICS_API CShaderManager* getShaderManager();
-		TSGRAPHICS_API CMeshManager* getMeshManager();
 		
+		//Get/set graphics system properties
 		TSGRAPHICS_API void setDisplayConfiguration(EDisplayMode displaymode, uint32 width = 0, uint32 height = 0, SMultisampling sampling = SMultisampling(0));
 		TSGRAPHICS_API void getConfiguration(SGraphicsSystemConfig& cfg);
 
-		TSGRAPHICS_API void drawBegin(const Vector& vec);
-		TSGRAPHICS_API void drawEnd();
-		
-		TSGRAPHICS_API IRenderContext* const getContext() const;
+		//Execute a graphical context on this frame
+		TSGRAPHICS_API void execute(GraphicsContext* context);
 	};
 }
 

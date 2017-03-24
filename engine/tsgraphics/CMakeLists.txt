@@ -8,10 +8,13 @@ set(tsgraphics_inc
 	
 	inc/tsgraphics/GraphicsSystem.h
 	inc/tsgraphics/GraphicsCore.h
+	inc/tsgraphics/GraphicsContext.h
 	inc/tsgraphics/TextureManager.h
 	inc/tsgraphics/ShaderManager.h
 	inc/tsgraphics/MeshManager.h
+	inc/tsgraphics/BufferPool.h
 	inc/tsgraphics/CommandQueue.h
+	inc/tsgraphics/DrawBuilder.h
 
 	inc/tsgraphics/api/RenderApi.h
 	inc/tsgraphics/api/RenderDef.h
@@ -56,6 +59,7 @@ SET(tsgraphics_src
 	
 	src/GraphicsCore.cpp
 	src/GraphicsSystem.cpp
+	src/GraphicsContext.cpp
 
 	src/CommandQueue.cpp
 	src/CommandDispatchers.cpp
@@ -66,6 +70,7 @@ SET(tsgraphics_src
 	src/TextureImporter.cpp
 	src/MeshManager.cpp
 	src/VertexBuilder.cpp
+	src/BufferPool.cpp
 	
 	src/platform/Nvoptimus.cpp
 	src/platform/Borderless.h

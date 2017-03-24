@@ -216,14 +216,8 @@ int CEngineEnv::start(IApplication& app)
 
 			Vector framecolour = colours::AntiqueWhite;
 
-			//Clear the frame to a specific colour
-			m_graphics->drawBegin(framecolour);
-
 			//Update application
 			app.onUpdate(dt);
-
-			//Present the frame
-			m_graphics->drawEnd();
 
 			watch.stop();
 			dt = max(0.0, watch.deltaTime()); //clamp delta time to positive value - just to be safe

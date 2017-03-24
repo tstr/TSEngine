@@ -37,11 +37,11 @@ namespace ts
 		OpaquePtr<Queue> pQueue;
 
 		//Internal command management methods
-		Command* commandAlloc(size_t dispatchSize, size_t extraSize);
-		void commandAttach(CommandBatch* pBatch, Command* pCmd);
-		void* storeCommandDispatcher(Command* pCmd, const void* pDispatchSrc);
-		void storeCommandDispatcherFunc(Command* pCmd, CommandDelegate dispatcherFunc);
-		void storeCommandExtra(Command* pCmd, const void* pExtraSrc);
+		TSGRAPHICS_API Command* commandAlloc(size_t dispatchSize, size_t extraSize);
+		TSGRAPHICS_API void commandAttach(CommandBatch* pBatch, Command* pCmd);
+		TSGRAPHICS_API void* storeCommandDispatcher(Command* pCmd, const void* pDispatchSrc);
+		TSGRAPHICS_API void storeCommandDispatcherFunc(Command* pCmd, CommandDelegate dispatcherFunc);
+		TSGRAPHICS_API void storeCommandExtra(Command* pCmd, const void* pExtraSrc);
 
 		/*
 			Asserts that comand dispatcher(and extra parameter) is a POD type
@@ -61,14 +61,14 @@ namespace ts
 
 		//Ctor/dtor
 		CommandQueue() {}
-		CommandQueue(uint32 numBatches);
-		~CommandQueue();
+		TSGRAPHICS_API CommandQueue(uint32 numBatches);
+		TSGRAPHICS_API ~CommandQueue();
 
 		//Create new command batch for queueing.
-		CommandBatch* createBatch();
+		TSGRAPHICS_API CommandBatch* createBatch();
 		
 		//Submit command batch to queue.
-		void submitBatch(SortKey key, CommandBatch* batch);
+		TSGRAPHICS_API void submitBatch(SortKey key, CommandBatch* batch);
 
 		//////////////////////////////////////////////////////////////////////////////////
 		/*
@@ -122,9 +122,9 @@ namespace ts
 		//////////////////////////////////////////////////////////////////////////////////
 
 		//Sort queued command batches based on their keys
-		void sort();
-		//Execute queued command batches
-		void dispatch(IRenderContext* context);
+		TSGRAPHICS_API void sort();
+		//Execute queued command batches on a given context
+		TSGRAPHICS_API void flush(IRenderContext* context);
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
