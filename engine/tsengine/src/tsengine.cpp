@@ -48,14 +48,14 @@ private:
 			getWindowResizeEventArgs(args, w, h);
 			if (auto render = m_env.getGraphics())
 			{
-				render->setDisplayConfiguration(eDisplayUnknown, w, h, SMultisampling(0));
+				render->setDisplayInfo(eDisplayUnknown, w, h, SMultisampling(0));
 			}
 
 			break;
 		}
 		case EWindowEvent::eEventDestroy:
 		{
-			m_env.getGraphics()->setDisplayConfiguration(eDisplayWindowed, 0, 0, 0);
+			m_env.getGraphics()->setDisplayInfo(eDisplayWindowed, 0, 0, 0);
 
 			break;
 		}
@@ -167,14 +167,14 @@ CEngineEnv::CEngineEnv(const SEngineStartupParams& params)
 	uint32 samplecount = 1;
 	config.getProperty("video.multisamplecount", samplecount);
 
-	SGraphicsSystemConfig graphicscfg;
+	SGraphicsSystemInfo graphicscfg;
 	graphicscfg.windowHandle = m_window->nativeHandle();
-	graphicscfg.width = width;
-	graphicscfg.height = height;
+	graphicscfg.display.width = width;
+	graphicscfg.display.height = height;
+	graphicscfg.display.mode = (EDisplayMode)(displaymode + 1);
+	graphicscfg.display.multisampling.count = samplecount;
 	graphicscfg.apiid = EGraphicsAPIID::eGraphicsAPI_D3D11;
-	graphicscfg.displaymode = (EDisplayMode)(displaymode + 1);
 	graphicscfg.rootpath = assetpath;
-	graphicscfg.multisampling.count = samplecount;
 
 	m_graphics.reset(new GraphicsSystem(graphicscfg));
 	m_inputModule.reset(new CInputModule(m_window.get()));

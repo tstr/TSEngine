@@ -34,8 +34,8 @@ SET(src_list
 )
 
 ADD_SAMPLE(
-	sceneviewer
-	"${src_list}"
+	NAME sceneviewer
+	SOURCES ${src_list}
 )
 
 ASSIGN_SOURCE_GROUPS(${src_list})

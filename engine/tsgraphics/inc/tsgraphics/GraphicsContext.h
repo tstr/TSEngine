@@ -62,8 +62,11 @@ namespace ts
 		TSGRAPHICS_API int destroyDraw(HDrawCmd cmd);
 		TSGRAPHICS_API void clearDraws();
 
+		//Update this context
+		TSGRAPHICS_API void update();
+
 		//Interface methods
-		virtual CommandQueue* render(HTarget display) = 0;
+		virtual CommandQueue* renderFrame(HTarget display) = 0;
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
