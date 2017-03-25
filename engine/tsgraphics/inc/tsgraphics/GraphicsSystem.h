@@ -33,18 +33,27 @@ namespace ts
 	class GraphicsContext;
 
 	/*
-		Graphics System configuration structure
+		Display configuration structure
 	*/
-	struct SGraphicsSystemConfig
+	struct SGraphicsDisplayInfo
 	{
-		//Handle to display (application window)
-		intptr windowHandle = 0;
-
 		//Display dimensions
 		uint32 width = 0;
 		uint32 height = 0;
 		SMultisampling multisampling;
-		EDisplayMode displaymode = eDisplayWindowed;
+		EDisplayMode mode = eDisplayWindowed;
+	};
+
+	/*
+		Graphics System configuration structure
+	*/
+	struct SGraphicsSystemInfo
+	{
+		//Handle to display (application window)
+		intptr windowHandle = 0;
+
+		//Display info
+		SGraphicsDisplayInfo display;
 
 		//Graphics API id
 		EGraphicsAPIID apiid = EGraphicsAPIID::eGraphicsAPI_Null;
@@ -67,17 +76,40 @@ namespace ts
 
 		OPAQUE_PTR(GraphicsSystem, pSystem)
 
+		////////////////////////////////////////////////////////////////////////////////
+
 		//Initialize/deinitialize system
-		TSGRAPHICS_API GraphicsSystem(const SGraphicsSystemConfig&);
+		TSGRAPHICS_API GraphicsSystem(const SGraphicsSystemInfo&);
 		TSGRAPHICS_API ~GraphicsSystem();
 
 		//Get resource managers
 		TSGRAPHICS_API CTextureManager* getTextureManager();
 		TSGRAPHICS_API CShaderManager* getShaderManager();
+
+		//Get list of available adapters
+		TSGRAPHICS_API void getAdapterList(std::vector<SRenderAdapterDesc>& adapters);
+
+		////////////////////////////////////////////////////////////////////////////////
+		// Get/set graphics system properties
+		////////////////////////////////////////////////////////////////////////////////
+
+		void setDisplayInfo(EDisplayMode displaymode, uint32 width = 0, uint32 height = 0, SMultisampling sampling = SMultisampling(0))
+		{
+			SGraphicsDisplayInfo config;
+			config.mode = displaymode;
+			config.height = height;
+			config.width = width;
+			config.multisampling = sampling;
+			this->setDisplayInfo(config);
+		}
+
+		TSGRAPHICS_API void setDisplayInfo(const SGraphicsDisplayInfo& info);
+		TSGRAPHICS_API void getDisplayInfo(SGraphicsDisplayInfo& info);
 		
-		//Get/set graphics system properties
-		TSGRAPHICS_API void setDisplayConfiguration(EDisplayMode displaymode, uint32 width = 0, uint32 height = 0, SMultisampling sampling = SMultisampling(0));
-		TSGRAPHICS_API void getConfiguration(SGraphicsSystemConfig& cfg);
+		TSGRAPHICS_API intptr getDisplayHandle() const;
+		TSGRAPHICS_API Path getRootPath() const;
+
+		////////////////////////////////////////////////////////////////////////////////
 
 		//Execute a graphical context on this frame
 		TSGRAPHICS_API void execute(GraphicsContext* context);

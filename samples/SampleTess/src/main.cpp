@@ -3,17 +3,18 @@
 */
 
 #include <tsengine.h>
+
 #include <tscore/debug/log.h>
+#include <tscore/debug/profiling.h>
+
 #include <tsgraphics/GraphicsContext.h>
 #include <tsengine/input/inputmodule.h>
 
-#include <tsgraphics/CommandQueue.h>
-#include <tsgraphics/DrawBuilder.h>
-
-#include <tscore/debug/profiling.h>
-
 using namespace std;
 using namespace ts;
+
+//Use a cube mesh
+#define USE_CUBE
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -21,7 +22,7 @@ void generateCubeMesh(Vector halfextents, vector<Index>& indices, vector<Vector>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-class RenderTest :
+class Sample :
 	public IApplication,
 	public IInputEventListener,
 	public GraphicsContext
@@ -34,7 +35,10 @@ private:
 	double timecount = 0.0;
 
 	HBuffer hConstants;
-	HDrawCmd hDraw;
+	HDrawCmd hDrawSolid;
+	HDrawCmd hDrawWire;
+
+	bool toggleSolid = true;
 
 	struct Constants
 	{
@@ -55,42 +59,15 @@ private:
 		Vector tangent;
 	};
 
-public:
-	
-	RenderTest(CEngineEnv& env) :
-		mEnv(env),
-		GraphicsContext::GraphicsContext(env.getGraphics())
+	//Create a mesh object
+	MeshId loadMesh()
 	{
-
-	}
-
-	int onInit() override
-	{
-		GraphicsSystem* gfx = mEnv.getGraphics();
-		
-		ShaderId programId = 0;
-		const string programName("TestCube");
-		if (EShaderManagerStatus s = gfx->getShaderManager()->load(programName, programId))
-		{
-			tserror("Unable to load shader \"%\" : %", programName, s);
-			return -1;
-		}
-
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Create buffers
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		//Shader constant buffer
-		Constants data;
-		hConstants = getPool()->createConstantBuffer(data);
-		if (hConstants == HBUFFER_NULL)
-			tswarn("buffer fail");
-
 		//Create mesh
 		CVertexBuilder vertexBuilder;
 		SVertexMesh meshData;
 
-		//*
+#ifdef USE_CUBE
+
 		//Vertex buffer
 		vector<Index> indices;
 		vector<Vector> vertices;
@@ -100,18 +77,17 @@ public:
 		generateCubeMesh(Vector(0.5f, 0.5f, 0.5f), indices, vertices, texcoords, normals);
 
 		vertexBuilder.begin((uint32)vertices.size(), (uint32)indices.size());
-		vertexBuilder.setAttributeStream("POSITION", vertices,  eAttribFloat3);
-		vertexBuilder.setAttributeStream("NORMAL",   normals,   eAttribFloat3);
+		vertexBuilder.setAttributeStream("POSITION", vertices, eAttribFloat3);
+		vertexBuilder.setAttributeStream("NORMAL", normals, eAttribFloat3);
 		vertexBuilder.setAttributeStream("TEXCOORD", texcoords, eAttribFloat2);
-		vertexBuilder.setAttributeStream("TANGENT",  normals,	eAttribFloat3);
+		vertexBuilder.setAttributeStream("TANGENT", normals, eAttribFloat3);
 		vertexBuilder.setIndexStream(indices);
 		vertexBuilder.end(meshData);
 
 		meshData.vertexTopology = eTopologyTriangleList;
 
-		//*/
+#else
 
-		/*
 		Vector attributePositions[] =
 		{
 			Vector(-1, -1, 0), //bottom left
@@ -152,52 +128,70 @@ public:
 
 		vertexBuilder.begin((uint32)ARRAYSIZE(attributePositions), (uint32)ARRAYSIZE(indices));
 		vertexBuilder.setAttributeStream("POSITION", (const ts::byte*)(attributePositions), sizeof(Vector), eAttribFloat3);
-		vertexBuilder.setAttributeStream("NORMAL",   (const ts::byte*)(attributeNormals),	sizeof(Vector), eAttribFloat3);
+		vertexBuilder.setAttributeStream("NORMAL", (const ts::byte*)(attributeNormals), sizeof(Vector), eAttribFloat3);
 		vertexBuilder.setAttributeStream("TEXCOORD", (const ts::byte*)(attributeTexcoords), sizeof(Vector), eAttribFloat2);
-		vertexBuilder.setAttributeStream("TANGENT",  (const ts::byte*)(attributeTangents),	sizeof(Vector), eAttribFloat3);
+		vertexBuilder.setAttributeStream("TANGENT", (const ts::byte*)(attributeTangents), sizeof(Vector), eAttribFloat3);
 		vertexBuilder.setIndexStream(indices);
 		vertexBuilder.end(meshData);
-		//*/
-		
-		MeshId id;
-		SMeshInstance meshInst;
+#endif
+
+		MeshId id = 0;
+		//Create mesh buffers
 		getMeshManager()->createMesh(meshData, id);
+
+		return id;
+	}
+
+public:
+	
+	Sample(CEngineEnv& env) :
+		mEnv(env),
+		GraphicsContext::GraphicsContext(env.getGraphics())
+	{
+		mEnv.getInput()->addEventListener(this);
+	}
+
+	//Input handler
+	int onKeyDown(EKeyCode code) override
+	{
+		if (code == eKeyT)
+		{
+			toggleSolid = !toggleSolid;
+		}
+
+		return 0;
+	}
+
+	int onInit() override
+	{
+		GraphicsSystem* gfx = mEnv.getGraphics();
+		
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Initialize resources
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		ShaderId programId = 0;
+		const string programName("TestCube");
+		
+		//Load shader program
+		if (EShaderManagerStatus s = gfx->getShaderManager()->load(programName, programId))
+		{
+			tserror("Unable to load shader \"%\" : %", programName, s);
+			return -1;
+		}
+
+		//Create shader constant buffer
+		Constants data;
+		hConstants = getPool()->createConstantBuffer(data);
+		if (hConstants == HBUFFER_NULL)
+			tswarn("buffer fail");
+
+		//Create mesh
+		MeshId id = loadMesh();
+		SMeshInstance meshInst;
 		getMeshManager()->getMeshInstance(id, meshInst);
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Create texture resources
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		/*
-		Vector texColours[] =
-		{
-			Vector(1, 0, 0, 1), Vector(0, 1, 0, 1), Vector(0, 0, 1, 1),
-			Vector(1, 1, 0, 1), Vector(1, 0, 1, 1), Vector(0, 1, 1, 1),
-			Vector(0, 0, 1, 1), Vector(0, 1, 0, 1), Vector(1, 0, 0, 1),
-		};
-
-		//Create texture
-		STextureResourceData texData;
-		texData.memory = texColours;
-		texData.memoryByteWidth = sizeof(Vector);
-		texData.memoryByteDepth = 0;
-		STextureResourceDesc texDesc;
-		texDesc.depth = 0;
-		texDesc.width = 3;
-		texDesc.height = 3;
-		texDesc.multisampling.count = 1;
-		texDesc.texformat = ETextureFormat::eTextureFormatFloat4;
-		texDesc.texmask = ETextureResourceMask::eTextureMaskShaderResource;
-		texDesc.useMips = false;
-		texDesc.textype = ETextureResourceType::eTypeTexture2D;
-		texDesc.arraySize = 1;
-		if (auto r = api->createResourceTexture(hTex, &texData, texDesc))
-		{
-			tswarn("tex fail : %", r);
-		}
-		//*/
-
-		//*
+		//Create textures
 		TextureId tex = 0;
 		TextureId texDisp = 0;
 		TextureId texNorm = 0;
@@ -210,58 +204,8 @@ public:
 			return -1;
 		}
 
-		/*
-		if (auto status = gfx->getTextureManager()->load("logo_H.png", texDisp, 0))
-		{
-			tswarn("tex fail (%)", status);
-		}
-
-		if (auto status = gfx->getTextureManager()->load("logo_N.png", texNorm, 0))
-		{
-			tswarn("tex fail (%)", status);
-		}
-
-		//*/
-
-		/*
-		Vector cubeColours[6]
-		{
-			Vector(0, 0, 0, 1),
-			Vector(0, 0, 1, 1),
-			Vector(0, 1, 0, 1),
-			Vector(1, 1, 1, 1),
-			Vector(1, 0, 0, 1),
-			Vector(1, 0, 1, 1),
-		};
-
-		STextureResourceData cubeData[6];
-
-		for (int i = 0; i < 6; i++)
-		{
-			cubeData[i].memory = &cubeColours[i];
-			cubeData[i].memoryByteWidth = sizeof(Vector);
-			cubeData[i].memoryByteDepth = 0;
-		}
-
-		STextureResourceDesc cubeDesc;
-		cubeDesc.depth = 0;
-		cubeDesc.width = 1;
-		cubeDesc.height = 1;
-		cubeDesc.multisampling.count = 1;
-		cubeDesc.texformat = ETextureFormat::eTextureFormatFloat4;
-		cubeDesc.texmask = ETextureResourceMask::eTextureMaskShaderResource;
-		cubeDesc.useMips = false;
-		cubeDesc.textype = ETextureResourceType::eTypeTextureCube;
-		cubeDesc.arraySize = 6;
-		
-		if (auto r = api->createResourceTexture(hCube, cubeData, cubeDesc))
-			tswarn("cubemap fail : %", r);
-		//*/
-
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// Create commands
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+		//Create command
 		CDrawBuilder drawBuild(mEnv.getGraphics());
 
 		drawBuild.setShader(programId);
@@ -279,7 +223,7 @@ public:
 		sampler.addressU = ETextureAddressMode::eTextureAddressClamp;
 		sampler.addressV = ETextureAddressMode::eTextureAddressClamp;
 		sampler.addressW = ETextureAddressMode::eTextureAddressClamp;
-		sampler.filtering = eTextureFilterTrilinear;
+		sampler.filtering = eTextureFilterAnisotropic16x;
 		sampler.enabled = true;
 		drawBuild.setTextureSampler(0, sampler);
 
@@ -291,8 +235,8 @@ public:
 		blendState.enable = false;
 		rasterState.enableScissor = false;
 		rasterState.cullMode = eCullNone;
-		rasterState.fillMode = eFillWireframe;
-		//rasterState.fillMode = eFillSolid;
+		//rasterState.fillMode = eFillWireframe;
+		rasterState.fillMode = eFillSolid;
 
 		drawBuild.setRasterState(rasterState);
 		drawBuild.setBlendState(blendState);
@@ -300,7 +244,16 @@ public:
 
 		drawBuild.setDrawIndexed(0, 0, meshInst.indexCount);
 
-		if (auto r = this->createDraw(drawBuild, hDraw))
+		//One command for solid drawing
+		if (auto r = this->createDraw(drawBuild, hDrawSolid))
+			tswarn("draw cmd fail : %", r);
+
+		//Change fill mode
+		rasterState.fillMode = eFillWireframe;
+		drawBuild.setRasterState(rasterState);
+
+		//Another command for wireframe drawing
+		if (auto r = this->createDraw(drawBuild, hDrawWire))
 			tswarn("draw cmd fail : %", r);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -308,31 +261,20 @@ public:
 		return 0;
 	}
 
-	CommandQueue* render(HTarget target) override
+	CommandQueue* renderFrame(HTarget target) override
 	{
 		auto gfx = mEnv.getGraphics();
-		SGraphicsSystemConfig config;
-		gfx->getConfiguration(config);
+		SGraphicsDisplayInfo displayInfo;
+		gfx->getDisplayInfo(displayInfo);
 
-		/*
-		POINT p;
-		GetCursorPos(&p);
-		Vector vec;
-		ScreenToClient((HWND)config.windowHandle, &p);
-		vec.x() = (float)p.x;
-		vec.y() = (float)p.y;
-		vec.x() /= config.width;
-		vec.y() /= config.height;
-		vec.x() = max(min(vec.x(), 1), 0);
-		vec.y() = max(min(vec.y(), 1), 0);
-		*/
+		const Vector meshPos(0.0f, 0.0f, 3.0f);
 
 		//Update shader constants
 		Constants data;
 		//data.world = Matrix::rotationY((float)timecount) * Matrix::translation(0.0f, 0.0f, 2.0f);
-		data.world = Matrix::rotationY((Pi / 3) * sin((float)timecount)) * Matrix::translation(0.0f, 0.0f, 1.5f);
+		data.world = Matrix::rotationY((Pi / 3) * sin((float)timecount)) * Matrix::translation(meshPos);
 		data.view = Matrix::identity();
-		data.projection = Matrix::perspectiveFieldOfView(Pi / 2, (float)config.width / config.height, 0.1f, 20.0f);
+		data.projection = Matrix::perspectiveFieldOfView(Pi / 2, (float)displayInfo.width / displayInfo.height, 0.1f, 20.0f);
 
 		data.lightDir = Vector(0, -0.5f, -1);
 		data.lightDir = Matrix::transform3D(data.lightDir, data.view);
@@ -355,7 +297,7 @@ public:
 		CommandBatch* batch = queue->createBatch();
 		queue->addCommand(batch, CommandTargetClear(target, Vector((const float*)colours::AliceBlue), 1.0f));
 		queue->addCommand(batch, CommandBufferUpdate(hConstants), data);
-		queue->addCommand(batch, CommandDraw(target, hDraw, SViewport(config.width, config.height, 0, 0), SViewport()));
+		queue->addCommand(batch, CommandDraw(target, (toggleSolid) ? hDrawSolid : hDrawWire, SViewport(displayInfo.width, displayInfo.height, 0, 0), SViewport()));
 		queue->submitBatch(0, batch);
 
 		queue->sort();
@@ -369,7 +311,7 @@ public:
 		//tsprofile("% : %s", frame, timecount);
 		frame++;
 
-		mEnv.getGraphics()->execute(this);
+		this->update();
 	}
 
 	void onExit() override
@@ -400,7 +342,7 @@ int main(int argc, char** argv)
 
 	//Run engine
 	CEngineEnv engine(startup);
-	RenderTest test(engine);
+	Sample test(engine);
 	return engine.start(test);
 }
 
@@ -412,88 +354,34 @@ void generateCubeMesh(Vector halfextents, vector<Index>& indices, vector<Vector>
 	float y = halfextents.y();
 	float z = halfextents.z();
 
-	/*
-	indices = vector<Index>{
-		0,2,1,
-		0,3,2,
-
-		1,2,6,
-		6,5,1,
-
-		4,5,6,
-		6,7,4,
-
-		2,3,6,
-		6,3,7,
-
-		0,7,3,
-		0,4,7,
-
-		0,1,5,
-		0,5,4
-	};
-	*/
-
-	/*
-	texcoords = vector<Vector>{
-
-		{ 0, 1 },
-		{ 1, 1 },
-		{ 1, 0 },
-		{ 0, 0 },
-
-		// { 0, 1 },
-		// { 1, 1 },
-		// { 1, 0 },
-		// { 0, 0 },
-
-		{ 1, 1 },
-		{ 0, 1 },
-		{ 0, 0 },
-		{ 1, 0 },
-	};
-	*/
-
-	/*
-	vertices = vector<Vector>{
-		{ -x, -y, -z, }, // 0
-		{ x, -y, -z, }, // 1
-		{ x,  y, -z, }, // 2
-		{ -x,  y, -z, }, // 3
-		{ -x, -y,  z, }, // 4
-		{ x, -y,  z, }, // 5
-		{ x,  y,  z, }, // 6
-		{ -x,  y,  z }, // 7
-	};
-	*/
-	
 	vertices = vector<Vector> {
-		Vector(1.99412, -1.98691, 2.00283),
-		Vector(1.99412, -1.98691, -1.99717),
-		Vector(-2.00588, -1.98691, -1.99717),
-		Vector(-2.00588, -1.98691, 2.00283),
-		Vector(1.99413, 2.01309, 2.00283),
-		Vector(-2.00588, 2.01309, 2.00283),
-		Vector(-2.00588, 2.01309, -1.99717),
-		Vector(1.99412, 2.01309, -1.99717),
-		Vector(1.99412, -1.98691, 2.00283),
-		Vector(1.99413, 2.01309, 2.00283),
-		Vector(1.99412, 2.01309, -1.99717),
-		Vector(1.99412, -1.98691, -1.99717),
-		Vector(1.99412, -1.98691, -1.99717),
-		Vector(1.99412, 2.01309, -1.99717),
-		Vector(-2.00588, 2.01309, -1.99717),
-		Vector(-2.00588, -1.98691, -1.99717),
-		Vector(-2.00588, -1.98691, -1.99717),
-		Vector(-2.00588, 2.01309, -1.99717),
-		Vector(-2.00588, 2.01309, 2.00283),
-		Vector(-2.00588, -1.98691, 2.00283),
-		Vector(1.99413, 2.01309, 2.00283),
-		Vector(1.99412, -1.98691, 2.00283),
-		Vector(-2.00588, -1.98691, 2.00283),
-		Vector(-2.00588, 2.01309, 2.00283),
+		Vector(2, -2, 2),
+		Vector(2, -2, -2),
+		Vector(-2, -2, -2),
+		Vector(-2, -2, 2),
+		Vector(2, 2, 2),
+		Vector(-2, 2, 2),
+		Vector(-2, 2, -2),
+		Vector(2, 2, -2),
+		Vector(2, -2, 2),
+		Vector(2, 2, 2),
+		Vector(2, 2, -2),
+		Vector(2, -2, -2),
+		Vector(2, -2, -2),
+		Vector(2, 2, -2),
+		Vector(-2, 2, -2),
+		Vector(-2, -2, -2),
+		Vector(-2, -2, -2),
+		Vector(-2, 2, -2),
+		Vector(-2, 2, 2),
+		Vector(-2, -2, 2),
+		Vector(2, 2, 2),
+		Vector(2, -2, 2),
+		Vector(-2, -2, 2),
+		Vector(-2, 2, 2),
 	};
 
+	//Scale vertices
 	for (Vector& v : vertices)
 	{
 		v = v * Vector(x, y, z);
@@ -536,14 +424,14 @@ void generateCubeMesh(Vector halfextents, vector<Index>& indices, vector<Vector>
 		Vector(1, 1),
 		Vector(1, 0),
 		Vector(0, 0),
-		Vector(0.9999, 0.9999),
-		Vector(0.9999, 0.000100017),
-		Vector(0.0001, 0.000100017),
-		Vector(0.0001, 0.9999),
-		Vector(0.9999, 0.9999),
-		Vector(0.9999, 0.000100017),
-		Vector(0.0001, 0.000100017),
-		Vector(0.0001, 0.9999),
+		Vector(1, 1),
+		Vector(1, 0),
+		Vector(0, 0),
+		Vector(0, 1),
+		Vector(1, 1),
+		Vector(1, 0),
+		Vector(0, 0),
+		Vector(0, 1),
 		Vector(0, 1),
 		Vector(1, 1),
 		Vector(1, 0),

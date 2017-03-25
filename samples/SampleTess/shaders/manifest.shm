@@ -3,25 +3,25 @@ shader TestCube
 {
 	stage vertex
 	{
-		file = "rendertest/cube.fx";
+		file = "cube.fx";
 		entrypoint = "VS";
 	}
 	
 	stage pixel
 	{
-		file = "rendertest/cube.fx";
+		file = "cube.fx";
 		entrypoint = "PS";
 	}
 	
 	stage hull
 	{
-		file = "rendertest/cube.fx";
+		file = "cube.fx";
 		entrypoint = "HS";
 	}
 	
 	stage domain
 	{
-		file = "rendertest/cube.fx";
+		file = "cube.fx";
 		entrypoint = "DS";
 	}
 }
@@ -30,13 +30,13 @@ shader TestQuad
 {
 	stage vertex
 	{
-		file = "rendertest/quad.fx";
+		file = "quad.fx";
 		entrypoint = "VS";
 	}
 	
 	stage pixel
 	{
-		file = "rendertest/quad.fx";
+		file = "quad.fx";
 		entrypoint = "PS";
 	}
 }

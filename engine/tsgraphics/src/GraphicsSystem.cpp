@@ -19,16 +19,16 @@ using namespace ts;
 struct GraphicsSystem::System
 {
 	GraphicsSystem* system;
-	SGraphicsSystemConfig systemConfig;
+	SGraphicsSystemInfo systemInfo;
 
 	CTextureManager textureManager;
 	CShaderManager shaderManager;
 
 	IRenderContext* context;
 
-	System(GraphicsSystem* system, const SGraphicsSystemConfig& cfg) :
+	System(GraphicsSystem* system, const SGraphicsSystemInfo& cfg) :
 		system(system),
-		systemConfig(cfg),
+		systemInfo(cfg),
 		context(nullptr)
 	{
 
@@ -42,15 +42,15 @@ struct GraphicsSystem::System
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg)
+GraphicsSystem::GraphicsSystem(const SGraphicsSystemInfo& cfg)
 {
 	//Configure low level render api
 	SRenderApiConfig apicfg;
 	apicfg.adapterIndex = 0; //hard code the adapter for now
-	apicfg.display.resolutionH = cfg.height;
-	apicfg.display.resolutionW = cfg.width;
-	apicfg.display.fullscreen = (cfg.displaymode == EDisplayMode::eDisplayFullscreen);
-	apicfg.display.multisampleCount = cfg.multisampling.count;
+	apicfg.display.resolutionH = cfg.display.height;
+	apicfg.display.resolutionW = cfg.display.width;
+	apicfg.display.fullscreen = (cfg.display.mode == EDisplayMode::eDisplayFullscreen);
+	apicfg.display.multisampleCount = cfg.display.multisampling.count;
 	apicfg.windowHandle = cfg.windowHandle;
 
 #ifdef _DEBUG
@@ -65,8 +65,9 @@ GraphicsSystem::GraphicsSystem(const SGraphicsSystemConfig& cfg)
 
 	//Initialize texture/shader/mesh managers
 	
+	//Shader files are located in a folder called shaderbin in the root asset directory
 	Path sourcepath(cfg.rootpath);
-	sourcepath.addDirectories("shaders/bin");
+	sourcepath.addDirectories("shaderbin");
 
 	pSystem->textureManager = CTextureManager(this, cfg.rootpath);
 	pSystem->shaderManager = CShaderManager(this, sourcepath, eShaderManagerFlag_Debug);
@@ -94,51 +95,80 @@ GraphicsSystem::~GraphicsSystem()
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
-
-void GraphicsSystem::setDisplayConfiguration(EDisplayMode displaymode, uint32 w, uint32 h, SMultisampling sampling)
+//Enumerate list of available render adapters on this machine
+void GraphicsSystem::getAdapterList(std::vector<SRenderAdapterDesc>& adapters)
 {
-	if (!pSystem)
+	IAdapterFactory* adapterfactory = nullptr;
+	abi::createAdapterFactory(&adapterfactory);
+
+	adapters.clear();
+
+	for (uint32 i = 0; i < adapterfactory->getAdapterCount(); i++)
 	{
-		return;
+		SRenderAdapterDesc desc;
+		adapterfactory->enumAdapter(i, desc);
+		adapters.push_back(desc);
 	}
 
-	auto& config = pSystem->systemConfig;
+	abi::destroyAdapterFactory(adapterfactory);
+}
 
-	SDisplayConfig display;
-	getApi()->getDisplayConfiguration(display);
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//	Manage display settings
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+void GraphicsSystem::getDisplayInfo(SGraphicsDisplayInfo& info)
+{
+	tsassert(pSystem);
+
+	info = pSystem->systemInfo.display;
+}
+
+void GraphicsSystem::setDisplayInfo(const SGraphicsDisplayInfo& newInfo)
+{
+	tsassert(pSystem);
+
+	auto& info = pSystem->systemInfo.display;
+
+	const EDisplayMode displaymode = newInfo.mode;
+	uint32 w = newInfo.width;
+	uint32 h = newInfo.height;
+	const SMultisampling sampling = newInfo.multisampling;
+
+	SDisplayConfig displaycfg;
+	getApi()->getDisplayConfiguration(displaycfg);
 
 	//Update multisample count
 	if (sampling.count)
 	{
-		if (config.multisampling.count != sampling.count)
+		if (info.multisampling.count != sampling.count)
 		{
-			config.multisampling = sampling;
-			display.multisampleCount = sampling.count;
+			info.multisampling = sampling;
+			displaycfg.multisampleCount = sampling.count;
 		}
 	}
 
 	//Update fullscreen state
 	if (displaymode)
 	{
-		if (config.displaymode != displaymode)
+		if (info.mode != displaymode)
 		{
-			intptr winhandle = config.windowHandle;
+			intptr winhandle = pSystem->systemInfo.windowHandle;
 
 			if (displaymode == eDisplayFullscreen)
 			{
 				//Exit borderless if previous mode was borderless
-				if (config.displaymode == eDisplayBorderless)
+				if (info.mode == eDisplayBorderless)
 					exitBorderless(winhandle);
 
 				//Enter fullscreen
-				display.fullscreen = true;
+				displaycfg.fullscreen = true;
 			}
 			else if (displaymode == eDisplayBorderless)
 			{
 				//Exit fullscreen if the previous mode was fullscreen
-				if (config.displaymode == eDisplayFullscreen)
-					display.fullscreen = false;
+				if (info.mode == eDisplayFullscreen)
+					displaycfg.fullscreen = false;
 				
 				//Enter borderless fullscreen
 				enterBorderless(winhandle);
@@ -146,49 +176,51 @@ void GraphicsSystem::setDisplayConfiguration(EDisplayMode displaymode, uint32 w,
 			else if (displaymode == eDisplayWindowed) //Windowed mode
 			{
 				//Exit fullscreen if the previous mode was fullscreen
-				if (config.displaymode == eDisplayFullscreen)
-					display.fullscreen = false;
+				if (info.mode == eDisplayFullscreen)
+					displaycfg.fullscreen = false;
 				//Exit borderless if previous mode was borderless
-				else if (config.displaymode == eDisplayBorderless)
+				else if (info.mode == eDisplayBorderless)
 					exitBorderless(winhandle);
 
 				//Do nothing
 			}
 
-			config.displaymode = displaymode;
+			info.mode = displaymode;
 		}
 	}
 
 	//Update resolution
 	if (w || h)
 	{
-		w = (w) ? w : config.width;
-		h = (h) ? h : config.height;
+		w = (w) ? w : info.width;
+		h = (h) ? h : info.height;
 
-		if (config.width != w || config.height != h)
+		if (info.width != w || info.height != h)
 		{
-			display.resolutionH = h;
-			display.resolutionW = w;
+			displaycfg.resolutionH = h;
+			displaycfg.resolutionW = w;
 
-			config.width = w;
-			config.height = h;
+			info.width = w;
+			info.height = h;
 		}
 	}
 
-	getApi()->setDisplayConfiguration(display);
+	getApi()->setDisplayConfiguration(displaycfg);
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
-//	Getters
-/////////////////////////////////////////////////////////////////////////////////////////////////
-
-void GraphicsSystem::getConfiguration(SGraphicsSystemConfig& cfg)
+intptr GraphicsSystem::getDisplayHandle() const
 {
-	if (pSystem)
-	{
-		cfg = pSystem->systemConfig;
-	}
+	return pSystem->systemInfo.windowHandle;
 }
+
+Path GraphicsSystem::getRootPath() const
+{
+	return pSystem->systemInfo.rootpath;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// Get resource managers
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 CTextureManager* GraphicsSystem::getTextureManager()
 {
@@ -216,7 +248,7 @@ void GraphicsSystem::execute(GraphicsContext* context)
 	rc->clearRenderTarget(display, (const Vector&)colours::Azure);
 	rc->clearDepthTarget(display, 1.0f);
 
-	if (CommandQueue* queue = context->render(display))
+	if (CommandQueue* queue = context->renderFrame(display))
 	{
 		queue->flush(rc);
 	}
