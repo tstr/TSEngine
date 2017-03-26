@@ -20,10 +20,6 @@ struct GraphicsSystem::System
 {
 	GraphicsSystem* system;
 	SGraphicsSystemInfo systemInfo;
-
-	CTextureManager textureManager;
-	CShaderManager shaderManager;
-
 	IRenderContext* context;
 
 	System(GraphicsSystem* system, const SGraphicsSystemInfo& cfg) :
@@ -62,16 +58,7 @@ GraphicsSystem::GraphicsSystem(const SGraphicsSystemInfo& cfg)
 
 	//Allocate internal implementation
 	pSystem.reset(new System(this, cfg));
-
-	//Initialize texture/shader/mesh managers
 	
-	//Shader files are located in a folder called shaderbin in the root asset directory
-	Path sourcepath(cfg.rootpath);
-	sourcepath.addDirectories("shaderbin");
-
-	pSystem->textureManager = CTextureManager(this, cfg.rootpath);
-	pSystem->shaderManager = CShaderManager(this, sourcepath, eShaderManagerFlag_Debug);
-
 	//Create main render context
 	getApi()->createContext(&pSystem->context);
 }
@@ -82,10 +69,6 @@ GraphicsSystem::~GraphicsSystem()
 	{
 		getApi()->destroyContext(pSystem->context);
 		pSystem->context = nullptr;
-
-		//Destroy all cached shaders
-		pSystem->shaderManager.clear();
-		pSystem->textureManager.clear();
 
 		//Release all resources before deinitialization (causes memory leak otherwise)
 		pSystem.reset();
@@ -218,26 +201,20 @@ Path GraphicsSystem::getRootPath() const
 	return pSystem->systemInfo.rootpath;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
-// Get resource managers
-/////////////////////////////////////////////////////////////////////////////////////////////////
-
-CTextureManager* GraphicsSystem::getTextureManager()
+HTarget GraphicsSystem::getDisplayTarget() const
 {
-	return &pSystem->textureManager;
-}
-
-CShaderManager* GraphicsSystem::getShaderManager()
-{
-	return &pSystem->shaderManager;
+	HTarget target;
+	getApi()->getDisplayTarget(target);
+	return target;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void GraphicsSystem::execute(GraphicsContext* context)
+void GraphicsSystem::begin()
 {
 	tsassert(pSystem);
 
+	//Main context
 	IRenderContext* rc = pSystem->context;
 
 	getApi()->drawBegin();
@@ -247,15 +224,25 @@ void GraphicsSystem::execute(GraphicsContext* context)
 
 	rc->clearRenderTarget(display, (const Vector&)colours::Azure);
 	rc->clearDepthTarget(display, 1.0f);
+}
 
-	if (CommandQueue* queue = context->renderFrame(display))
-	{
-		queue->flush(rc);
-	}
+void GraphicsSystem::end()
+{
+	tsassert(pSystem);
+
+	//Main context
+	IRenderContext* rc = pSystem->context;
 
 	rc->finish();
 
 	getApi()->drawEnd(&rc, 1);
+}
+
+void GraphicsSystem::execute(CommandQueue* queue)
+{
+	tsassert(pSystem);
+
+	queue->flush(pSystem->context);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

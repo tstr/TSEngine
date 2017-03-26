@@ -14,9 +14,7 @@
 #include <tscore/filesystem/path.h>
 
 #include "GraphicsCore.h"
-
-#include <tsgraphics/ShaderManager.h>
-#include <tsgraphics/TextureManager.h>
+#include "CommandQueue.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -29,8 +27,6 @@ namespace ts
 		eDisplayBorderless = 2,
 		eDisplayFullscreen = 3
 	};
-
-	class GraphicsContext;
 
 	/*
 		Display configuration structure
@@ -82,10 +78,6 @@ namespace ts
 		TSGRAPHICS_API GraphicsSystem(const SGraphicsSystemInfo&);
 		TSGRAPHICS_API ~GraphicsSystem();
 
-		//Get resource managers
-		TSGRAPHICS_API CTextureManager* getTextureManager();
-		TSGRAPHICS_API CShaderManager* getShaderManager();
-
 		//Get list of available adapters
 		TSGRAPHICS_API void getAdapterList(std::vector<SRenderAdapterDesc>& adapters);
 
@@ -107,12 +99,19 @@ namespace ts
 		TSGRAPHICS_API void getDisplayInfo(SGraphicsDisplayInfo& info);
 		
 		TSGRAPHICS_API intptr getDisplayHandle() const;
+		TSGRAPHICS_API HTarget getDisplayTarget() const;
 		TSGRAPHICS_API Path getRootPath() const;
 
 		////////////////////////////////////////////////////////////////////////////////
+		// Pipeline methods
+		////////////////////////////////////////////////////////////////////////////////
 
-		//Execute a graphical context on this frame
-		TSGRAPHICS_API void execute(GraphicsContext* context);
+		//Signal draw begin
+		TSGRAPHICS_API void begin();
+		//Execute a queue of render commands
+		TSGRAPHICS_API void execute(CommandQueue* queue);
+		//Signal draw end
+		TSGRAPHICS_API void end();
 	};
 }
 

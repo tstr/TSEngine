@@ -9,6 +9,41 @@ using namespace ts;
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ctor/dtor
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+GraphicsContext::GraphicsContext(GraphicsSystem* system) :
+	m_system(system)
+{
+	//Create render queue
+	m_drawQueue = CommandQueue(1024);
+
+	//Get root asset directory
+	Path rootpath = m_system->getRootPath();
+
+	//Shader files are located in a folder called shaderbin in the root asset directory
+	Path sourcepath(rootpath);
+	sourcepath.addDirectories("shaderbin");
+
+	//Create resource managers
+	m_bufferPool = CBufferPool(m_system);
+	m_meshManager = CMeshManager(m_system);
+	m_textureManager = CTextureManager(m_system, rootpath);
+	m_shaderManager = CShaderManager(m_system, sourcepath, eShaderManagerFlag_Debug);
+}
+
+GraphicsContext::~GraphicsContext()
+{
+	clearDraws();
+
+	//Destroy all cached resources
+	m_shaderManager.clear();
+	m_textureManager.clear();
+	m_meshManager.clear();
+	m_bufferPool.clear();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int GraphicsContext::createDraw(const CDrawBuilder& build, HDrawCmd& cmd)
 {
@@ -56,9 +91,11 @@ void GraphicsContext::clearDraws()
 	m_drawPool.clear();
 }
 
-void GraphicsContext::update()
+void GraphicsContext::commit()
 {
-	m_system->execute(this);
+	//Sort queue before submission
+	m_drawQueue.sort();
+	m_system->execute(&m_drawQueue);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
