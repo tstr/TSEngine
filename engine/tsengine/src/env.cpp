@@ -164,7 +164,7 @@ CEngineEnv::CEngineEnv(int argc, char** argv)
 	m_window.reset(new EngineWindow(*this, windesc));
 
 	//Runs window message loop on separate thread
-	m_window->open(SW_SHOWDEFAULT);
+	m_window->open(SW_SHOWMAXIMIZED);
 	
 	uint32 displaymode = 0;
 	config.getProperty("video.displaymode", displaymode);
@@ -233,8 +233,12 @@ int CEngineEnv::start(IApplication& app)
 		{
 			watch.start();
 
+			m_graphics->begin();
+
 			//Update application
 			app.onUpdate(dt);
+
+			m_graphics->end();
 
 			watch.stop();
 			dt = max(0.0, watch.deltaTime()); //clamp delta time to positive value - just to be safe

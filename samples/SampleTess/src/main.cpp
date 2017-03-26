@@ -185,7 +185,7 @@ public:
 		const string programName("SampleTessShader");
 		
 		//Load shader program
-		if (EShaderManagerStatus s = gfx->getShaderManager()->load(programName, programId))
+		if (EShaderManagerStatus s = getShaderManager()->load(programName, programId))
 		{
 			tserror("Unable to load shader \"%\" : %", programName, s);
 			return -1;
@@ -209,19 +209,19 @@ public:
 
 		STextureProperties texProps;
 		
-		if (auto status = gfx->getTextureManager()->load("cubetexture.png", tex, 0))
+		if (auto status = getTextureManager()->load("cubetexture.png", tex, 0))
 		{
 			tswarn("tex fail (%)", status);
 			return -1;
 		}
 
-		if (auto status = gfx->getTextureManager()->load("cubetexture_norm.png", texNorm, 0))
+		if (auto status = getTextureManager()->load("cubetexture_norm.png", texNorm, 0))
 		{
 			tswarn("tex fail (%)", status);
 			return -1;
 		}
 
-		if (auto status = gfx->getTextureManager()->load("cubetexture_disp.png", texDisp, 0))
+		if (auto status = getTextureManager()->load("cubetexture_disp.png", texDisp, 0))
 		{
 			tswarn("tex fail (%)", status);
 			return -1;
@@ -230,7 +230,7 @@ public:
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Create command
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		CDrawBuilder drawBuild(mEnv.getGraphics());
+		CDrawBuilder drawBuild(this);
 
 		drawBuild.setShader(programId);
 		drawBuild.setConstantBuffer(0, hConstants);
@@ -239,9 +239,8 @@ public:
 		drawBuild.setTexture(1, texDisp);
 		drawBuild.setTexture(2, texNorm);
 		
-		drawBuild.setVertexBuffer(0, meshInst.vertexBuffers[0], meshInst.vertexStrides[0], meshInst.vertexOffset[0], meshInst.vertexAttributes, meshInst.vertexAttributeCount);
+		drawBuild.setMesh(id);
 		drawBuild.setVertexTopology(eTopologyPatchList3);
-		drawBuild.setIndexBuffer(meshInst.indexBuffer);
 
 		STextureSampler sampler;
 		sampler.addressU = ETextureAddressMode::eTextureAddressClamp;
@@ -284,12 +283,20 @@ public:
 		return 0;
 	}
 
-	CommandQueue* renderFrame(HTarget target) override
+	void onUpdate(double dt) override
 	{
+		//Print elapsed time
+		timecount += dt;
+		tsprofile("% : %s", frame, timecount);
+		frame++;
+
+		//Get display information/target
 		auto gfx = mEnv.getGraphics();
 		SGraphicsDisplayInfo displayInfo;
 		gfx->getDisplayInfo(displayInfo);
-		
+		HTarget target = gfx->getDisplayTarget();
+
+		//Calculate distance
 		float dist = 1.0f + (4.0f * scroll);
 		dist = max(1.0f, min(scroll, 5.0f));
 		const Vector meshPos(0.0f, 0.0f, dist);
@@ -330,18 +337,7 @@ public:
 		queue->addCommand(batch, CommandDraw(target, (toggleSolid) ? hDrawSolid : hDrawWire, SViewport(displayInfo.width, displayInfo.height, 0, 0), SViewport()));
 		queue->submitBatch(1, batch);
 
-		queue->sort();
-
-		return queue;
-	}
-
-	void onUpdate(double dt) override
-	{
-		timecount += dt;
-		//tsprofile("% : %s", frame, timecount);
-		frame++;
-
-		this->update();
+		this->commit();
 	}
 
 	void onExit() override

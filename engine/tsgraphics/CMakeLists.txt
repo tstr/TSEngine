@@ -14,7 +14,6 @@ set(tsgraphics_inc
 	inc/tsgraphics/MeshManager.h
 	inc/tsgraphics/BufferPool.h
 	inc/tsgraphics/CommandQueue.h
-	inc/tsgraphics/DrawBuilder.h
 
 	inc/tsgraphics/api/RenderApi.h
 	inc/tsgraphics/api/RenderDef.h
