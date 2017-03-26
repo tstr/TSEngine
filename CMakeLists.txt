@@ -131,8 +131,11 @@ function(InitShaderGenerator)
 			OUTPUT ${manifest_stamp}					 # stamp file
 			COMMAND cmake -E touch "${manifest_stamp}"	 # update stamp file
 			COMMAND $<TARGET_FILE:shaderc> -t "${m}" -s "${manifestdir}" -o "${SHADER_GENERATOR_OUTPUT_DIR}"# >> "${SHADER_GENERATOR_LOG_FILE}"
-			DEPENDS ${m} ${SHADER_GENERATOR_SOURCE_LIST} # when either the manifest or sources are modified run command
+			DEPENDS ${m} ${source_list} # when either the manifest or sources are modified run command
 		)
+		
+		message("man:${m}")
+		message("src:${source_list}")
 
 	endforeach()
 		

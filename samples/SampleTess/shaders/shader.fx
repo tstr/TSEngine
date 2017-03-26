@@ -132,11 +132,11 @@ float4 PS(PSinput input) : SV_TARGET
 	//tbn = transpose(tbn); //inverse matrix - tangent to view
 	normal = normalize(mul(tangentNormal ,tbn));
 	
-
-	float f = abs(dot(input.normal, u_lightdir.xyz));
-	f = lerp(0.2f, 1.0f, f);
+	float f = abs(dot(normal, u_lightdir.xyz));
+	//f = lerp(0.2f, 1.0f, f);
 
 	float4 colour = tex.Sample(texSampler, input.texcoord);
-	
+
+	//return float4(colour.r, 0, 0, 1);
 	return float4(colour.rgb * f, colour.a);
 }

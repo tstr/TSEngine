@@ -1,8 +1,8 @@
 /*
-	Render test
+	Tessellation Sample
 */
 
-#include <tsengine.h>
+#include <tsengine/env.h>
 
 #include <tscore/debug/log.h>
 #include <tscore/debug/profiling.h>
@@ -39,6 +39,7 @@ private:
 	HDrawCmd hDrawWire;
 
 	bool toggleSolid = true;
+	float scroll = 2.5f;
 
 	struct Constants
 	{
@@ -151,7 +152,8 @@ public:
 		mEnv.getInput()->addEventListener(this);
 	}
 
-	//Input handler
+	////////////////////////////////////////////////////////
+	//Input handlers
 	int onKeyDown(EKeyCode code) override
 	{
 		if (code == eKeyT)
@@ -162,6 +164,15 @@ public:
 		return 0;
 	}
 
+	int onMouseScroll(const SInputMouseEvent& event) override
+	{
+		scroll += 0.06f * -event.deltaScroll;
+
+		return 0;
+	}
+
+	////////////////////////////////////////////////////////
+
 	int onInit() override
 	{
 		GraphicsSystem* gfx = mEnv.getGraphics();
@@ -171,7 +182,7 @@ public:
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		ShaderId programId = 0;
-		const string programName("TestCube");
+		const string programName("SampleTessShader");
 		
 		//Load shader program
 		if (EShaderManagerStatus s = gfx->getShaderManager()->load(programName, programId))
@@ -204,8 +215,21 @@ public:
 			return -1;
 		}
 
+		if (auto status = gfx->getTextureManager()->load("cubetexture_norm.png", texNorm, 0))
+		{
+			tswarn("tex fail (%)", status);
+			return -1;
+		}
+
+		if (auto status = gfx->getTextureManager()->load("cubetexture_disp.png", texDisp, 0))
+		{
+			tswarn("tex fail (%)", status);
+			return -1;
+		}
+
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//Create command
+		// Create command
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		CDrawBuilder drawBuild(mEnv.getGraphics());
 
 		drawBuild.setShader(programId);
@@ -234,8 +258,7 @@ public:
 		depthState.enableDepth = true;
 		blendState.enable = false;
 		rasterState.enableScissor = false;
-		rasterState.cullMode = eCullNone;
-		//rasterState.fillMode = eFillWireframe;
+		rasterState.cullMode = eCullBack;
 		rasterState.fillMode = eFillSolid;
 
 		drawBuild.setRasterState(rasterState);
@@ -266,8 +289,10 @@ public:
 		auto gfx = mEnv.getGraphics();
 		SGraphicsDisplayInfo displayInfo;
 		gfx->getDisplayInfo(displayInfo);
-
-		const Vector meshPos(0.0f, 0.0f, 3.0f);
+		
+		float dist = 1.0f + (4.0f * scroll);
+		dist = max(1.0f, min(scroll, 5.0f));
+		const Vector meshPos(0.0f, 0.0f, dist);
 
 		//Update shader constants
 		Constants data;
@@ -294,11 +319,16 @@ public:
 		*/
 
 		CommandQueue* queue = this->getQueue();
-		CommandBatch* batch = queue->createBatch();
+		CommandBatch* batch = nullptr;
+
+		batch = queue->createBatch();
 		queue->addCommand(batch, CommandTargetClear(target, Vector((const float*)colours::AliceBlue), 1.0f));
+		queue->submitBatch(0, batch);
+
+		batch = queue->createBatch();
 		queue->addCommand(batch, CommandBufferUpdate(hConstants), data);
 		queue->addCommand(batch, CommandDraw(target, (toggleSolid) ? hDrawSolid : hDrawWire, SViewport(displayInfo.width, displayInfo.height, 0, 0), SViewport()));
-		queue->submitBatch(0, batch);
+		queue->submitBatch(1, batch);
 
 		queue->sort();
 
@@ -324,25 +354,11 @@ public:
 
 int main(int argc, char** argv)
 {
-	//Set startup parameters
-	ts::SEngineStartupParams startup;
-	startup.argc = argc;
-	startup.argv = argv;
-
-#ifdef TS_PLATFORM_WIN32
-
-	startup.appInstance = (void*)GetModuleHandle(0);
-	startup.showWindow = SW_SHOWDEFAULT;
-
-	char path[MAX_PATH];
-	GetModuleFileNameA((HMODULE)startup.appInstance, path, MAX_PATH);
-	startup.appPath = path;
-
-#endif
-
 	//Run engine
-	CEngineEnv engine(startup);
+	CEngineEnv engine(argc, argv);
+
 	Sample test(engine);
+	
 	return engine.start(test);
 }
 

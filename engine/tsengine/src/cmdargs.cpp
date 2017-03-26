@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <tsengine/cmdargs.h>
+#include "cmdargs.h"
 #include <tscore/debug/log.h>
 
 using namespace ts;

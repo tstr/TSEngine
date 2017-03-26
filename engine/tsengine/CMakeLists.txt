@@ -3,10 +3,10 @@
 #
 
 SET(tsengine_inc
-
-	inc/tsengine.h
+	
 	inc/tsengine/abi.h
-
+	inc/tsengine/env.h
+	
 	inc/tsengine/event/event.h
 	inc/tsengine/event/messenger.h
 	
@@ -16,7 +16,6 @@ SET(tsengine_inc
 	
 	inc/tsengine/platform/window.h
 	
-	inc/tsengine/cmdargs.h
 	inc/tsengine/cvar.h
 	inc/tsengine/configfile.h
 )
@@ -33,11 +32,12 @@ SET(tsengine_src
 	src/platform/console.cpp
 	src/platform/window.cpp
 	
+	src/cmdargs.h
 	src/cmdargs.cpp
 	src/configfile.cpp
 	src/cvar.cpp
 	
-	src/tsengine.cpp
+	src/env.cpp
 )
 
 SET(tsengine_files ${tsengine_src} ${tsengine_inc})
