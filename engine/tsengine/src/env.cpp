@@ -1,8 +1,8 @@
 /*
-	Engine definition
+	Engine environment source
 */
 
-#include <tsengine.h>
+#include <tsengine/env.h>
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 #include <tscore/system/info.h>
@@ -10,15 +10,15 @@
 #include <tscore/system/error.h>
 #include <tsgraphics/colour.h>
 
-//Modules
+//Subsystems
 #include <tsgraphics/GraphicsSystem.h>
 #include <tsengine/input/inputmodule.h>
 
 #include <tsengine/platform/window.h>
 #include "platform/console.h"
 
+#include "cmdargs.h"
 #include <tsengine/event/messenger.h>
-#include <tsengine/cmdargs.h>
 #include <tsengine/configfile.h>
 
 using namespace ts;
@@ -35,6 +35,7 @@ class EngineWindow :
 private:
 
 	CEngineEnv& m_env;
+	int m_exitCode;
 
 	//Window event listener
 	int onWindowEvent(const SWindowEventArgs& args) override
@@ -66,10 +67,9 @@ private:
 
 public:
 
-	CEngineEnv& getSystem() { return m_env; }
-
 	EngineWindow(CEngineEnv& env, const SWindowDesc& desc) :
 		m_env(env),
+		m_exitCode(0),
 		CWindow(desc)
 	{
 		this->addEventListener((IEventListener*)this);
@@ -79,16 +79,28 @@ public:
 	{
 		this->removeEventListener((IEventListener*)this);
 	}
+
+	CEngineEnv& getSystem() { return m_env; }
+
+	int getExitCode() const
+	{
+		return m_exitCode;
+	}
+
+	void setExitCode(int code)
+	{
+		m_exitCode = code;
+	}
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Engine initialization
+// Engine initialization
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CEngineEnv::CEngineEnv(const SEngineStartupParams& params)
+CEngineEnv::CEngineEnv(int argc, char** argv)
 {
 	/////////////////////////////////////////////////////////////////////////
-	//Initialize debug layer
+	// Initialize debug layer
 	/////////////////////////////////////////////////////////////////////////
 
 	ts::internal::initializeSystemExceptionHandlingFilter();	//This sets the global exception handling filter for the process, meaning uncaught exceptions can be detected and a minidump can be generated
@@ -97,9 +109,9 @@ CEngineEnv::CEngineEnv(const SEngineStartupParams& params)
 #endif
 
 	/////////////////////////////////////////////////////////////////////////
-	//Parse command line arguments and load config
+	// Parse command line arguments and load config
 	/////////////////////////////////////////////////////////////////////////
-	CommandLineArgs args(params.argv, params.argc);
+	CommandLineArgs args(argv, argc);
 
 	//Console initialization
 	if (!args.isArgumentTag("noconsole"))
@@ -108,8 +120,11 @@ CEngineEnv::CEngineEnv(const SEngineStartupParams& params)
 		//setConsoleClosingHandler(consoleClosingHandlerFunc);
 	}
 
+	//Get startup path
+	Path appPath(argv[0]);
+
 	//Config loader
-	Path cfgpath(params.appPath.getParent());
+	Path cfgpath(appPath.getParent());
 	cfgpath.addDirectories((args.isArgumentTag("config")) ? args.getArgumentValue("config") : "config.ini");
 	ConfigFile config(cfgpath);
 
@@ -138,18 +153,18 @@ CEngineEnv::CEngineEnv(const SEngineStartupParams& params)
 	config.getProperty("video.resolutionH", height);
 
 	SWindowDesc windesc;
-	windesc.title = params.appPath.str();
+	windesc.title = appPath.str();
 	windesc.rect.x = (dispinf.width - width) / 2;
 	windesc.rect.y = (dispinf.height - height) / 2;
 	windesc.rect.w = width;
 	windesc.rect.h = height;
-	windesc.appInstance = params.appInstance;
+	windesc.appInstance = (void*)GetModuleHandle(0);
 	
 	//Create application window object
 	m_window.reset(new EngineWindow(*this, windesc));
 
 	//Runs window message loop on separate thread
-	m_window->open(params.showWindow);
+	m_window->open(SW_SHOWDEFAULT);
 	
 	uint32 displaymode = 0;
 	config.getProperty("video.displaymode", displaymode);
@@ -161,7 +176,7 @@ CEngineEnv::CEngineEnv(const SEngineStartupParams& params)
 
 	string assetpathbuf;
 	config.getProperty("system.assetdir", assetpathbuf);
-	Path assetpath = params.appPath.getParent();
+	Path assetpath = appPath.getParent();
 	assetpath.addDirectories(assetpathbuf);
 
 	uint32 samplecount = 1;
@@ -199,6 +214,12 @@ int CEngineEnv::start(IApplication& app)
 	if (int err = app.onInit())
 	{
 		tserror("Failed to load application class (%)", err);
+
+		//Force close window
+		m_window->close();
+		//Close events have to be handled manually
+		while (m_window->handleEvents()) {}
+		
 		return err;
 	}
 	
@@ -212,10 +233,6 @@ int CEngineEnv::start(IApplication& app)
 		{
 			watch.start();
 
-			//timer.tick();
-
-			Vector framecolour = colours::AntiqueWhite;
-
 			//Update application
 			app.onUpdate(dt);
 
@@ -226,12 +243,18 @@ int CEngineEnv::start(IApplication& app)
 
 	app.onExit();
 
-	return 0;
+	//Exit code is stored in the window - workaround
+	auto win = (EngineWindow*)m_window.get();
+	return win->getExitCode();
 }
 
-void CEngineEnv::shutdown()
+void CEngineEnv::exit(int code)
 {
-	m_window->close();
+	//Set environment exit code
+	auto win = (EngineWindow*)m_window.get();
+	win->invoke([=] { win->setExitCode(code); });
+	//Destroy window
+	win->close();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

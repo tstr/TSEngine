@@ -1,32 +1,32 @@
 
-shader TestCube
+shader SampleTessShader
 {
 	stage vertex
 	{
-		file = "cube.fx";
+		file = "shader.fx";
 		entrypoint = "VS";
 	}
 	
 	stage pixel
 	{
-		file = "cube.fx";
+		file = "shader.fx";
 		entrypoint = "PS";
 	}
 	
 	stage hull
 	{
-		file = "cube.fx";
+		file = "shader.fx";
 		entrypoint = "HS";
 	}
 	
 	stage domain
 	{
-		file = "cube.fx";
+		file = "shader.fx";
 		entrypoint = "DS";
 	}
 }
 
-shader TestQuad
+shader SampleTessQuad
 {
 	stage vertex
 	{

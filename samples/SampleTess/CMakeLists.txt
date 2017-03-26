@@ -9,7 +9,7 @@ SET(src_list
 
 SET(shader_src_list
 	
-	shaders/cube.fx
+	shaders/shader.fx
 	shaders/quad.fx
 )
 
