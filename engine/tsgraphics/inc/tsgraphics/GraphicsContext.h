@@ -12,10 +12,12 @@
 #include <tsgraphics/MeshManager.h>
 
 #include <vector>
+#include <unordered_map>
 
 namespace ts
 {
-	class CDrawBuilder;
+	class CRenderItem;
+	class CRenderItemInfo;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/*
@@ -33,9 +35,26 @@ namespace ts
 		CBufferPool m_bufferPool;
 
 		std::vector<HDrawCmd> m_drawPool;
+		std::map<std::string, uint32> m_passIdMapper;
+		uint32 m_passIdCounter = 0;
+
 		CommandQueue m_drawQueue;
 
+		//Draw command methods
+		TSGRAPHICS_API int allocDraw(const SDrawCommand& cmdDesc, HDrawCmd& cmd);
+		TSGRAPHICS_API int freeDraw(HDrawCmd cmd);
+		TSGRAPHICS_API void clearDraws();
+
 	public:
+
+		friend class CRenderItem;
+
+		//Ctor/dtor
+		TSGRAPHICS_API GraphicsContext(GraphicsSystem* system);
+		TSGRAPHICS_API ~GraphicsContext();
+
+		//Get parent system
+		GraphicsSystem* const getSystem() const { return m_system; }
 
 		//Get resource managers
 		CMeshManager* getMeshManager() { return &m_meshManager; }
@@ -45,27 +64,15 @@ namespace ts
 		//Get render queue
 		CommandQueue* getQueue() { return &m_drawQueue; }
 
-		//Ctor/dtor
-		TSGRAPHICS_API GraphicsContext(GraphicsSystem* system);
-		TSGRAPHICS_API ~GraphicsContext();
-
-		//Get parent system
-		GraphicsSystem* const getSystem() const { return m_system; }
-
-		//Draw command methods
-		TSGRAPHICS_API int createDraw(const CDrawBuilder& build, HDrawCmd& cmd);
-		TSGRAPHICS_API int destroyDraw(HDrawCmd cmd);
-		TSGRAPHICS_API void clearDraws();
-
 		//Commit queued draws on this context
 		TSGRAPHICS_API void commit();
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/*
-		Draw Command builder class
+		Render Item info class - describes how a render item is created
 	*/
-	class CDrawBuilder
+	class CRenderItemInfo
 	{
 	private:
 
@@ -74,7 +81,8 @@ namespace ts
 
 	public:
 
-		CDrawBuilder(GraphicsContext* context) : m_context(context) {}
+		CRenderItemInfo() {}
+		CRenderItemInfo(GraphicsContext* context) : m_context(context) {}
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////
 		// State setting methods
@@ -241,6 +249,41 @@ namespace ts
 		{
 			m_command = SDrawCommand();
 		}
+	};
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/*
+		Render Item class - encapsulates a set of commands
+	*/
+	class CRenderItem
+	{
+	private:
+
+		GraphicsContext* m_context;
+		HDrawCmd m_command;
+		CRenderItemInfo m_commandInfo;
+
+	public:
+
+		CRenderItem() :
+			m_context(nullptr),
+			m_command(HDRAWCMD_NULL)
+		{}
+
+		TSGRAPHICS_API CRenderItem(GraphicsContext* context, const CRenderItemInfo& info);
+
+		TSGRAPHICS_API CRenderItem(CRenderItem&& rhs);
+		TSGRAPHICS_API ~CRenderItem();
+
+		CRenderItem(const CRenderItem&) = delete;
+		TSGRAPHICS_API CRenderItem& operator=(CRenderItem&& rhs);
+
+		HDrawCmd getCommand() const { return m_command; }
+
+		TSGRAPHICS_API void clear();
+
+		void getInfo(CRenderItemInfo& info) const { info = m_commandInfo; }
+		TSGRAPHICS_API void setInfo(const CRenderItemInfo& info);
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

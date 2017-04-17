@@ -44,13 +44,12 @@ GraphicsContext::~GraphicsContext()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Draw command manager methods
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int GraphicsContext::createDraw(const CDrawBuilder& build, HDrawCmd& cmd)
+int GraphicsContext::allocDraw(const SDrawCommand& cmdDesc, HDrawCmd& cmd)
 {
 	auto api = m_system->getApi();
-
-	SDrawCommand cmdDesc;
-	build.get(cmdDesc);
 
 	ERenderStatus status = api->createDrawCommand(cmd, cmdDesc);
 
@@ -64,7 +63,7 @@ int GraphicsContext::createDraw(const CDrawBuilder& build, HDrawCmd& cmd)
 	return 0;
 }
 
-int GraphicsContext::destroyDraw(HDrawCmd cmd)
+int GraphicsContext::freeDraw(HDrawCmd cmd)
 {
 	auto it = find(m_drawPool.begin(), m_drawPool.end(), cmd);
 
@@ -90,6 +89,10 @@ void GraphicsContext::clearDraws()
 
 	m_drawPool.clear();
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Commit command queue
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void GraphicsContext::commit()
 {

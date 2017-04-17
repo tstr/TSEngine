@@ -35,8 +35,8 @@ private:
 	double timecount = 0.0;
 
 	HBuffer hConstants;
-	HDrawCmd hDrawSolid;
-	HDrawCmd hDrawWire;
+	CRenderItem drawSolid;
+	CRenderItem drawWire;
 
 	bool toggleSolid = true;
 	float scroll = 2.5f;
@@ -230,17 +230,17 @@ public:
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Create command
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		CDrawBuilder drawBuild(this);
+		CRenderItemInfo itemInfo(this);
 
-		drawBuild.setShader(programId);
-		drawBuild.setConstantBuffer(0, hConstants);
+		itemInfo.setShader(programId);
+		itemInfo.setConstantBuffer(0, hConstants);
 
-		drawBuild.setTexture(0, tex);
-		drawBuild.setTexture(1, texDisp);
-		drawBuild.setTexture(2, texNorm);
+		itemInfo.setTexture(0, tex);
+		itemInfo.setTexture(1, texDisp);
+		itemInfo.setTexture(2, texNorm);
 		
-		drawBuild.setMesh(id);
-		drawBuild.setVertexTopology(eTopologyPatchList3);
+		itemInfo.setMesh(id);
+		itemInfo.setVertexTopology(eTopologyPatchList3);
 
 		STextureSampler sampler;
 		sampler.addressU = ETextureAddressMode::eTextureAddressClamp;
@@ -248,7 +248,7 @@ public:
 		sampler.addressW = ETextureAddressMode::eTextureAddressClamp;
 		sampler.filtering = eTextureFilterAnisotropic16x;
 		sampler.enabled = true;
-		drawBuild.setTextureSampler(0, sampler);
+		itemInfo.setTextureSampler(0, sampler);
 
 		SDepthState depthState;
 		SRasterState rasterState;
@@ -260,23 +260,21 @@ public:
 		rasterState.cullMode = eCullBack;
 		rasterState.fillMode = eFillSolid;
 
-		drawBuild.setRasterState(rasterState);
-		drawBuild.setBlendState(blendState);
-		drawBuild.setDepthState(depthState);
+		itemInfo.setRasterState(rasterState);
+		itemInfo.setBlendState(blendState);
+		itemInfo.setDepthState(depthState);
 
-		drawBuild.setDrawIndexed(0, 0, meshInst.indexCount);
+		itemInfo.setDrawIndexed(0, 0, meshInst.indexCount);
 
 		//One command for solid drawing
-		if (auto r = this->createDraw(drawBuild, hDrawSolid))
-			tswarn("draw cmd fail : %", r);
+		drawSolid = CRenderItem(this, itemInfo);
 
 		//Change fill mode
 		rasterState.fillMode = eFillWireframe;
-		drawBuild.setRasterState(rasterState);
+		itemInfo.setRasterState(rasterState);
 
 		//Another command for wireframe drawing
-		if (auto r = this->createDraw(drawBuild, hDrawWire))
-			tswarn("draw cmd fail : %", r);
+		drawWire = CRenderItem(this, itemInfo);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -334,7 +332,7 @@ public:
 
 		batch = queue->createBatch();
 		queue->addCommand(batch, CommandBufferUpdate(hConstants), data);
-		queue->addCommand(batch, CommandDraw(target, (toggleSolid) ? hDrawSolid : hDrawWire, SViewport(displayInfo.width, displayInfo.height, 0, 0), SViewport()));
+		queue->addCommand(batch, CommandDraw(target, (toggleSolid) ? drawSolid.getCommand() : drawWire.getCommand(), SViewport(displayInfo.width, displayInfo.height, 0, 0), SViewport()));
 		queue->submitBatch(1, batch);
 
 		this->commit();

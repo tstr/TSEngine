@@ -55,9 +55,9 @@ SET_PROPERTY(GLOBAL PROPERTY SHADER_GENERATOR_SOURCE_LIST "")
 set (SHADER_GENERATOR_TARGET PrecompileShaders)
 
 # Directories
-set (SHADER_GENERATOR_LOG_FILE "${PROJECT_BINARY_DIR}/out.log")
+set (SHADER_GENERATOR_LOG_FILE "${PROJECT_BINARY_DIR}/shadergen/out.log")
 set (SHADER_GENERATOR_OUTPUT_DIR "${PROJECT_SOURCE_DIR}/assets/shaderbin/")
-set (SHADER_GENERATOR_STAMP_DIR "${PROJECT_BINARY_DIR}/shaderstamp/")
+set (SHADER_GENERATOR_STAMP_DIR "${PROJECT_BINARY_DIR}/shadergen/stamp/")
 
 # append a shader manifest and associated shader files to the generator list
 function(WrapShaders)
@@ -130,13 +130,11 @@ function(InitShaderGenerator)
 		add_custom_command(
 			OUTPUT ${manifest_stamp}					 # stamp file
 			COMMAND cmake -E touch "${manifest_stamp}"	 # update stamp file
-			COMMAND $<TARGET_FILE:shaderc> -t "${m}" -s "${manifestdir}" -o "${SHADER_GENERATOR_OUTPUT_DIR}"# >> "${SHADER_GENERATOR_LOG_FILE}"
+			COMMAND $<TARGET_FILE:shaderc> -t "${m}" -s "${manifestdir}" -o "${SHADER_GENERATOR_OUTPUT_DIR}" >> "${SHADER_GENERATOR_LOG_FILE}"
 			DEPENDS ${m} ${source_list} # when either the manifest or sources are modified run command
+			VERBATIM
 		)
 		
-		message("man:${m}")
-		message("src:${source_list}")
-
 	endforeach()
 		
 endfunction(InitShaderGenerator)
@@ -200,7 +198,7 @@ function(add_sample)
 	cmake_parse_arguments(add_sample "${options}" "${args}" "${argsMulti}" ${ARGN})
 	
 	ADD_EXECUTABLE(
-		"${add_sample_NAME}"
+		${add_sample_NAME}
 		${add_sample_SOURCES} ${add_sample_SHADERS} ${add_sample_SHADER_MANIFEST}
 	)
 		
@@ -211,7 +209,7 @@ function(add_sample)
 	endif()
 	
 	INSTALL(
-		TARGETS ${libname}
+		TARGETS ${add_sample_NAME}
 		RUNTIME DESTINATION ${TS_BINARY_INSTALL}
 		LIBRARY DESTINATION ${TS_BINARY_INSTALL}
 		ARCHIVE DESTINATION ${TS_LIBRARY_INSTALL}
@@ -298,11 +296,11 @@ set(TEST_FOLDER tests)
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 #Sample applications
-ADD_SUBDIRECTORY(samples/sceneviewer)
+ADD_SUBDIRECTORY(samples/Sandbox)
 ADD_SUBDIRECTORY(samples/SampleTess)
 
 SET_TARGET_PROPERTIES(
-	sceneviewer
+	Sandbox
 	SampleTess
 	PROPERTIES FOLDER ${SAMPLES_FOLDER}
 )
@@ -341,7 +339,7 @@ SET_TARGET_PROPERTIES(
 ################################################################################################
 #	Automatic shader compilation
 
-ADD_DEPENDENCIES(sceneviewer ${SHADER_GENERATOR_TARGET})
+ADD_DEPENDENCIES(Sandbox ${SHADER_GENERATOR_TARGET})
 ADD_DEPENDENCIES(SampleTess ${SHADER_GENERATOR_TARGET})
 
 InitShaderGenerator()
