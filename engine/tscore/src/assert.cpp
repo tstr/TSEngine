@@ -35,7 +35,10 @@ namespace ts
 
 				tserror(s.str());
 
-				MessageBoxA(0, s.str().c_str(), "Assert", MB_ICONERROR);
+				if (MessageBoxA(0, s.str().c_str(), "Assert", MB_ICONERROR | MB_OKCANCEL) == IDCANCEL)
+				{
+					throw exception(s.str().c_str());
+				}
 
 				exit(EXIT_FAILURE);
 			}

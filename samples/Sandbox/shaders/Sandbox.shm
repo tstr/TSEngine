@@ -1,0 +1,15 @@
+
+shader SandboxShader
+{
+	stage vertex
+	{
+		file = "Standard.fx";
+		entrypoint = "VS";
+	}
+	
+	stage pixel
+	{
+		file = "Standard.fx";
+		entrypoint = "PS";
+	}
+}
