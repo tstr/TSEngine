@@ -148,7 +148,7 @@ namespace ts
 			drawScissor(scissor)
 		{}
 
-		void dispatch(IRenderContext* context, CommandPtr extra);
+		TSGRAPHICS_API void dispatch(IRenderContext* context, CommandPtr extra);
 	};
 
 	//Updates a buffer resource on a given context
@@ -159,7 +159,7 @@ namespace ts
 		CommandBufferUpdate() {}
 		CommandBufferUpdate(HBuffer b) : hBuf(b) {}
 
-		void dispatch(IRenderContext* context, CommandPtr extra);
+		TSGRAPHICS_API void dispatch(IRenderContext* context, CommandPtr extra);
 	};
 
 	//Updates a texture resource on a given context
@@ -171,7 +171,7 @@ namespace ts
 		CommandTextureUpdate() {}
 		CommandTextureUpdate(HTexture t, uint32 idx) : hTex(t), texIdx(idx) {}
 
-		void dispatch(IRenderContext* context, CommandPtr extra);
+		TSGRAPHICS_API void dispatch(IRenderContext* context, CommandPtr extra);
 	};
 
 	//Clears a target on a given context
@@ -188,7 +188,7 @@ namespace ts
 			depth(depth)
 		{}
 
-		void dispatch(IRenderContext* context, CommandPtr extra);
+		TSGRAPHICS_API void dispatch(IRenderContext* context, CommandPtr extra);
 	};
 
 	//Resolves a multisampled texture on a given context
@@ -200,7 +200,7 @@ namespace ts
 		CommandTextureResolve() {}
 		CommandTextureResolve(HTexture src, HTexture dest) : hDst(dest), hSrc(src) {}
 
-		void dispatch(IRenderContext* context, CommandPtr extra);
+		TSGRAPHICS_API void dispatch(IRenderContext* context, CommandPtr extra);
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
