@@ -12,8 +12,6 @@ SET(src_list
 	
 	src/graphics/Graphics3D.h
 	src/graphics/Graphics3D.cpp
-	src/graphics/RenderItem.h
-	src/graphics/RenderItem.cpp
 	src/graphics/Model.h
 	src/graphics/Model.cpp
 	

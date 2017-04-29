@@ -18,11 +18,81 @@ namespace ts
 {
 	class CRenderItem;
 	class CRenderItemInfo;
+	class GraphicsContext;
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	typedef uint64 RenderItemID;
+
+	/*
+		Render Pass class
+	*/
+	class RenderPass
+	{
+	private:
+
+		HTarget m_target = HTARGET_NULL;
+		STargetDesc m_targetDesc;
+
+		bool m_owns = false;
+
+		SViewport m_targetViewport;
+		SViewport m_targetScissor;
+
+	public:
+
+		RenderPass() : m_owns(false) {}
+		RenderPass(HTexture target, const STargetDesc& desc);
+		RenderPass(HTexture target, const STargetDesc& desc, const SViewport& view, const SViewport& scissor);
+		RenderPass(RenderPass& pass, const SViewport& view, const SViewport& scissor);
+
+		~RenderPass();
+
+		HTarget getTarget() const { return m_target; }
+		SViewport getView() const { return m_targetViewport; }
+		SViewport getScissor() const { return m_targetScissor; }
+	};
+
+	/*
+		Render View class
+	*/
+	class RenderView
+	{
+	private:
+		
+		struct Item
+		{
+			HDrawCmd cmd;
+			SDrawCommand desc;
+		};
+
+		//HandleMap<RenderItemID, Item> m_itemCommands; //(m_itemCommands(&handleAllocator)
+
+		//VectorSet<>
+		std::vector<RenderPass*> m_passes;
+		CommandQueue m_queue;
+
+	protected:
+
+		void addPass(RenderPass* pass, RenderPass* prevPass);
+
+	public:
+
+		//composed of RenderPasses
+		RenderView(GraphicsContext* context);
+
+		~RenderView();
+
+		int setItemCommand(RenderItemID id, const SDrawCommand& command);
+		int setItemCommand(RenderItemID id, const SDrawCommand& command);
+		void submitItem(RenderItemID id);
+	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/*
 		Graphics Context class
 	*/
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	class GraphicsContext
 	{
 	private:
