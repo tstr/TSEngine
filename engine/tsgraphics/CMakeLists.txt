@@ -48,6 +48,7 @@ SET(tsgraphics_api_d3d11_src
 	src/api/d3d11/Context.h
 	src/api/d3d11/StateManager.cpp
 	src/api/d3d11/StateManager.h
+	src/api/d3d11/StateManagerHash.inl
 	
 	src/api/d3d11/Adapter.cpp
 )
