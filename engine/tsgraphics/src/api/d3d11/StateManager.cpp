@@ -13,56 +13,6 @@ using namespace ts;
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	State entry comparison methods
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-template<>
-bool D3D11StateManager::StateEntry<SDepthState, ID3D11DepthStencilState>::operator==(const StateEntry& rhs)
-{
-	return tie(desc.enableDepth, desc.enableStencil) == tie(rhs.desc.enableDepth, rhs.desc.enableStencil);
-}
-
-template<>
-bool D3D11StateManager::StateEntry<SRasterState, ID3D11RasterizerState>::operator==(const StateEntry& rhs)
-{
-	return tie(
-		desc.enableScissor,
-		desc.cullMode,
-		desc.fillMode
-	) == tie(
-		rhs.desc.enableScissor,
-		rhs.desc.cullMode,
-		rhs.desc.fillMode
-	);
-}
-
-template<>
-bool D3D11StateManager::StateEntry<SBlendState, ID3D11BlendState>::operator==(const StateEntry& rhs)
-{
-	return (desc.enable == rhs.desc.enable);
-}
-
-template<>
-bool D3D11StateManager::StateEntry<STextureSampler, ID3D11SamplerState>::operator==(const StateEntry& rhs)
-{
-	return tie(
-		desc.enabled,
-		desc.addressU,
-		desc.addressV,
-		desc.addressW,
-		desc.borderColour,
-		desc.filtering
-	) == tie(
-		rhs.desc.enabled,
-		rhs.desc.addressU,
-		rhs.desc.addressV,
-		rhs.desc.addressW,
-		rhs.desc.borderColour,
-		rhs.desc.filtering
-	);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 HRESULT D3D11StateManager::demandDepthState(const SDepthState & desc, ID3D11DepthStencilState** state)
 {

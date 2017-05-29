@@ -84,7 +84,6 @@ namespace ts
 		~RenderView();
 
 		int setItemCommand(RenderItemID id, const SDrawCommand& command);
-		int setItemCommand(RenderItemID id, const SDrawCommand& command);
 		void submitItem(RenderItemID id);
 	};
 

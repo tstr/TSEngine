@@ -9,9 +9,72 @@
 #pragma once
 
 #include "base.h"
-#include <vector>
+#include <unordered_map>
+
+#include "StateManagerHash.inl"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace std
+{
+	template<> struct hash<SDepthState>;
+	template<> struct hash<SRasterState>;
+	template<> struct hash<SBlendState>;
+	template<> struct hash<STextureSampler>;
+
+	/*
+	template<>
+	struct hash<SDepthState>
+	{
+		size_t operator()(const SDepthState& state) const;
+	};
+
+	template<>
+	struct hash<SRasterState>
+	{
+		size_t operator()(const SRasterState& state) const;
+	};
+
+	template<>
+	struct hash<SBlendState>
+	{
+
+		size_t operator()(const SBlendState& state) const;
+	};
+
+	template<>
+	struct hash<STextureSampler>
+	{
+		size_t operator()(const STextureSampler& state) const;
+	};
+
+	template<>
+	struct equal_to<SDepthState>
+	{
+		bool operator()(const SDepthState& left, const SDepthState& right) const;
+	};
+
+	template<>
+	struct equal_to<SRasterState>
+	{
+		bool operator()(const SRasterState& left, const SRasterState& right) const;
+	};
+
+	template<>
+	struct equal_to<SBlendState>
+	{
+
+		bool operator()(const SBlendState& left, const SBlendState& right) const;
+	};
+
+
+	template<>
+	struct equal_to<STextureSampler>
+	{
+		bool operator()(const STextureSampler& left, const STextureSampler& right) const;
+	};
+	//*/
+}
 
 namespace ts
 {
@@ -20,47 +83,21 @@ namespace ts
 	private:
 
 		template<typename desc_t, typename state_t>
-		struct StateEntry;
-		
-		template<typename desc_t, typename state_t>
-		struct StateEntry
-		{
-			desc_t desc;
-			ComPtr<state_t> state;
-
-			StateEntry()
-			{
-				desc = desc_t();
-				state.Reset();
-			}
-
-			StateEntry(desc_t desc, state_t* state = nullptr)
-			{
-				this->desc = desc;
-				this->state = state;
-			}
-
-			bool operator==(const StateEntry& rhs);
-		};
-
-		template<typename desc_t, typename state_t>
 		class StateCache
 		{
 		private:
 
-			typedef StateEntry<desc_t, state_t> Entry_t;
-
-			std::vector<Entry_t> m_cache;
+			std::unordered_map<desc_t, ComPtr<state_t>> m_cache;
 
 		public:
 
 			bool find(const desc_t& desc, state_t** state)
 			{
-				auto it = std::find(m_cache.begin(), m_cache.end(), desc);
+				auto it = m_cache.find(desc);
 
 				if (it != m_cache.end())
 				{
-					*state = it->state.Get();
+					*state = it->second.Get();
 					(*state)->AddRef();
 					return true;
 				}
@@ -70,11 +107,7 @@ namespace ts
 
 			void insert(const desc_t& desc, state_t* state)
 			{
-				ComPtr<state_t> i;
-				if (!this->find(desc, i.GetAddressOf()))
-				{
-					m_cache.push_back(Entry_t(desc, state));
-				}
+				m_cache.insert(make_pair(desc, ComPtr<state_t>(state)));
 			}
 		};
 
