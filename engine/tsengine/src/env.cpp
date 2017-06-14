@@ -120,12 +120,27 @@ CEngineEnv::CEngineEnv(int argc, char** argv)
 		//setConsoleClosingHandler(consoleClosingHandlerFunc);
 	}
 
+	////////////////////////
+	//Win32 get startup path
+	char path[MAX_PATH];
+	GetModuleFileNameA(nullptr, path, MAX_PATH);
+	////////////////////////
+
 	//Get startup path
-	Path appPath(argv[0]);
+	Path appPath(path);
 
 	//Config loader
 	Path cfgpath(appPath.getParent());
-	cfgpath.addDirectories((args.isArgumentTag("config")) ? args.getArgumentValue("config") : "config.ini");
+	
+	if (args.isArgumentTag("config"))
+	{
+		cfgpath.addDirectories(args.getArgumentValue("config"));
+	}
+	else
+	{
+		cfgpath.addDirectories("config.ini");
+	}
+
 	ConfigFile config(cfgpath);
 
 	//Create cvar table

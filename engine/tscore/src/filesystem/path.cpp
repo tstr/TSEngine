@@ -19,6 +19,13 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void Path::set(const Path& path)
+{
+	this->composePath(path.str());
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Path::composePath(const char* pathstr)
 {
 	StaticString<Path::MaxLength> strbuf(pathstr);
@@ -114,25 +121,24 @@ Path Path::getDirectory(uint16 idx) const
 
 void Path::addDirectories(const Path& subpath)
 {
-	Path& destpath = *this;
-	
 	//iterate over each directory in subpath
 	uint16 numdirs = subpath.getDirectoryCount();
+
 	for (uint16 i = 0; i < numdirs; i++)
 	{
-		string dirstr(subpath.getDirectory(i).str());
+		string dirstr(trim(subpath.getDirectory(i).str()));
 		
 		//If the directory is ".." then remove the topmost directory from the path
 		if (dirstr == "..")
 		{
-			destpath = destpath.getParent();
+			this->composePath(this->getParent().str());
 		}
 		else
 		{
 			//Append a single directory
-			size_t len = destpath.m_path.length();
-			destpath.m_path.set("/", len);
-			destpath.m_path.set(dirstr.c_str(), len + 1);
+			size_t len = m_path.length();
+			m_path.set("/", len);
+			m_path.set(dirstr.c_str(), len + 1);
 		}
 	}	
 }

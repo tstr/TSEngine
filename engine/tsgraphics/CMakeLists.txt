@@ -80,9 +80,11 @@ SET(tsgraphics_src
 
 SET(tsgraphics_files ${tsgraphics_src} ${tsgraphics_inc})
 
-ADD_ENGINE_LIBRARY(
-	tsgraphics
-	"${tsgraphics_files}"
+add_engine_library(
+	NAME tsgraphics
+	SOURCES ${tsgraphics_src}
+	HEADERS ${tsgraphics_inc}
+	HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/inc"
 )
 
 target_include_directories(

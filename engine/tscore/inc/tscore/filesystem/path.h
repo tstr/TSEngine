@@ -48,6 +48,12 @@ namespace ts
 
 		//operator overloads
 
+		Path& operator=(const Path& path)
+		{
+			this->set(path);
+			return *this;
+		}
+
 		bool operator==(const Path& p) const
 		{
 			return compare_string_weak(p.m_path.str(), m_path.str());
@@ -59,6 +65,8 @@ namespace ts
 		}
 		
 		//methods
+
+		TSCORE_API void set(const Path& path);
 
 		const char* str() const { return m_path.str(); } 
 		void str(std::string& str) const { str = m_path.str(); }
