@@ -42,9 +42,11 @@ SET(tsengine_src
 
 SET(tsengine_files ${tsengine_src} ${tsengine_inc})
 
-ADD_ENGINE_LIBRARY(
-	tsengine
-	"${tsengine_files}"
+add_engine_library(
+	NAME tsengine
+	SOURCES ${tsengine_src}
+	HEADERS ${tsengine_inc}
+	HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/inc"
 )
 
 target_link_libraries(tsengine PUBLIC tscore tsgraphics)

@@ -29,7 +29,7 @@ SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/")
 
 set (TS_BINARY_INSTALL "${CMAKE_INSTALL_PREFIX}/bin")
 set (TS_LIBRARY_INSTALL "${CMAKE_INSTALL_PREFIX}/lib")
-set (TS_INCLUDE_INSTALL "${CMAKE_INSTALL_PREFIX}/include")
+set (TS_HEADER_INSTALL "${CMAKE_INSTALL_PREFIX}/inc")
 
 # Project include directory
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/inc")
@@ -148,7 +148,16 @@ include(GenerateExportHeader)
 SET(TS_BUILD_SHARED_LIBRARIES CACHE BOOL OFF)
 
 #Add a component library
-function(add_engine_library libname libsrcs)
+function(add_engine_library)
+	
+	set(options)
+	set(args NAME HEADER_DIR)
+	set(argsMulti SOURCES HEADERS)
+	cmake_parse_arguments(add_engine_library "${options}" "${args}" "${argsMulti}" ${ARGN})
+	
+	set(libname ${add_engine_library_NAME})
+	set(libsrcs ${add_engine_library_SOURCES})
+	set(libhead ${add_engine_library_HEADERS})
 	
 	set(libtype STATIC)
 	
@@ -159,7 +168,7 @@ function(add_engine_library libname libsrcs)
 	add_library(
 		${libname}
 		${libtype}
-		${libsrcs}
+		${libsrcs} ${libhead}
 	)
 	
 	set(macro_libname ${libname})
@@ -186,6 +195,15 @@ function(add_engine_library libname libsrcs)
 		LIBRARY DESTINATION ${TS_BINARY_INSTALL}
 		ARCHIVE DESTINATION ${TS_LIBRARY_INSTALL}
 	)
+	
+	if (NOT add_engine_library_HEADER_DIR STREQUAL "")
+	
+		INSTALL(
+			DIRECTORY "${add_engine_library_HEADER_DIR}/"
+			DESTINATION ${TS_HEADER_INSTALL}
+		)
+		
+	endif()
 	
 endfunction()
 

@@ -56,9 +56,11 @@ SET(tscore_src
 
 SET(tscore_files ${tscore_src} ${tscore_inc})
 
-ADD_ENGINE_LIBRARY(
-	tscore
-	"${tscore_files}"
+add_engine_library(
+	NAME tscore
+	SOURCES ${tscore_src}
+	HEADERS ${tscore_inc}
+	HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/inc"
 )
 
 target_include_directories(
