@@ -38,19 +38,21 @@ namespace std
 
 namespace ts
 {
+	typedef std::string String;
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Format string - allows arguments to be inserted to locations in the string marked by the '%' char
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//Format no arguments
-	inline std::string format(const std::string& str)
+	inline String format(const String& str)
 	{
 		return str;
 	}
 
 	//Format at least one argument - cstring
 	template<typename arg_t, typename ... args_t>
-	static std::string format(
+	static String format(
 		const char* str,
 		arg_t&& arg,
 		args_t&& ... args
@@ -75,8 +77,8 @@ namespace ts
 
 	//Format at least one argument - move
 	template<typename arg_t, typename ... args_t>
-	static std::string format(
-		std::string&& str,
+	static String format(
+		String&& str,
 		arg_t&& arg,
 		args_t&& ... args
 		)
@@ -99,8 +101,8 @@ namespace ts
 
 	//Format at least one argument - copy
 	template<typename arg_t, typename ... args_t>
-	inline std::string format(
-		const std::string& str,
+	inline String format(
+		const String& str,
 		arg_t&& arg,
 		args_t&& ... args
 		)
@@ -112,10 +114,10 @@ namespace ts
 	//String helpers
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	static std::vector<std::string>& split(const std::string &s, char delim, std::vector<std::string> &elems)
+	static std::vector<String>& split(const String &s, char delim, std::vector<String> &elems)
 	{
 		std::stringstream ss(s);
-		std::string item;
+		String item;
 
 		while (std::getline(ss, item, delim))
 		{
@@ -125,22 +127,22 @@ namespace ts
 		return elems;
 	}
 
-	static std::vector<std::string> split(const std::string &s, char delim)
+	static std::vector<String> split(const String &s, char delim)
 	{
-		std::vector<std::string> elems;
+		std::vector<String> elems;
 		split(s, delim, elems);
 
 		return elems;
 	}
 	
-	static std::vector<std::string>& split(const std::string &str, const std::string& delim)
+	static std::vector<String>& split(const String &str, const String& delim)
 	{
-		std::string s(str);
+		String s(str);
 		size_t pos = 0;
-		std::string token;
-		std::vector<std::string> tokens;
+		String token;
+		std::vector<String> tokens;
 		
-		while ((pos = s.find(delim)) != std::string::npos)
+		while ((pos = s.find(delim)) != String::npos)
 		{
 			token = s.substr(0, pos);
 			tokens.push_back(token);
@@ -153,7 +155,7 @@ namespace ts
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	static std::string trim(const std::string& str)
+	static String trim(const String& str)
 	{
 		using namespace std;
 
@@ -163,7 +165,7 @@ namespace ts
 		size_t first = max(str.find_first_not_of(' '), str.find_first_not_of('\t'));
 		size_t last = min(str.find_last_not_of(' '), str.find_last_not_of('\t'));
 
-		if (first == std::string::npos)
+		if (first == String::npos)
 			first = 0;
 
 		return str.substr(first, (last - first + 1));
@@ -171,7 +173,7 @@ namespace ts
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	static void toLower(std::string& str)
+	static void toLower(String& str)
 	{
 		for (size_t i = 0; i < str.size(); i++)
 		{
@@ -179,7 +181,7 @@ namespace ts
 		}
 	}
 
-	static void toUpper(std::string& str)
+	static void toUpper(String& str)
 	{
 		for (size_t i = 0; i < str.size(); i++)
 		{
@@ -224,11 +226,11 @@ namespace ts
 		return true;
 	}
 
-	static bool compare_string_weak(const std::string& str0, const std::string& str1)
+	static bool compare_string_weak(const String& str0, const String& str1)
 	{
 		if (str0.size() != str1.size()) return false;
 
-		for (std::string::size_type i = 0; i < str0.size(); ++i)
+		for (String::size_type i = 0; i < str0.size(); ++i)
 		{
 			if (::toupper(str0[i]) != ::toupper(str1[i]))
 				return false;
@@ -266,7 +268,7 @@ namespace ts
 			set(str);
 		}
 
-		StaticString(const std::string& str) :
+		StaticString(const String& str) :
 			StaticString(str.c_str())
 		{}
 
@@ -305,7 +307,7 @@ namespace ts
 			return strcmp(str.m_chars, this->m_chars) == 0;
 		}
 
-		inline void set(const std::string& str, size_t offset = 0)
+		inline void set(const String& str, size_t offset = 0)
 		{
 			set(str.c_str(), offset);
 		}

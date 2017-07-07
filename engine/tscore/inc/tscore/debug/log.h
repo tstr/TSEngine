@@ -72,7 +72,9 @@ namespace ts
 		void detachStream(ILogStream* stream)
 		{
 			auto it = find(m_streams.begin(), m_streams.end(), stream);
-			m_streams.erase(it);
+			
+			if (it != m_streams.end())
+				m_streams.erase(it);
 		}
 
 	private:

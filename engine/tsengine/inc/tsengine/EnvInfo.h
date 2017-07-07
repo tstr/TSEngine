@@ -1,12 +1,11 @@
 /*
-	System information header
+	System Information
 */
 
 #pragma once
 
-#include <tscore/abi.h>
 #include <tscore/types.h>
-#include <tscore/strings.h>
+#include <string>
 
 namespace ts
 {
@@ -54,8 +53,4 @@ namespace ts
 		uint32 width;
 		uint8 colourDepth;
 	};
-	
-	void TSCORE_API getSystemInformation(SSystemInfo& i);
-	void TSCORE_API getPrimaryDisplayInformation(SDisplayInfo& i);
-	void TSCORE_API getSystemMemoryInformation(SSystemMemoryInfo& i);
 }

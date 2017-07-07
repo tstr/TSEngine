@@ -1,8 +1,8 @@
 /*
-	Config file parser source
+	INI file parser source
 */
 
-#include <tsengine/configfile.h>
+#include "INIReader.h"
 #include <fstream>
 #include <tscore/debug/log.h>
 
@@ -18,7 +18,7 @@ static bool isWhitespace(char c)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ConfigFile::parseSection(const std::string& line, ConfigFile::Section& section)
+bool INIReader::parseSection(const std::string& line, INIReader::Section& section)
 {
 	size_t pos0 = line.find_first_of('[');
 	size_t pos1 = line.find_first_of(']');
@@ -47,7 +47,7 @@ bool ConfigFile::parseSection(const std::string& line, ConfigFile::Section& sect
 	return true;
 }
 
-bool ConfigFile::parseProperty(const std::string& line, ConfigFile::SProperty& property)
+bool INIReader::parseProperty(const std::string& line, Property& property)
 {
 	auto v = split(line, '=');
 
@@ -56,7 +56,7 @@ bool ConfigFile::parseProperty(const std::string& line, ConfigFile::SProperty& p
 		return false;
 	}
 
-	SProperty prop;
+	Property prop;
 
 	prop.key = move(v[0]);
 	prop.value = move(v[1]);
@@ -75,7 +75,7 @@ bool ConfigFile::parseProperty(const std::string& line, ConfigFile::SProperty& p
 	return true;
 }
 
-void ConfigFile::trimComments(std::string& line)
+void INIReader::trimComments(std::string& line)
 {
 	size_t pos = line.find_first_of('#');
 	if (pos != string::npos)
@@ -85,7 +85,7 @@ void ConfigFile::trimComments(std::string& line)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Parse a config file and loads it's contents into memory
-bool ConfigFile::load(const ts::Path& configpath)
+bool INIReader::load(const ts::Path& configpath)
 {
 	ifstream filestream(configpath.str());
 
@@ -138,7 +138,7 @@ bool ConfigFile::load(const ts::Path& configpath)
 						continue;
 					}
 
-					SProperty property;
+					Property property;
 					if (!parseProperty(line, property))
 						tswarn("Unable to parse property - line %", linenumber);
 
@@ -158,28 +158,28 @@ bool ConfigFile::load(const ts::Path& configpath)
 	}
 }
 
-ConfigFile::~ConfigFile()
+INIReader::~INIReader()
 {
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ConfigFile::isSection(const Section& section)
+bool INIReader::isSection(const Section& section)
 {
 	string key(section);
 	toLower(key);
 	return (m_properties.count(key) > 0);
 }
 
-size_t ConfigFile::getSectionPropertyCount(const Section& section) const
+size_t INIReader::getSectionPropertyCount(const Section& section) const
 {
 	string key(section);
 	toLower(key);
 	return m_properties.count(key);
 }
 
-size_t ConfigFile::getSectionCount() const
+size_t INIReader::getSectionCount() const
 {
 	size_t sz = 0;
 	for (auto& i : m_properties)
@@ -190,7 +190,7 @@ size_t ConfigFile::getSectionCount() const
 }
 
 
-void ConfigFile::getSectionProperties(const Section& section, SPropertyArray& properties)
+void INIReader::getSectionProperties(const Section& section, PropertyArray& properties)
 {
 	//Section key
 	string key(section);
@@ -214,7 +214,16 @@ void ConfigFile::getSectionProperties(const Section& section, SPropertyArray& pr
 	}
 }
 
-bool ConfigFile::getProperty(const PropertyKey& keystr, PropertyValue& valuestr)
+
+void INIReader::getSections(SectionArray& sections)
+{
+	for (auto it = m_properties.begin(), end = m_properties.end(); it != end; it = m_properties.upper_bound(it->first))
+	{
+		sections.push_back(it->first);
+	}
+}
+
+bool INIReader::getProperty(const PropertyKey& keystr, PropertyValue& valuestr)
 {
 	size_t splitpos = keystr.find_last_of('.');
 

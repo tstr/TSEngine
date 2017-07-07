@@ -7,7 +7,7 @@
 	- iterators
 */
 
-#include <tscore/filesystem/path.h>
+#include <tscore/path.h>
 
 #define NOMINMAX
 #include <Windows.h>

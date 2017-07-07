@@ -1,16 +1,16 @@
 /*
-	Config file parser header
+	INI file parser header
 
-	Config files use a simple INI format, eg.
+	Format:
 
-	[Section]
-	key = value 
+		[Section]
+		key = value 
 */
 
 #pragma once
 
 #include <tsengine/abi.h>
-#include <tscore/filesystem/path.h>
+#include <tscore/path.h>
 #include <tscore/strings.h>
 #include <tscore/types.h>
 //stdlib
@@ -22,14 +22,7 @@
 
 namespace ts
 {
-	struct SConfigProperty
-	{
-		std::string section;
-		std::string keyname;
-		std::string keyvalue;
-	};
-	
-	class ConfigFile
+	class INIReader
 	{
 	public:
 
@@ -37,29 +30,32 @@ namespace ts
 		typedef std::string PropertyKey;
 		typedef std::string PropertyValue;
 
-		struct SProperty
+		struct Property
 		{
 			PropertyKey key;
 			PropertyValue value;
 		};
 
-		typedef std::vector<SProperty> SPropertyArray;
+		typedef std::vector<Property> PropertyArray;
+		typedef std::vector<Section> SectionArray;
 
-		bool TSENGINE_API load(const ts::Path& configpath);
+		bool load(const ts::Path& configpath);
 		void reload() { load(m_configpath); }
 
 		Path getPath() const { return m_configpath; }
 
-		ConfigFile() {}
-		ConfigFile(const ts::Path& configpath) { load(configpath); }
-		TSENGINE_API ~ConfigFile();
+		INIReader() {}
+		INIReader(const ts::Path& configpath) { load(configpath); }
+		~INIReader();
 
-		TSENGINE_API void getSectionProperties(const Section& section, SPropertyArray& properties);
-		TSENGINE_API size_t getSectionPropertyCount(const Section& section) const;
-		TSENGINE_API size_t getSectionCount() const;
-		TSENGINE_API bool isSection(const Section& section);
+		void getSectionProperties(const Section& section, PropertyArray& properties);
+		void getSections(SectionArray& sections);
+
+		size_t getSectionPropertyCount(const Section& section) const;
+		size_t getSectionCount() const;
+		bool isSection(const Section& section);
 		
-		TSENGINE_API bool getProperty(const PropertyKey& key, PropertyValue& val);
+		bool getProperty(const PropertyKey& key, PropertyValue& val);
 		
 		template<
 			typename t,
@@ -91,12 +87,12 @@ namespace ts
 	private:
 
 		Path m_configpath;
-		std::multimap<Section, SProperty> m_properties;
+		std::multimap<Section, Property> m_properties;
 
-		TSENGINE_API bool parseSection(const std::string& line, Section& section);
-		TSENGINE_API bool parseProperty(const std::string& line, SProperty& property);
+		bool parseSection(const std::string& line, Section& section);
+		bool parseProperty(const std::string& line, Property& property);
 
-		TSENGINE_API void trimComments(std::string& line);
+		void trimComments(std::string& line);
 	};
 }
 

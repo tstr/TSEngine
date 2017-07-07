@@ -2,7 +2,7 @@
 	Path helper function source
 */
 
-#include <tscore/filesystem/pathhelpers.h>
+#include <tscore/pathutil.h>
 
 #include <Windows.h>
 #include <Shlwapi.h>
