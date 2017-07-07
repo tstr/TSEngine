@@ -5,21 +5,18 @@
 #include <tsengine/env.h>
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
-#include <tscore/system/info.h>
 #include <tscore/system/thread.h>
-#include <tscore/system/error.h>
 #include <tsgraphics/colour.h>
 
 //Subsystems
 #include <tsgraphics/GraphicsSystem.h>
-#include <tsengine/input/inputmodule.h>
+#include <tsengine/Input.h>
 
-#include <tsengine/platform/window.h>
+#include "platform/Window.h"
 #include "platform/console.h"
 
 #include "cmdargs.h"
-#include <tsengine/event/messenger.h>
-#include <tsengine/configfile.h>
+#include "INIReader.h"
 
 using namespace ts;
 using namespace std;
@@ -28,59 +25,53 @@ using namespace std;
 //Application window class
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class EngineWindow :
-	public CWindow,
-	public CWindow::IEventListener
+class EngineWindow : public Window
 {
 private:
 
-	CEngineEnv& m_env;
+	EngineEnv& m_env;
 	int m_exitCode;
 
-	//Window event listener
-	int onWindowEvent(const SWindowEventArgs& args) override
+	/*
+		Window event handlers
+	*/
+
+	void onResize() override
 	{
-		switch (args.eventcode)
+		if (auto render = m_env.getGraphics())
 		{
-		case EWindowEvent::eEventResize:
-		{
-			uint32 w = 1;
-			uint32 h = 1;
-			getWindowResizeEventArgs(args, w, h);
-			if (auto render = m_env.getGraphics())
-			{
-				render->setDisplayInfo(eDisplayUnknown, w, h, SMultisampling(0));
-			}
-
-			break;
+			uint w = 0;
+			uint h = 0;
+			Window::getSize(w, h);
+			
+			render->setDisplayInfo(eDisplayUnknown, w, h, SMultisampling(0));
 		}
-		case EWindowEvent::eEventDestroy:
-		{
-			m_env.getGraphics()->setDisplayInfo(eDisplayWindowed, 0, 0, 0);
+	}
 
-			break;
-		}
-		}
+	void onDestroy() override
+	{
+		m_env.getGraphics()->setDisplayInfo(eDisplayWindowed, 0, 0, 0);
+	}
 
-		return 0;
+	void onEvent(const PlatformEventArgs& arg) override
+	{
+		m_env.getInput()->onEvent(arg);
 	}
 
 public:
 
-	EngineWindow(CEngineEnv& env, const SWindowDesc& desc) :
+	EngineWindow(EngineEnv& env, const WindowInfo& desc) :
 		m_env(env),
 		m_exitCode(0),
-		CWindow(desc)
+		Window(desc)
 	{
-		this->addEventListener((IEventListener*)this);
 	}
 
 	~EngineWindow()
 	{
-		this->removeEventListener((IEventListener*)this);
 	}
 
-	CEngineEnv& getSystem() { return m_env; }
+	EngineEnv& getSystem() { return m_env; }
 
 	int getExitCode() const
 	{
@@ -97,20 +88,16 @@ public:
 // Engine initialization
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CEngineEnv::CEngineEnv(int argc, char** argv)
+EngineEnv::EngineEnv(int argc, char** argv)
 {
 	/////////////////////////////////////////////////////////////////////////
-	// Initialize debug layer
-	/////////////////////////////////////////////////////////////////////////
-
-	ts::internal::initializeSystemExceptionHandlingFilter();	//This sets the global exception handling filter for the process, meaning uncaught exceptions can be detected and a minidump can be generated
-#ifdef _DEBUG
-	ts::internal::initializeSystemMemoryLeakDetector();			//This allows the crt to detect memory leaks
-#endif
-
+	// Initialize error handlers
+	
+	initErrorHandler();
+	
 	/////////////////////////////////////////////////////////////////////////
 	// Parse command line arguments and load config
-	/////////////////////////////////////////////////////////////////////////
+	
 	CommandLineArgs args(argv, argc);
 
 	//Console initialization
@@ -119,18 +106,9 @@ CEngineEnv::CEngineEnv(int argc, char** argv)
 		consoleOpen();
 		//setConsoleClosingHandler(consoleClosingHandlerFunc);
 	}
-
-	////////////////////////
-	//Win32 get startup path
-	char path[MAX_PATH];
-	GetModuleFileNameA(nullptr, path, MAX_PATH);
-	////////////////////////
-
-	//Get startup path
-	Path appPath(path);
-
-	//Config loader
-	Path cfgpath(appPath.getParent());
+	
+	//Determine path of config file
+	Path cfgpath(getCurrentDir());
 	
 	if (args.isArgumentTag("config"))
 	{
@@ -141,48 +119,33 @@ CEngineEnv::CEngineEnv(int argc, char** argv)
 		cfgpath.addDirectories("config.ini");
 	}
 
-	ConfigFile config(cfgpath);
-
-	//Create cvar table
-	m_cvarTable.reset(new CVarTable());
-	
-	if (config.isSection("CVars"))
-	{
-		ConfigFile::SPropertyArray properties;
-		config.getSectionProperties("CVars", properties);
-		
-		for (auto p : properties)
-		{
-			m_cvarTable->setVar(p.key, p.value);
-		}
-	}
+	initConfig(cfgpath);
 
 	/////////////////////////////////////////////////////////////////////////
 	
 	//Set application window parameters
 	SDisplayInfo dispinf;
-	getPrimaryDisplayInformation(dispinf);
+	getSystemDisplayInfo(dispinf);
 	uint32 width = 800;
 	uint32 height = 600;
-	config.getProperty("video.resolutionW", width);
-	config.getProperty("video.resolutionH", height);
+	m_vars->get("video.resolutionW", width);
+	m_vars->get("video.resolutionH", height);
 
-	SWindowDesc windesc;
-	windesc.title = appPath.str();
-	windesc.rect.x = (dispinf.width - width) / 2;
-	windesc.rect.y = (dispinf.height - height) / 2;
-	windesc.rect.w = width;
-	windesc.rect.h = height;
-	windesc.appInstance = (void*)GetModuleHandle(0);
+	WindowInfo winInf;
+	winInf.title = format("%  ::::  %", cfgpath.str(), args.getArguments());
+	winInf.rect.x = (dispinf.width - width) / 2;
+	winInf.rect.y = (dispinf.height - height) / 2;
+	winInf.rect.w = width;
+	winInf.rect.h = height;
 	
 	//Create application window object
-	m_window.reset(new EngineWindow(*this, windesc));
+	m_window.reset(new EngineWindow(*this, winInf));
 
 	//Runs window message loop on separate thread
-	m_window->open(SW_SHOWMAXIMIZED);
+	m_window->open();
 	
 	uint32 displaymode = 0;
-	config.getProperty("video.displaymode", displaymode);
+	m_vars->get("video.displaymode", displaymode);
 	if (displaymode > 2)
 	{
 		tswarn("% is not a valid fullscreen mode", displaymode);
@@ -190,15 +153,15 @@ CEngineEnv::CEngineEnv(int argc, char** argv)
 	}
 
 	string assetpathbuf;
-	config.getProperty("system.assetdir", assetpathbuf);
-	Path assetpath = appPath.getParent();
+	m_vars->get("system.assetdir", assetpathbuf);
+	Path assetpath = cfgpath.getParent();
 	assetpath.addDirectories(assetpathbuf);
 
 	uint32 samplecount = 1;
-	config.getProperty("video.multisamplecount", samplecount);
+	m_vars->get("video.multisamplecount", samplecount);
 
 	SGraphicsSystemInfo graphicscfg;
-	graphicscfg.windowHandle = m_window->nativeHandle();
+	graphicscfg.windowHandle = m_window->getHandle();
 	graphicscfg.display.width = width;
 	graphicscfg.display.height = height;
 	graphicscfg.display.mode = (EDisplayMode)(displaymode + 1);
@@ -206,17 +169,17 @@ CEngineEnv::CEngineEnv(int argc, char** argv)
 	graphicscfg.apiid = EGraphicsAPIID::eGraphicsAPI_D3D11;
 	graphicscfg.rootpath = assetpath;
 
-	m_graphics.reset(new GraphicsSystem(graphicscfg));
-	m_inputModule.reset(new CInputModule(m_window.get()));
+	m_graphicsSystem.reset(new GraphicsSystem(graphicscfg));
+	m_inputSystem.reset(new InputSystem(m_window.get()));
 
 	/////////////////////////////////////////////////////////////////////////
 }
 
-CEngineEnv::~CEngineEnv()
+EngineEnv::~EngineEnv()
 {
 	//Shutdown
-	m_inputModule.reset();
-	m_graphics.reset();
+	m_inputSystem.reset();
+	m_graphicsSystem.reset();
 	m_window.reset();
 
 	consoleClose();
@@ -224,7 +187,7 @@ CEngineEnv::~CEngineEnv()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int CEngineEnv::start(IApplication& app)
+int EngineEnv::start(Application& app)
 {
 	if (int err = app.onInit())
 	{
@@ -233,27 +196,27 @@ int CEngineEnv::start(IApplication& app)
 		//Force close window
 		m_window->close();
 		//Close events have to be handled manually
-		while (m_window->handleEvents()) {}
+		while (m_window->poll()) {}
 		
 		return err;
 	}
-	
+
 	{
 		Timer timer;
 		Stopwatch watch;
 		double dt = 0.0;
 
 		//Main engine loop
-		while (m_window->handleEvents())
+		while (m_window->poll())
 		{
 			watch.start();
 
-			m_graphics->begin();
+			m_graphicsSystem->begin();
 
 			//Update application
 			app.onUpdate(dt);
 
-			m_graphics->end();
+			m_graphicsSystem->end();
 
 			watch.stop();
 			dt = max(0.0, watch.deltaTime()); //clamp delta time to positive value - just to be safe
@@ -267,7 +230,7 @@ int CEngineEnv::start(IApplication& app)
 	return win->getExitCode();
 }
 
-void CEngineEnv::exit(int code)
+void EngineEnv::exit(int code)
 {
 	//Set environment exit code
 	auto win = (EngineWindow*)m_window.get();

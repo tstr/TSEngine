@@ -4,12 +4,13 @@
 
 #pragma once
 
+#include <tsengine/abi.h>
 #include <tscore/strings.h>
 #include <array>
 
 namespace ts
 {
-	//Physical key codes
+	//Physical key/button codes
 	enum EKeyCode
 	{
 		eKeyUnknown,
@@ -135,27 +136,21 @@ namespace ts
 		eKeyNumpad8,
 		eKeyNumpad9,
 
+		eMouseButtonLeft,
+		eMouseButtonRight,
+		eMouseButtonMiddle,
+		eMouseXbutton1,
+		eMouseXbutton2,
+
 		KeyEnumMax
 	};
 	
-	//Key table class for converting between key types
-	class CKeyTable
+	namespace keys
 	{
-	public:
+		TSENGINE_API const char* getKeyName(EKeyCode code);
 
-		typedef StaticString<32> KeyName;
+		TSENGINE_API EKeyCode mapFromVirtualKey(uint32 vk);
 
-		CKeyTable();
-		~CKeyTable() {}
-
-		bool getKeyName(EKeyCode code, KeyName& name) const;
-		EKeyCode mapFromVirtualKey(uint32 vk) const;
-		uint32 mapToVirtualKey(EKeyCode code) const;
-
-	private:
-
-		std::array<uint32, EKeyCode::KeyEnumMax> m_keys;
-		std::array<KeyName, EKeyCode::KeyEnumMax> m_keyStrings;
-
-	};
+		TSENGINE_API uint32 mapToVirtualKey(EKeyCode code);
+	}
 }

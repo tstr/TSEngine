@@ -14,12 +14,10 @@ set(tscore_inc
 
 	inc/tscore/system/memory.h
 	inc/tscore/system/thread.h
-	inc/tscore/system/error.h
 	inc/tscore/system/time.h
-	inc/tscore/system/info.h
 	
-	inc/tscore/filesystem/path.h
-	inc/tscore/filesystem/pathhelpers.h
+	inc/tscore/path.h
+	inc/tscore/pathutil.h
 	
 	inc/tscore/containers/circularbuffer.h
 	inc/tscore/containers/threadqueue.h
@@ -42,16 +40,11 @@ set(tscore_inc
 SET(tscore_src
 	
 	src/maths.cpp
-	
 	src/assert.cpp
 	src/log.cpp
-
-	src/system/memory.cpp
-	src/system/error.cpp
-	src/system/info.cpp
-
-	src/filesystem/path.cpp
-	src/filesystem/pathhelpers.cpp
+	src/memory.cpp
+	src/path.cpp
+	src/pathutil.cpp
 )
 
 SET(tscore_files ${tscore_src} ${tscore_inc})

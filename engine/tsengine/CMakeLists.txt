@@ -5,39 +5,36 @@
 SET(tsengine_inc
 	
 	inc/tsengine/abi.h
-	inc/tsengine/env.h
 	
-	inc/tsengine/event/event.h
-	inc/tsengine/event/messenger.h
-	
-	inc/tsengine/input/inputdevice.h
-	inc/tsengine/input/keycodes.h
-	inc/tsengine/input/inputmodule.h
-	
-	inc/tsengine/platform/window.h
-	
-	inc/tsengine/cvar.h
-	inc/tsengine/configfile.h
+	inc/tsengine/Env.h
+	inc/tsengine/EnvInfo.h
+	inc/tsengine/VarTable.h
+	inc/tsengine/Surface.h
+
+	inc/tsengine/KeyCodes.h
+	inc/tsengine/Input.h
 )
 
 SET(tsengine_src
 	
-	src/input/inputdevice.cpp
+	src/input/InputEvent.cpp
+	src/input/InputSystem.cpp
 	src/input/keycodes.cpp
-	src/input/inputmodule.cpp
 	
-	src/event/event.cpp
+	src/platform/Console.h
+	src/platform/Console.cpp
+	src/platform/Window.cpp
+	src/platform/Window.h
+
+	src/CmdArgs.h
+	src/CmdArgs.cpp
+	src/IniReader.cpp
+	src/IniReader.h
 	
-	src/platform/console.h
-	src/platform/console.cpp
-	src/platform/window.cpp
-	
-	src/cmdargs.h
-	src/cmdargs.cpp
-	src/configfile.cpp
-	src/cvar.cpp
-	
-	src/env.cpp
+	src/Env.cpp
+	src/EnvError.cpp
+	src/EnvInfo.cpp
+	src/EnvConfig.cpp
 )
 
 SET(tsengine_files ${tsengine_src} ${tsengine_inc})

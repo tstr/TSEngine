@@ -2,7 +2,7 @@
 	Exception handling and memory leak handling functions - these functions are only meant to be called on startup and in no other place
 */
 
-#include <tscore/system/error.h>
+#include <TsEngine/Env.h>
 
 #define _CRTDBG_MAP_ALLOC
 
@@ -19,21 +19,17 @@
 
 static LONG WINAPI exception_filter(EXCEPTION_POINTERS *info);
 
-namespace ts
-{
-	namespace internal
-	{
-		void initializeSystemExceptionHandlingFilter()
-		{
-			SetUnhandledExceptionFilter(exception_filter);
-		}
+using namespace ts;
 
-		void initializeSystemMemoryLeakDetector()
-		{
-			//todo: actually get memory leak detection to work
-			_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-		}
-	}
+void EngineEnv::initErrorHandler()
+{
+	SetUnhandledExceptionFilter(exception_filter);
+	
+#ifdef _DEBUG
+	//todo: actually get memory leak detection to work
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -15,18 +15,18 @@ namespace ts
 	{
 	private:
 		
-		std::string m_commandLine;
+		String m_commandLine;
 		std::unordered_map<std::string, std::string> m_argPairs;
 		
 	public:
 		
 		CommandLineArgs() {}
-		TSENGINE_API CommandLineArgs(const std::string& cmdline) { parse(cmdline); }
+		CommandLineArgs(const String& cmdline) { parse(cmdline); }
 		~CommandLineArgs() {}
 		
 		CommandLineArgs(char** argv, int argc)
 		{
-			std::string cmdline;
+			String cmdline;
 			for (int i = 1; i < argc; i++)
 			{
 				cmdline += " ";
@@ -37,14 +37,14 @@ namespace ts
 			parse(cmdline);
 		}
 		
-		TSENGINE_API void parse(const std::string& cmdline);
+		void parse(const String& cmdline);
 		
 		bool isArgumentTag(const std::string& tag) const
 		{
 			return (m_argPairs.find(tag) != m_argPairs.end());
 		}
 		
-		std::string getArgumentValue(const std::string& tag) const
+		String getArgumentValue(const String& tag) const
 		{
 			auto it = m_argPairs.find(tag);
 			
@@ -57,6 +57,11 @@ namespace ts
 		size_t getArgumentCount() const
 		{
 			return m_argPairs.size();
+		}
+
+		String getArguments() const
+		{
+			return m_commandLine;
 		}
 	};
 }

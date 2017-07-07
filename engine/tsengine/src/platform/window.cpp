@@ -11,7 +11,8 @@
 #include <Windows.h>
 #include <Windowsx.h> //todo: use the macros
 
-#include <tsengine/platform/window.h>
+#include "Window.h"
+
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 
@@ -59,66 +60,11 @@ static bool EnableVisualStyles()
 using namespace std;
 using namespace ts;
 
-//Maps a EWindowEvent enum to it's corresponding windows specific WM_* event code
-static const class Win32EventEnums
-{
-private:
-
-	array<uint32, EWindowEvent::EnumMax> m_windowEvents;
-
-public:
-
-	Win32EventEnums()
-	{
-		//Set up event table for matching enums
-		m_windowEvents[EWindowEvent::eEventNull] = WM_NULL;
-		m_windowEvents[EWindowEvent::eEventInput] = WM_INPUT;
-		m_windowEvents[EWindowEvent::eEventActivate] = WM_ACTIVATE;
-		m_windowEvents[EWindowEvent::eEventResize] = WM_SIZE;
-		m_windowEvents[EWindowEvent::eEventCreate] = WM_CREATE;
-		m_windowEvents[EWindowEvent::eEventDestroy] = WM_DESTROY;
-		m_windowEvents[EWindowEvent::eEventClose] = WM_CLOSE;
-		m_windowEvents[EWindowEvent::eEventDraw] = WM_PAINT;
-		m_windowEvents[EWindowEvent::eEventSetfocus] = WM_SETFOCUS;
-		m_windowEvents[EWindowEvent::eEventKillfocus] = WM_KILLFOCUS;
-		m_windowEvents[EWindowEvent::eEventChar] = WM_CHAR;
-		m_windowEvents[EWindowEvent::eEventKeydown] = WM_KEYDOWN;
-		m_windowEvents[EWindowEvent::eEventKeyup] = WM_KEYUP;
-		m_windowEvents[EWindowEvent::eEventScroll] = WM_MOUSEWHEEL;
-		m_windowEvents[EWindowEvent::eEventMouseDown] = WM_LBUTTONDOWN;
-		m_windowEvents[EWindowEvent::eEventMouseUp] = WM_LBUTTONUP;
-		m_windowEvents[EWindowEvent::eEventMouseMove] = WM_MOUSEMOVE;
-	}
-
-	EWindowEvent GetWindowEventEnum(uint32 w32code) const
-	{
-		//return m_CWindowEvents.at(eventcodes);
-		EWindowEvent eventcode = eEventNull;
-		
-		for (uint32 i = 0; i < m_windowEvents.size(); i++)
-		{
-			if (m_windowEvents[i] == w32code)
-			{
-				eventcode = (EWindowEvent)i;
-				break;
-			}
-		}
-
-		return eventcode;
-	}
-
-	uint32 GetWin32MessageEnum(EWindowEvent eventcode) const
-	{
-		return m_windowEvents.at(eventcode);
-	}
-
-} EventCodes;
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct CWindow::Impl
+struct Window::Impl
 {
-	CWindow* window = nullptr;
+	Window* window = nullptr;
 	HWND windowHandle;
 	WNDCLASSEX windowClass;
 	HMODULE windowModule;
@@ -126,17 +72,15 @@ struct CWindow::Impl
 	string windowClassname;
 	string windowTitle;
 
-	SWindowRect size;
-
-	list<CWindow::IEventListener*> windowEventListeners;
+	WindowRect size;
 	
-	Impl(CWindow* window, const SWindowDesc& desc) :
+	Impl(Window* window, const WindowInfo& info) :
 		window(window),
 		windowClassname("tsAppWindow"),
-		windowTitle(desc.title),
-		size(desc.rect)
+		windowTitle(info.title),
+		size(info.rect)
 	{
-		windowModule = (HMODULE)desc.appInstance;
+		windowModule = (HMODULE)GetModuleHandle(0);
 
 		//Set win32 window class values
 		ZeroMemory(&windowClass, sizeof(WNDCLASSEX));
@@ -146,7 +90,7 @@ struct CWindow::Impl
 		windowClass.cbWndExtra = 0;
 
 		windowClass.hInstance = windowModule;
-		windowClass.lpfnWndProc = (WNDPROC)&CWindow::Impl::WndProc;
+		windowClass.lpfnWndProc = (WNDPROC)&Window::Impl::WndProc;
 		windowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 
 		windowClass.lpszClassName = windowClassname.c_str();
@@ -182,48 +126,66 @@ struct CWindow::Impl
 		}
 
 		//Get window ptr from user data
-		if (auto wnd = reinterpret_cast<CWindow::Impl*>(GetWindowLongPtr(hwnd, GWLP_USERDATA)))
+		if (auto wnd = reinterpret_cast<Window::Impl*>(GetWindowLongPtr(hwnd, GWLP_USERDATA)))
 		{
 			if (msg == TSM_INVOKE)
 			{
-				auto f = (CWindow::IInvoker*)wparam;
+				auto f = (Window::IInvoker*)wparam;
 				if (f) f->execute();
 				return 0;
 			}
 
-			EWindowEvent code = EventCodes.GetWindowEventEnum(msg);
-
-			//Only call the event listener for WM_* messages which have a corresponding EWindowEvent enum
-			if (code != EWindowEvent::eEventNull)
+			switch (msg)
 			{
-				SWindowEventArgs args;
-				args.pWindow = wnd->window;
-				args.eventcode = EventCodes.GetWindowEventEnum(msg);
-				args.a = lparam;
-				args.b = wparam;
+			case WM_SIZE:
+				//wnd->window->onResize(LOWORD(lparam), HIWORD(lparam));
+				wnd->window->onResize();
+				break;
 
-				//Copy event listeners
-				auto ls = wnd->windowEventListeners;
+			case WM_PAINT:
+				wnd->window->onRedraw();
+				break;
 
-				for (CWindow::IEventListener* listener : ls)
-				{
-					if (listener != nullptr)
-					{
-						//If the return value is not equal to zero the event is marked as handled by the listener
-						if (listener->onWindowEvent(args))
-						{
-							return 0;
-						}
-					}
-				}
+			case WM_SETFOCUS:
+				wnd->window->onActivate();
+				break;
 
+			case WM_KILLFOCUS:
+				wnd->window->onDeactivate();
+				break;
+
+			case WM_CREATE:
+				wnd->window->onCreate();
+				break;
+
+			case WM_CLOSE:
+				wnd->window->onClose();
+				break;
+
+			case WM_DESTROY:
+				wnd->window->onDestroy();
+				break;
+
+			case TSM_INVOKE:
+				if (auto f = (Window::IInvoker*)wparam)
+					f->execute();
+				return 0;
+
+			default:
+
+				PlatformEventArgs arg;
+				arg.code = msg;
+				arg.a = lparam;
+				arg.b = wparam;
+
+				wnd->window->onEvent(arg);
 			}
 		}
 
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
 
-	void open(int showCmd)
+	void open()
 	{
 
 #ifdef USE_VISUAL_STYLES
@@ -266,84 +228,46 @@ struct CWindow::Impl
 
 		tsassert(IsWindow(windowHandle));
 
-		ShowWindow(windowHandle, showCmd);
+		//ShowWindow(windowHandle, SW_SHOWDEFAULT);
 	}
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CWindow::CWindow(const SWindowDesc& desc) :
-	pImpl(new Impl(this, desc))
+Window::Window(const WindowInfo& info) :
+	pImpl(new Impl(this, info))
 {
 
 }
 
-CWindow::~CWindow()
+Window::~Window()
 {
 	delete pImpl;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CWindow::addEventListener(IEventListener* listener)
-{
-	auto f = [this, &listener]() {
-			pImpl->windowEventListeners.push_back(listener);
-	};
-
-	if (isOpen())
-	{
-		invoke(f);
-	}
-	else
-	{
-		f();
-	}
-}
-
-void CWindow::removeEventListener(IEventListener* listener)
-{
-	auto f = [this, &listener]() {
-		auto& listeners = pImpl->windowEventListeners;
-		auto it = find(listeners.begin(), listeners.end(), listener);
-
-		if (it != listeners.end())
-			pImpl->windowEventListeners.erase(it);
-	};
-
-	if (isOpen())
-	{
-		invoke(f);
-	}
-	else
-	{
-		f();
-	}
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void CWindow::open(int showCmd)
+void Window::open()
 {
 	tsassert(pImpl);
-	pImpl->open(showCmd);
+	pImpl->open();
 }
 
-void CWindow::close()
+void Window::close()
 {
 	tsassert(pImpl);
 	DestroyWindow(pImpl->windowHandle);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-bool CWindow::isOpen() const
+bool Window::isOpen() const
 {
 	tsassert(pImpl);
 	return IsWindow(pImpl->windowHandle) != 0;
 }
 
-int CWindow::handleEvents()
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+int Window::poll()
 {
 	MSG msg;
 	ZeroMemory(&msg, sizeof(MSG));
@@ -353,37 +277,172 @@ int CWindow::handleEvents()
 	{
 		if (msg.message == WM_QUIT)
 		{
-			return eQueueExit;
+			return 0;
 		}
 
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
 
-	return (ret != 0) ? eQueueMessagePresent : eQueueMessageEmpty;
+	return (ret != 0) ? 2 : 1;
 }
 
-intptr CWindow::nativeHandle() const
+void Window::invokeImpl(Window::IInvoker* i)
 {
-	return (intptr)pImpl->windowHandle;
-}
-
-void CWindow::invoke_internal(CWindow::IInvoker* i)
-{
+	tsassert(pImpl);
 	SendMessage(pImpl->windowHandle, TSM_INVOKE, (WPARAM)i, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Window event helper functions
+// ISurface overrides
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-namespace ts
+intptr Window::getHandle() const
 {
-	void getWindowResizeEventArgs(const SWindowEventArgs& args, uint32& w, uint32& h)
+	tsassert(pImpl);
+	return (intptr)pImpl->windowHandle;
+}
+
+void Window::enableBorderless(bool enable)
+{
+	tsassert(pImpl);
+	const HWND hwnd = pImpl->windowHandle;
+
+	Window::invoke([=]() {
+
+		if (enable)
+		{
+			//Set borderless mode
+			DEVMODE dev;
+			ZeroMemory(&dev, sizeof(DEVMODE));
+
+			int width = GetSystemMetrics(SM_CXSCREEN);
+			int	height = GetSystemMetrics(SM_CYSCREEN);
+
+			EnumDisplaySettings(NULL, 0, &dev);
+
+			HDC context = GetWindowDC(hwnd);
+			int colourBits = GetDeviceCaps(context, BITSPIXEL);
+			int refreshRate = GetDeviceCaps(context, VREFRESH);
+
+			dev.dmPelsWidth = width;
+			dev.dmPelsHeight = height;
+			dev.dmBitsPerPel = colourBits;
+			dev.dmDisplayFrequency = refreshRate;
+			dev.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
+
+			//todo: fix error with changing settings
+			//LONG result = ChangeDisplaySettingsA(&dev, CDS_FULLSCREEN);// == DISP_CHANGE_SUCCESSFUL);
+			//tserror("ChangeDisplaySettings returned %", result);
+
+			SetWindowLongPtr(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+			SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height, 0);
+			BringWindowToTop(hwnd);
+		}
+		else
+		{
+			//Exit borderless mode
+			SetWindowLongPtr(hwnd, GWL_EXSTYLE, WS_EX_LEFT);
+			SetWindowLongPtr(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+
+			ShowWindow(hwnd, SW_MAXIMIZE);
+		}
+	});
+}
+
+bool Window::isBorderless() const
+{
+	tsassert(pImpl);
+
+	LONG_PTR style = GetWindowLongPtr(pImpl->windowHandle, GWL_STYLE);
+
+	return (style & (WS_POPUP | WS_VISIBLE)) == (WS_POPUP | WS_VISIBLE);
+}
+
+bool Window::supportsBorderless() const
+{
+	//Window class does support this feature
+	return true;
+}
+
+void Window::resize(uint width, uint height)
+{
+	tsassert(pImpl);
+
+	if (!isBorderless())
 	{
-		w = LOWORD(args.a);
-		h = HIWORD(args.a);
+		Window::invoke([=]() {
+			
+			RECT r;
+
+			const HWND hwnd = pImpl->windowHandle;
+
+			//Get current size of client area
+			GetWindowRect(hwnd, &r);
+
+			//Resize the width and height of the old client area while preserving original position
+			r.right = r.left + width;
+			r.bottom = r.top + height;
+
+			LONG_PTR styles = GetWindowLongPtr(hwnd, GWL_STYLE);
+			LONG_PTR exStyles = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+
+			//Convert client area to window rect
+			AdjustWindowRectEx(
+				&r,
+				styles,
+				false,
+				exStyles
+			);
+
+			//Set new window rect
+			SetWindowPos(
+				hwnd,
+				HWND_TOP,
+				r.left,
+				r.top,
+				r.right,
+				r.bottom,
+				SWP_SHOWWINDOW
+			);
+		});
 	}
 }
+
+void Window::getSize(uint& w, uint& h) const
+{
+	tsassert(pImpl);
+	
+	RECT r;
+	GetClientRect(pImpl->windowHandle, &r);
+
+	w = r.right - r.left;
+	h = r.bottom - r.top;
+}
+
+void Window::redraw()
+{
+	tsassert(pImpl);
+	
+	RedrawWindow(pImpl->windowHandle, NULL, NULL, RDW_UPDATENOW);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Default event handlers
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Window::onCreate() {}
+void Window::onSuspend() {}
+
+void Window::onClose() {}
+void Window::onDestroy() {}
+
+void Window::onActivate() {}
+void Window::onDeactivate() {}
+
+void Window::onResize() {}
+void Window::onRedraw() {}
+
+void Window::onEvent(const PlatformEventArgs& arg) {}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -5,8 +5,7 @@
 */
 
 #include <tscore/strings.h>
-#include <tscore/types.h>
-#include <tsengine/input/keycodes.h>
+#include <tsengine/KeyCodes.h>
 #include <array>
 
 #include <Windows.h>
@@ -144,293 +143,322 @@ enum VirtualKeyCodes
 ///////////////////////////////////////////////////////////////////////////////////////////
 //Win32 key code mappings
 ///////////////////////////////////////////////////////////////////////////////////////////
-
-CKeyTable::CKeyTable()
+static const struct KeyTable
 {
-	/*
-		Key codes
-	*/
+	KeyTable()
+	{
+		/*
+			Key codes
+		*/
 
-	const uint32 unused = 0xffffffff;
+		const uint32 unused = 0xffffffff;
 
-	m_keys[EKeyCode::eKeyEsc] = vk_Escape;
+		keys[EKeyCode::eKeyEsc] = vk_Escape;
 
-	m_keys[EKeyCode::eKeyA] = vk_A;
-	m_keys[EKeyCode::eKeyB] = vk_B;
-	m_keys[EKeyCode::eKeyC] = vk_C;
-	m_keys[EKeyCode::eKeyD] = vk_D;
-	m_keys[EKeyCode::eKeyE] = vk_E;
-	m_keys[EKeyCode::eKeyF] = vk_F;
-	m_keys[EKeyCode::eKeyG] = vk_G;
-	m_keys[EKeyCode::eKeyH] = vk_H;
-	m_keys[EKeyCode::eKeyI] = vk_I;
-	m_keys[EKeyCode::eKeyJ] = vk_J;
-	m_keys[EKeyCode::eKeyK] = vk_K;
-	m_keys[EKeyCode::eKeyL] = vk_L;
-	m_keys[EKeyCode::eKeyM] = vk_M;
-	m_keys[EKeyCode::eKeyN] = vk_N;
-	m_keys[EKeyCode::eKeyO] = vk_O;
-	m_keys[EKeyCode::eKeyP] = vk_P;
-	m_keys[EKeyCode::eKeyQ] = vk_Q;
-	m_keys[EKeyCode::eKeyR] = vk_R;
-	m_keys[EKeyCode::eKeyS] = vk_S;
-	m_keys[EKeyCode::eKeyT] = vk_T;
-	m_keys[EKeyCode::eKeyU] = vk_U;
-	m_keys[EKeyCode::eKeyV] = vk_V;
-	m_keys[EKeyCode::eKeyW] = vk_W;
-	m_keys[EKeyCode::eKeyZ] = vk_Z;
-	m_keys[EKeyCode::eKeyY] = vk_Y;
-	m_keys[EKeyCode::eKeyX] = vk_X;
+		keys[EKeyCode::eKeyA] = vk_A;
+		keys[EKeyCode::eKeyB] = vk_B;
+		keys[EKeyCode::eKeyC] = vk_C;
+		keys[EKeyCode::eKeyD] = vk_D;
+		keys[EKeyCode::eKeyE] = vk_E;
+		keys[EKeyCode::eKeyF] = vk_F;
+		keys[EKeyCode::eKeyG] = vk_G;
+		keys[EKeyCode::eKeyH] = vk_H;
+		keys[EKeyCode::eKeyI] = vk_I;
+		keys[EKeyCode::eKeyJ] = vk_J;
+		keys[EKeyCode::eKeyK] = vk_K;
+		keys[EKeyCode::eKeyL] = vk_L;
+		keys[EKeyCode::eKeyM] = vk_M;
+		keys[EKeyCode::eKeyN] = vk_N;
+		keys[EKeyCode::eKeyO] = vk_O;
+		keys[EKeyCode::eKeyP] = vk_P;
+		keys[EKeyCode::eKeyQ] = vk_Q;
+		keys[EKeyCode::eKeyR] = vk_R;
+		keys[EKeyCode::eKeyS] = vk_S;
+		keys[EKeyCode::eKeyT] = vk_T;
+		keys[EKeyCode::eKeyU] = vk_U;
+		keys[EKeyCode::eKeyV] = vk_V;
+		keys[EKeyCode::eKeyW] = vk_W;
+		keys[EKeyCode::eKeyZ] = vk_Z;
+		keys[EKeyCode::eKeyY] = vk_Y;
+		keys[EKeyCode::eKeyX] = vk_X;
 
-	m_keys[EKeyCode::eKeyF1] = vk_F1;
-	m_keys[EKeyCode::eKeyF2] = vk_F2;
-	m_keys[EKeyCode::eKeyF3] = vk_F3;
-	m_keys[EKeyCode::eKeyF4] = vk_F4;
-	m_keys[EKeyCode::eKeyF5] = vk_F5;
-	m_keys[EKeyCode::eKeyF6] = vk_F6;
-	m_keys[EKeyCode::eKeyF7] = vk_F7;
-	m_keys[EKeyCode::eKeyF8] = vk_F8;
-	m_keys[EKeyCode::eKeyF9] = vk_F9;
-	m_keys[EKeyCode::eKeyF10] = vk_F10;
-	m_keys[EKeyCode::eKeyF11] = vk_F11;
-	m_keys[EKeyCode::eKeyF12] = vk_F12;
-	m_keys[EKeyCode::eKeyF13] = vk_F13;
-	m_keys[EKeyCode::eKeyF14] = vk_F14;
-	m_keys[EKeyCode::eKeyF15] = vk_F15;
-	m_keys[EKeyCode::eKeyF16] = vk_F16;
+		keys[EKeyCode::eKeyF1] = vk_F1;
+		keys[EKeyCode::eKeyF2] = vk_F2;
+		keys[EKeyCode::eKeyF3] = vk_F3;
+		keys[EKeyCode::eKeyF4] = vk_F4;
+		keys[EKeyCode::eKeyF5] = vk_F5;
+		keys[EKeyCode::eKeyF6] = vk_F6;
+		keys[EKeyCode::eKeyF7] = vk_F7;
+		keys[EKeyCode::eKeyF8] = vk_F8;
+		keys[EKeyCode::eKeyF9] = vk_F9;
+		keys[EKeyCode::eKeyF10] = vk_F10;
+		keys[EKeyCode::eKeyF11] = vk_F11;
+		keys[EKeyCode::eKeyF12] = vk_F12;
+		keys[EKeyCode::eKeyF13] = vk_F13;
+		keys[EKeyCode::eKeyF14] = vk_F14;
+		keys[EKeyCode::eKeyF15] = vk_F15;
+		keys[EKeyCode::eKeyF16] = vk_F16;
 
-	m_keys[EKeyCode::eKey0] = vk_0;
-	m_keys[EKeyCode::eKey1] = vk_1;
-	m_keys[EKeyCode::eKey2] = vk_2;
-	m_keys[EKeyCode::eKey3] = vk_3;
-	m_keys[EKeyCode::eKey4] = vk_4;
-	m_keys[EKeyCode::eKey5] = vk_5;
-	m_keys[EKeyCode::eKey6] = vk_6;
-	m_keys[EKeyCode::eKey7] = vk_7;
-	m_keys[EKeyCode::eKey8] = vk_8;
-	m_keys[EKeyCode::eKey9] = vk_9;
+		keys[EKeyCode::eKey0] = vk_0;
+		keys[EKeyCode::eKey1] = vk_1;
+		keys[EKeyCode::eKey2] = vk_2;
+		keys[EKeyCode::eKey3] = vk_3;
+		keys[EKeyCode::eKey4] = vk_4;
+		keys[EKeyCode::eKey5] = vk_5;
+		keys[EKeyCode::eKey6] = vk_6;
+		keys[EKeyCode::eKey7] = vk_7;
+		keys[EKeyCode::eKey8] = vk_8;
+		keys[EKeyCode::eKey9] = vk_9;
 
-	m_keys[EKeyCode::eKeyMinus] = vk_UnderScore;
-	m_keys[EKeyCode::eKeyEquals] = vk_Equals;
+		keys[EKeyCode::eKeyMinus] = vk_UnderScore;
+		keys[EKeyCode::eKeyEquals] = vk_Equals;
 
-	m_keys[EKeyCode::eKeyGrave] = vk_Grave;
-	m_keys[EKeyCode::eKeyCapsLock] = vk_CapsLock;
-	m_keys[EKeyCode::eKeyTab] = vk_Tab;
-	m_keys[EKeyCode::eKeyLWindows] = vk_LWin;
-	m_keys[EKeyCode::eKeyRWindows] = vk_RWin;
-	m_keys[EKeyCode::eKeyAltL] = vk_LAlt;
-	m_keys[EKeyCode::eKeyAltR] = vk_RAlt;
+		keys[EKeyCode::eKeyGrave] = vk_Grave;
+		keys[EKeyCode::eKeyCapsLock] = vk_CapsLock;
+		keys[EKeyCode::eKeyTab] = vk_Tab;
+		keys[EKeyCode::eKeyLWindows] = vk_LWin;
+		keys[EKeyCode::eKeyRWindows] = vk_RWin;
+		keys[EKeyCode::eKeyAltL] = vk_LAlt;
+		keys[EKeyCode::eKeyAltR] = vk_RAlt;
 
-	m_keys[EKeyCode::eKeySpace] = vk_Space;
-	m_keys[EKeyCode::eKeyBackSlash] = vk_BackSlash;
-	m_keys[EKeyCode::eKeyForwardSlash] = vk_Slash;
-	m_keys[EKeyCode::eKeyComma] = vk_Comma;
-	m_keys[EKeyCode::eKeyFullStop] = vk_Period;
-	m_keys[EKeyCode::eKeyBracketL] = vk_LeftBrace;
-	m_keys[EKeyCode::eKeyBracketR] = vk_RightBrace;
-	m_keys[EKeyCode::eKeySemiColon] = vk_SemiColon;
-	m_keys[EKeyCode::eKeyApostrophe] = vk_Apostrophe;
-	m_keys[EKeyCode::eKeyHash] = vk_Pound;
-	m_keys[EKeyCode::eKeyApps] = vk_Apps;
+		keys[EKeyCode::eKeySpace] = vk_Space;
+		keys[EKeyCode::eKeyBackSlash] = vk_BackSlash;
+		keys[EKeyCode::eKeyForwardSlash] = vk_Slash;
+		keys[EKeyCode::eKeyComma] = vk_Comma;
+		keys[EKeyCode::eKeyFullStop] = vk_Period;
+		keys[EKeyCode::eKeyBracketL] = vk_LeftBrace;
+		keys[EKeyCode::eKeyBracketR] = vk_RightBrace;
+		keys[EKeyCode::eKeySemiColon] = vk_SemiColon;
+		keys[EKeyCode::eKeyApostrophe] = vk_Apostrophe;
+		keys[EKeyCode::eKeyHash] = vk_Pound;
+		keys[EKeyCode::eKeyApps] = vk_Apps;
 
-	m_keys[EKeyCode::eKeyBackspace] = vk_BackSpace;
-	m_keys[EKeyCode::eKeyEnter] = vk_Return;
-	m_keys[EKeyCode::eKeyCtrlL] = vk_LControl;
-	m_keys[EKeyCode::eKeyCtrlR] = vk_RControl;
-	m_keys[EKeyCode::eKeyShiftL] = vk_LShift;
-	m_keys[EKeyCode::eKeyShiftR] = vk_RShift;
+		keys[EKeyCode::eKeyBackspace] = vk_BackSpace;
+		keys[EKeyCode::eKeyEnter] = vk_Return;
+		keys[EKeyCode::eKeyCtrlL] = vk_LControl;
+		keys[EKeyCode::eKeyCtrlR] = vk_RControl;
+		keys[EKeyCode::eKeyShiftL] = vk_LShift;
+		keys[EKeyCode::eKeyShiftR] = vk_RShift;
 
-	m_keys[EKeyCode::eKeyPrintScreen] = vk_PrintScreen;
-	m_keys[EKeyCode::eKeyScrollLock] = vk_ScrollLock;
-	m_keys[EKeyCode::eKeyPause] = vk_Pause;
+		keys[EKeyCode::eKeyPrintScreen] = vk_PrintScreen;
+		keys[EKeyCode::eKeyScrollLock] = vk_ScrollLock;
+		keys[EKeyCode::eKeyPause] = vk_Pause;
 
-	m_keys[EKeyCode::eKeyInsert] = vk_Insert;
-	m_keys[EKeyCode::eKeyHome] = vk_Home;
-	m_keys[EKeyCode::eKeyPageUp] = VK_PRIOR;
-	m_keys[EKeyCode::eKeyDelete] = vk_Delete;
-	m_keys[EKeyCode::eKeyEnd] = vk_End;
-	m_keys[EKeyCode::eKeyPageDown] = VK_NEXT;
+		keys[EKeyCode::eKeyInsert] = vk_Insert;
+		keys[EKeyCode::eKeyHome] = vk_Home;
+		keys[EKeyCode::eKeyPageUp] = VK_PRIOR;
+		keys[EKeyCode::eKeyDelete] = vk_Delete;
+		keys[EKeyCode::eKeyEnd] = vk_End;
+		keys[EKeyCode::eKeyPageDown] = VK_NEXT;
 
-	//Arrow keys
-	m_keys[EKeyCode::eKeyArrowUp] = vk_Up;
-	m_keys[EKeyCode::eKeyArrowDown] = vk_Down;
-	m_keys[EKeyCode::eKeyArrowLeft] = vk_Left;
-	m_keys[EKeyCode::eKeyArrowRight] = vk_Right;
+		//Arrow keys
+		keys[EKeyCode::eKeyArrowUp] = vk_Up;
+		keys[EKeyCode::eKeyArrowDown] = vk_Down;
+		keys[EKeyCode::eKeyArrowLeft] = vk_Left;
+		keys[EKeyCode::eKeyArrowRight] = vk_Right;
 
-	//Numpad keys
-	m_keys[EKeyCode::eKeyNumpadLock] = vk_NumLock;
-	m_keys[EKeyCode::eKeyNumpadDivide] = vk_Divide;
-	m_keys[EKeyCode::eKeyNumpadMultiply] = vk_Multiply;
-	m_keys[EKeyCode::eKeyNumpadMinus] = vk_Subtract;
-	m_keys[EKeyCode::eKeyNumpadAdd] = vk_Add;
-	m_keys[EKeyCode::eKeyNumpadEnter] = unused;
-	m_keys[EKeyCode::eKeyNumpadDecimal] = vk_Decimal;
-	m_keys[EKeyCode::eKeyNumpad0] = vk_NumPad0;
-	m_keys[EKeyCode::eKeyNumpad1] = vk_NumPad1;
-	m_keys[EKeyCode::eKeyNumpad2] = vk_NumPad2;
-	m_keys[EKeyCode::eKeyNumpad3] = vk_NumPad3;
-	m_keys[EKeyCode::eKeyNumpad4] = vk_NumPad4;
-	m_keys[EKeyCode::eKeyNumpad5] = vk_NumPad5;
-	m_keys[EKeyCode::eKeyNumpad6] = vk_NumPad6;
-	m_keys[EKeyCode::eKeyNumpad7] = vk_NumPad7;
-	m_keys[EKeyCode::eKeyNumpad8] = vk_NumPad8;
-	m_keys[EKeyCode::eKeyNumpad9] = vk_NumPad9;
+		//Numpad keys
+		keys[EKeyCode::eKeyNumpadLock] = vk_NumLock;
+		keys[EKeyCode::eKeyNumpadDivide] = vk_Divide;
+		keys[EKeyCode::eKeyNumpadMultiply] = vk_Multiply;
+		keys[EKeyCode::eKeyNumpadMinus] = vk_Subtract;
+		keys[EKeyCode::eKeyNumpadAdd] = vk_Add;
+		keys[EKeyCode::eKeyNumpadEnter] = unused;
+		keys[EKeyCode::eKeyNumpadDecimal] = vk_Decimal;
+		keys[EKeyCode::eKeyNumpad0] = vk_NumPad0;
+		keys[EKeyCode::eKeyNumpad1] = vk_NumPad1;
+		keys[EKeyCode::eKeyNumpad2] = vk_NumPad2;
+		keys[EKeyCode::eKeyNumpad3] = vk_NumPad3;
+		keys[EKeyCode::eKeyNumpad4] = vk_NumPad4;
+		keys[EKeyCode::eKeyNumpad5] = vk_NumPad5;
+		keys[EKeyCode::eKeyNumpad6] = vk_NumPad6;
+		keys[EKeyCode::eKeyNumpad7] = vk_NumPad7;
+		keys[EKeyCode::eKeyNumpad8] = vk_NumPad8;
+		keys[EKeyCode::eKeyNumpad9] = vk_NumPad9;
 
-	/*
-		Key names
-	*/
+		keys[EKeyCode::eMouseButtonLeft] = unused;
+		keys[EKeyCode::eMouseButtonRight] = unused;
+		keys[EKeyCode::eMouseButtonMiddle] = unused;
+		keys[EKeyCode::eMouseXbutton1] = unused;
+		keys[EKeyCode::eMouseXbutton2] = unused;
 
-	m_keyStrings[EKeyCode::eKeyEsc] = "ESCAPE";
+		/*
+			Key names
+		*/
 
-	m_keyStrings[EKeyCode::eKeyA] = "A";
-	m_keyStrings[EKeyCode::eKeyB] = "B";
-	m_keyStrings[EKeyCode::eKeyC] = "C";
-	m_keyStrings[EKeyCode::eKeyD] = "D";
-	m_keyStrings[EKeyCode::eKeyE] = "E";
-	m_keyStrings[EKeyCode::eKeyF] = "F";
-	m_keyStrings[EKeyCode::eKeyG] = "G";
-	m_keyStrings[EKeyCode::eKeyH] = "H";
-	m_keyStrings[EKeyCode::eKeyI] = "I";
-	m_keyStrings[EKeyCode::eKeyJ] = "J";
-	m_keyStrings[EKeyCode::eKeyK] = "K";
-	m_keyStrings[EKeyCode::eKeyL] = "L";
-	m_keyStrings[EKeyCode::eKeyM] = "M";
-	m_keyStrings[EKeyCode::eKeyN] = "N";
-	m_keyStrings[EKeyCode::eKeyO] = "O";
-	m_keyStrings[EKeyCode::eKeyP] = "P";
-	m_keyStrings[EKeyCode::eKeyQ] = "Q";
-	m_keyStrings[EKeyCode::eKeyR] = "R";
-	m_keyStrings[EKeyCode::eKeyS] = "S";
-	m_keyStrings[EKeyCode::eKeyT] = "T";
-	m_keyStrings[EKeyCode::eKeyU] = "U";
-	m_keyStrings[EKeyCode::eKeyV] = "V";
-	m_keyStrings[EKeyCode::eKeyW] = "W";
-	m_keyStrings[EKeyCode::eKeyX] = "X";
-	m_keyStrings[EKeyCode::eKeyY] = "Y";
-	m_keyStrings[EKeyCode::eKeyZ] = "Z";
+		keyStrings[EKeyCode::eKeyEsc] = "ESCAPE";
 
-	m_keyStrings[EKeyCode::eKeyF1] = "F1";
-	m_keyStrings[EKeyCode::eKeyF2] = "F2";
-	m_keyStrings[EKeyCode::eKeyF3] = "F3";
-	m_keyStrings[EKeyCode::eKeyF4] = "F4";
-	m_keyStrings[EKeyCode::eKeyF5] = "F5";
-	m_keyStrings[EKeyCode::eKeyF6] = "F6";
-	m_keyStrings[EKeyCode::eKeyF7] = "F7";
-	m_keyStrings[EKeyCode::eKeyF8] = "F8";
-	m_keyStrings[EKeyCode::eKeyF9] = "F9";
-	m_keyStrings[EKeyCode::eKeyF10] = "F10";
-	m_keyStrings[EKeyCode::eKeyF11] = "F11";
-	m_keyStrings[EKeyCode::eKeyF12] = "F12";
+		keyStrings[EKeyCode::eKeyA] = "A";
+		keyStrings[EKeyCode::eKeyB] = "B";
+		keyStrings[EKeyCode::eKeyC] = "C";
+		keyStrings[EKeyCode::eKeyD] = "D";
+		keyStrings[EKeyCode::eKeyE] = "E";
+		keyStrings[EKeyCode::eKeyF] = "F";
+		keyStrings[EKeyCode::eKeyG] = "G";
+		keyStrings[EKeyCode::eKeyH] = "H";
+		keyStrings[EKeyCode::eKeyI] = "I";
+		keyStrings[EKeyCode::eKeyJ] = "J";
+		keyStrings[EKeyCode::eKeyK] = "K";
+		keyStrings[EKeyCode::eKeyL] = "L";
+		keyStrings[EKeyCode::eKeyM] = "M";
+		keyStrings[EKeyCode::eKeyN] = "N";
+		keyStrings[EKeyCode::eKeyO] = "O";
+		keyStrings[EKeyCode::eKeyP] = "P";
+		keyStrings[EKeyCode::eKeyQ] = "Q";
+		keyStrings[EKeyCode::eKeyR] = "R";
+		keyStrings[EKeyCode::eKeyS] = "S";
+		keyStrings[EKeyCode::eKeyT] = "T";
+		keyStrings[EKeyCode::eKeyU] = "U";
+		keyStrings[EKeyCode::eKeyV] = "V";
+		keyStrings[EKeyCode::eKeyW] = "W";
+		keyStrings[EKeyCode::eKeyX] = "X";
+		keyStrings[EKeyCode::eKeyY] = "Y";
+		keyStrings[EKeyCode::eKeyZ] = "Z";
 
-	m_keyStrings[EKeyCode::eKey0] = "0";
-	m_keyStrings[EKeyCode::eKey1] = "1";
-	m_keyStrings[EKeyCode::eKey2] = "2";
-	m_keyStrings[EKeyCode::eKey3] = "3";
-	m_keyStrings[EKeyCode::eKey4] = "4";
-	m_keyStrings[EKeyCode::eKey5] = "5";
-	m_keyStrings[EKeyCode::eKey6] = "6";
-	m_keyStrings[EKeyCode::eKey7] = "7";
-	m_keyStrings[EKeyCode::eKey8] = "8";
-	m_keyStrings[EKeyCode::eKey9] = "9";
+		keyStrings[EKeyCode::eKeyF1] = "F1";
+		keyStrings[EKeyCode::eKeyF2] = "F2";
+		keyStrings[EKeyCode::eKeyF3] = "F3";
+		keyStrings[EKeyCode::eKeyF4] = "F4";
+		keyStrings[EKeyCode::eKeyF5] = "F5";
+		keyStrings[EKeyCode::eKeyF6] = "F6";
+		keyStrings[EKeyCode::eKeyF7] = "F7";
+		keyStrings[EKeyCode::eKeyF8] = "F8";
+		keyStrings[EKeyCode::eKeyF9] = "F9";
+		keyStrings[EKeyCode::eKeyF10] = "F10";
+		keyStrings[EKeyCode::eKeyF11] = "F11";
+		keyStrings[EKeyCode::eKeyF12] = "F12";
 
-	m_keyStrings[EKeyCode::eKeyMinus] = "-";
-	m_keyStrings[EKeyCode::eKeyEquals] = "=";
+		keyStrings[EKeyCode::eKey0] = "0";
+		keyStrings[EKeyCode::eKey1] = "1";
+		keyStrings[EKeyCode::eKey2] = "2";
+		keyStrings[EKeyCode::eKey3] = "3";
+		keyStrings[EKeyCode::eKey4] = "4";
+		keyStrings[EKeyCode::eKey5] = "5";
+		keyStrings[EKeyCode::eKey6] = "6";
+		keyStrings[EKeyCode::eKey7] = "7";
+		keyStrings[EKeyCode::eKey8] = "8";
+		keyStrings[EKeyCode::eKey9] = "9";
 
-	m_keyStrings[EKeyCode::eKeyGrave] = "`";
-	m_keyStrings[EKeyCode::eKeyCapsLock] = "CAPS LOCK";
-	m_keyStrings[EKeyCode::eKeyTab] = "TAB";
-	m_keyStrings[EKeyCode::eKeyLWindows] = "Windows";
-	m_keyStrings[EKeyCode::eKeyRWindows] = "Right Windows";
-	m_keyStrings[EKeyCode::eKeyAltL] = "Alt";
-	m_keyStrings[EKeyCode::eKeyAltR] = "Right Alt";
+		keyStrings[EKeyCode::eKeyMinus] = "-";
+		keyStrings[EKeyCode::eKeyEquals] = "=";
 
-	m_keyStrings[EKeyCode::eKeySpace] = "SPACE";
-	m_keyStrings[EKeyCode::eKeyBackSlash] = "\\";
-	m_keyStrings[EKeyCode::eKeyForwardSlash] = "/";
-	m_keyStrings[EKeyCode::eKeyComma] = ",";
-	m_keyStrings[EKeyCode::eKeyFullStop] = ".";
-	m_keyStrings[EKeyCode::eKeyBracketL] = "[";
-	m_keyStrings[EKeyCode::eKeyBracketR] = "]";
-	m_keyStrings[EKeyCode::eKeySemiColon] = ";";
-	m_keyStrings[EKeyCode::eKeyApostrophe] = "'";
-	m_keyStrings[EKeyCode::eKeyHash] = "#";
-	m_keyStrings[EKeyCode::eKeyApps] = "APPLICATION";
+		keyStrings[EKeyCode::eKeyGrave] = "`";
+		keyStrings[EKeyCode::eKeyCapsLock] = "CAPS LOCK";
+		keyStrings[EKeyCode::eKeyTab] = "TAB";
+		keyStrings[EKeyCode::eKeyLWindows] = "Windows";
+		keyStrings[EKeyCode::eKeyRWindows] = "Right Windows";
+		keyStrings[EKeyCode::eKeyAltL] = "Alt";
+		keyStrings[EKeyCode::eKeyAltR] = "Right Alt";
 
-	m_keyStrings[EKeyCode::eKeyBackspace] = "BACKSPACE";
-	m_keyStrings[EKeyCode::eKeyEnter] = "ENTER";
-	m_keyStrings[EKeyCode::eKeyCtrlL] = "Control";
-	m_keyStrings[EKeyCode::eKeyCtrlR] = "Right Control";
-	m_keyStrings[EKeyCode::eKeyShiftL] = "Shift";
-	m_keyStrings[EKeyCode::eKeyShiftR] = "Right Shift";
+		keyStrings[EKeyCode::eKeySpace] = "SPACE";
+		keyStrings[EKeyCode::eKeyBackSlash] = "\\";
+		keyStrings[EKeyCode::eKeyForwardSlash] = "/";
+		keyStrings[EKeyCode::eKeyComma] = ",";
+		keyStrings[EKeyCode::eKeyFullStop] = ".";
+		keyStrings[EKeyCode::eKeyBracketL] = "[";
+		keyStrings[EKeyCode::eKeyBracketR] = "]";
+		keyStrings[EKeyCode::eKeySemiColon] = ";";
+		keyStrings[EKeyCode::eKeyApostrophe] = "'";
+		keyStrings[EKeyCode::eKeyHash] = "#";
+		keyStrings[EKeyCode::eKeyApps] = "APPLICATION";
 
-	m_keyStrings[EKeyCode::eKeyPrintScreen] = "Print Screen";
-	m_keyStrings[EKeyCode::eKeyScrollLock] = "SCROLL LOCK";
-	m_keyStrings[EKeyCode::eKeyPause] = "Break";
+		keyStrings[EKeyCode::eKeyBackspace] = "BACKSPACE";
+		keyStrings[EKeyCode::eKeyEnter] = "ENTER";
+		keyStrings[EKeyCode::eKeyCtrlL] = "Control";
+		keyStrings[EKeyCode::eKeyCtrlR] = "Right Control";
+		keyStrings[EKeyCode::eKeyShiftL] = "Shift";
+		keyStrings[EKeyCode::eKeyShiftR] = "Right Shift";
 
-	m_keyStrings[EKeyCode::eKeyInsert] = "INSERT";
-	m_keyStrings[EKeyCode::eKeyHome] = "HOME";
-	m_keyStrings[EKeyCode::eKeyPageUp] = "Page Up";
-	m_keyStrings[EKeyCode::eKeyDelete] = "DELETE";
-	m_keyStrings[EKeyCode::eKeyEnd] = "END";
-	m_keyStrings[EKeyCode::eKeyPageDown] = "Page Down";
+		keyStrings[EKeyCode::eKeyPrintScreen] = "Print Screen";
+		keyStrings[EKeyCode::eKeyScrollLock] = "SCROLL LOCK";
+		keyStrings[EKeyCode::eKeyPause] = "Break";
 
-	//Arrow keys
-	m_keyStrings[EKeyCode::eKeyArrowUp] = "UP";
-	m_keyStrings[EKeyCode::eKeyArrowDown] = "DOWN";
-	m_keyStrings[EKeyCode::eKeyArrowLeft] = "LEFT";
-	m_keyStrings[EKeyCode::eKeyArrowRight] = "RIGHT";
+		keyStrings[EKeyCode::eKeyInsert] = "INSERT";
+		keyStrings[EKeyCode::eKeyHome] = "HOME";
+		keyStrings[EKeyCode::eKeyPageUp] = "Page Up";
+		keyStrings[EKeyCode::eKeyDelete] = "DELETE";
+		keyStrings[EKeyCode::eKeyEnd] = "END";
+		keyStrings[EKeyCode::eKeyPageDown] = "Page Down";
 
-	//Numpad keys
-	m_keyStrings[EKeyCode::eKeyNumpadLock] = "NUM LOCK";
-	m_keyStrings[EKeyCode::eKeyNumpadDivide] = "NUM Divide";
-	m_keyStrings[EKeyCode::eKeyNumpadMultiply] = "NUM Multiply";
-	m_keyStrings[EKeyCode::eKeyNumpadMinus] = "NUM Minus";
-	m_keyStrings[EKeyCode::eKeyNumpadAdd] = "NUM Add";
-	m_keyStrings[EKeyCode::eKeyNumpadEnter] = "NUM Enter";
-	m_keyStrings[EKeyCode::eKeyNumpadDecimal] = "NUM Decimal";
-	m_keyStrings[EKeyCode::eKeyNumpad0] = "NUM 0";
-	m_keyStrings[EKeyCode::eKeyNumpad1] = "NUM 1";
-	m_keyStrings[EKeyCode::eKeyNumpad2] = "NUM 2";
-	m_keyStrings[EKeyCode::eKeyNumpad3] = "NUM 3";
-	m_keyStrings[EKeyCode::eKeyNumpad4] = "NUM 4";
-	m_keyStrings[EKeyCode::eKeyNumpad5] = "NUM 5";
-	m_keyStrings[EKeyCode::eKeyNumpad6] = "NUM 6";
-	m_keyStrings[EKeyCode::eKeyNumpad7] = "NUM 7";
-	m_keyStrings[EKeyCode::eKeyNumpad8] = "NUM 8";
-	m_keyStrings[EKeyCode::eKeyNumpad9] = "NUM 9";
-}
+		//Arrow keys
+		keyStrings[EKeyCode::eKeyArrowUp] = "UP";
+		keyStrings[EKeyCode::eKeyArrowDown] = "DOWN";
+		keyStrings[EKeyCode::eKeyArrowLeft] = "LEFT";
+		keyStrings[EKeyCode::eKeyArrowRight] = "RIGHT";
+
+		//Numpad keys
+		keyStrings[EKeyCode::eKeyNumpadLock] = "NUM LOCK";
+		keyStrings[EKeyCode::eKeyNumpadDivide] = "NUM Divide";
+		keyStrings[EKeyCode::eKeyNumpadMultiply] = "NUM Multiply";
+		keyStrings[EKeyCode::eKeyNumpadMinus] = "NUM Minus";
+		keyStrings[EKeyCode::eKeyNumpadAdd] = "NUM Add";
+		keyStrings[EKeyCode::eKeyNumpadEnter] = "NUM Enter";
+		keyStrings[EKeyCode::eKeyNumpadDecimal] = "NUM Decimal";
+		keyStrings[EKeyCode::eKeyNumpad0] = "NUM 0";
+		keyStrings[EKeyCode::eKeyNumpad1] = "NUM 1";
+		keyStrings[EKeyCode::eKeyNumpad2] = "NUM 2";
+		keyStrings[EKeyCode::eKeyNumpad3] = "NUM 3";
+		keyStrings[EKeyCode::eKeyNumpad4] = "NUM 4";
+		keyStrings[EKeyCode::eKeyNumpad5] = "NUM 5";
+		keyStrings[EKeyCode::eKeyNumpad6] = "NUM 6";
+		keyStrings[EKeyCode::eKeyNumpad7] = "NUM 7";
+		keyStrings[EKeyCode::eKeyNumpad8] = "NUM 8";
+		keyStrings[EKeyCode::eKeyNumpad9] = "NUM 9";
+
+		keyStrings[EKeyCode::eMouseButtonLeft] = "Mouse Left";
+		keyStrings[EKeyCode::eMouseButtonRight] = "Mouse Right";
+		keyStrings[EKeyCode::eMouseButtonMiddle] = "Mouse Middle";
+		keyStrings[EKeyCode::eMouseXbutton1] = "Mouse X1";
+		keyStrings[EKeyCode::eMouseXbutton2] = "Mouse X2";
+	}
+
+	typedef StaticString<32> Name;
+
+	//Lookup tables
+	array<uint32, EKeyCode::KeyEnumMax> keys;
+	array<Name, EKeyCode::KeyEnumMax> keyStrings;
+
+} s_keyTable;
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-bool CKeyTable::getKeyName(EKeyCode code, KeyName& name) const
+namespace ts
 {
-	if (code > EKeyCode::KeyEnumMax)
-		return false;
-
-	name = m_keyStrings[code];
-
-	return true;
-}
-
-EKeyCode CKeyTable::mapFromVirtualKey(uint32 code) const
-{
-	for (int i = 0; i < EKeyCode::KeyEnumMax; i++)
+	namespace keys
 	{
-		if (m_keys[i] == code)
+		const char* getKeyName(EKeyCode code)
 		{
-			return (EKeyCode)i;
+			if (code < EKeyCode::KeyEnumMax)
+			{
+				return s_keyTable.keyStrings[code].str();
+			}
+
+			return nullptr;
+		}
+
+		EKeyCode mapFromVirtualKey(uint32 code)
+		{
+			for (int i = 0; i < EKeyCode::KeyEnumMax; i++)
+			{
+				if (s_keyTable.keys[i] == code)
+				{
+					return (EKeyCode)i;
+				}
+			}
+
+			return EKeyCode::eKeyUnknown;
+		}
+
+		uint32 mapToVirtualKey(EKeyCode code)
+		{
+			if (code < EKeyCode::KeyEnumMax)
+			{
+				return s_keyTable.keys[code];
+			}
+
+			return 0;
 		}
 	}
-
-	return EKeyCode::eKeyUnknown;
-}
-
-uint32 CKeyTable::mapToVirtualKey(EKeyCode code) const
-{
-	if (code > EKeyCode::KeyEnumMax)
-		return 0;
-
-	return m_keys[code];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
