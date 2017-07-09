@@ -19,6 +19,8 @@ namespace ts
 	*/
 	class ISurface
 	{
+	public:
+
 		//Put Surface into borderless mode, Surface is put into fullscreen and size is set to native resolution
 		virtual void enableBorderless(bool enable) = 0;
 		//Is Surface in borderless mode

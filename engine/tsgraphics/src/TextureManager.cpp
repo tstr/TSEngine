@@ -7,7 +7,7 @@
 
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
-#include <tscore/filesystem/pathhelpers.h>
+#include <tscore/pathutil.h>
 
 #include <tscore/table.h>
 

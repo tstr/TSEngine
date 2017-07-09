@@ -28,7 +28,9 @@ D3D11Render::D3D11Render(const SRenderApiConfig& cfg)
 
 	HRESULT hr = S_OK;
 
+	//initialize members
 	m_apiFlags = cfg.flags;
+	m_drawActive.store(false);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	//initialize direct3D
@@ -44,7 +46,7 @@ D3D11Render::D3D11Render(const SRenderApiConfig& cfg)
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = m_hwnd;
 
-	scd.SampleDesc.Count = cfg.display.multisampleCount;
+	scd.SampleDesc.Count = cfg.display.multisampleLevel;
 	scd.SampleDesc.Quality = 0;
 	scd.Windowed = !cfg.display.fullscreen;
 	scd.BufferDesc.Width = cfg.display.resolutionW;
@@ -140,6 +142,28 @@ D3D11Render::D3D11Render(const SRenderApiConfig& cfg)
 		return;
 	}
 
+	/*
+	//m_dxgiAdapter->EnumOutputs();
+	m_dxgiSwapchain->GetContainingOutput(m_dxgiOutput.ReleaseAndGetAddressOf());
+
+	DXGI_MODE_DESC modeDescs[128];
+	UINT modeCount = ARRAYSIZE(modeDescs);
+
+	m_dxgiOutput->GetDisplayModeList(scd.BufferDesc.Format, 3, &modeCount, modeDescs);
+
+	for (int i = 0; i < modeCount; i++)
+	{
+		const DXGI_MODE_DESC& m = modeDescs[i];
+
+		OutputDebugStringA("===========================================\n");
+		OutputDebugStringA(format("Resolution: %x%\n", m.Width, m.Height).c_str());
+		OutputDebugStringA(format("Refresh Rata: %/%\n", m.RefreshRate.Denominator, m.RefreshRate.Numerator).c_str());
+		OutputDebugStringA(format("Format: %\n", m.Format).c_str());
+		OutputDebugStringA(format("Scaling: %\n", m.Scaling).c_str());
+		OutputDebugStringA(format("Scanline Ordering: %\n", m.ScanlineOrdering).c_str());
+	}
+	*/
+
 	//Create render targets for this swapchain
 	initDisplayTarget();
 
@@ -185,10 +209,6 @@ D3D11Render::D3D11Render(const SRenderApiConfig& cfg)
 		desc.DepthClipEnable = true;
 		m_device->CreateRasterizerState(&desc, m_rasterizerState.GetAddressOf());
 	}
-
-	//Initialize values
-	m_displayNeedRebuild.store(false);
-	m_drawActive.store(false);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 }
@@ -237,6 +257,9 @@ void D3D11Render::destroyContext(IRenderContext* context)
 
 void D3D11Render::drawBegin()
 {
+	//Lock drawing
+	m_drawMutex.lock();
+
 	//Sets drawing status to active
 	//If status was already marked as active then show error
 	tsassert(!m_drawActive.exchange(true));
@@ -257,10 +280,6 @@ void D3D11Render::drawEnd(IRenderContext** contexts, uint32 numContexts)
 		}
 	}
 
-	//Handle rebuilding of swapchain if changes were marked
-	//MUST BE CALLED AT THIS POINT
-	tryRebuildDisplay();
-	
 	//Send queued commands to the GPU and present swapchain backbuffer
 	m_dxgiSwapchain->Present(0, 0);
 	//Reset draw call counter each frame
@@ -269,6 +288,8 @@ void D3D11Render::drawEnd(IRenderContext** contexts, uint32 numContexts)
 	//Sets drawing status to inactive
 	//If status was already marked as inactive then show error
 	tsassert(m_drawActive.exchange(false));
+	//Unlock drawing
+	m_drawMutex.unlock();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

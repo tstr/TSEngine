@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <tscore/filesystem/path.h>
+#include <tscore/path.h>
 #include <tsgraphics/api/RenderDef.h>
 
 #include <vector>

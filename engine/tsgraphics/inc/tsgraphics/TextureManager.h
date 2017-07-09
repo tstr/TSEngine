@@ -7,7 +7,7 @@
 #include <tsgraphics/abi.h>
 #include <tsgraphics/GraphicsCore.h>
 
-#include <tscore/filesystem/path.h>
+#include <tscore/path.h>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 

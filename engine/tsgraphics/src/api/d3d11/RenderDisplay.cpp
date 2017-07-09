@@ -11,48 +11,100 @@
 using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	Display rebuild methods
+//	Gets/sets the configuration of the display (swapchain)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Render::tryRebuildDisplay()
+void D3D11Render::setDisplayConfiguration(const SDisplayConfig& displayCfg)
 {
-	//If display is marked for rebuild
-	if (m_displayNeedRebuild.exchange(false))
+	//Lock
+	std::lock_guard<std::mutex> lk(m_drawMutex);
+
+	DXGI_SWAP_CHAIN_DESC newDesc;
+	DXGI_SWAP_CHAIN_DESC curDesc;
+
+	HRESULT hr = S_OK;
+
+	//Get current swap chain configuration
+	tsassert(SUCCEEDED(m_dxgiSwapchain->GetDesc(&curDesc)));
+
+	//Translate desired display configuration to a DXGI_SWAP_CHAIN_DESC
+	tsassert(SUCCEEDED(translateSwapChainDesc(displayCfg, newDesc)));
+
+	bool ms_differs = curDesc.SampleDesc.Count != newDesc.SampleDesc.Count;
+	bool res_differs = (curDesc.BufferDesc.Width != newDesc.BufferDesc.Width) || (curDesc.BufferDesc.Height != newDesc.BufferDesc.Height);
+	bool mode_differs = curDesc.Windowed != newDesc.Windowed;
+
+	//If multisampling count differs
+	if (ms_differs)
 	{
-		doRebuildDisplay();
+		rebuildSwapChain(newDesc);
+	}
+	//If fullscreen state differs
+	else if (mode_differs)
+	{
+		//Call resizetarget before entering fullscreen
+		//if (FAILED(hr = m_dxgiSwapchain->ResizeTarget(&newDesc.BufferDesc)))
+		//	tserror("unable to resize IDXGISwapChain target. Error: \"%\"", _com_error(hr).ErrorMessage());
+
+		if (FAILED(hr = m_dxgiSwapchain->SetFullscreenState(!newDesc.Windowed, nullptr)))
+			tserror("failed to change fullscreen mode. Error: \"%\"", _com_error(hr).ErrorMessage());
+	}
+	//If resolution state differs
+	else if (res_differs)
+	{
+		//Release targets associated with swapchain
+		m_displayTarget.reset();
+
+		if (FAILED(
+			hr = m_dxgiSwapchain->ResizeBuffers(
+				2, //Number of back and front buffers
+				newDesc.BufferDesc.Width,
+				newDesc.BufferDesc.Height,
+				newDesc.BufferDesc.Format,
+				m_swapChainFlags
+			)
+		))
+		{
+			tserror("unable to resize IDXGISwapChain buffers. Error: \"%\"", _com_error(hr).ErrorMessage());
+		}
+
+		//Rebuild targets aassociated with swapchain
+		initDisplayTarget();
 	}
 }
 
-void D3D11Render::doRebuildDisplay()
+//todo: make thread safe
+void D3D11Render::getDisplayConfiguration(SDisplayConfig& displayCfg)
 {
-	//Copy cached display configuration
-	auto cfg(m_cachedDisplayConfig);
-
 	DXGI_SWAP_CHAIN_DESC desc;
-	m_dxgiSwapchain->GetDesc(&desc);
+	ZeroMemory(&desc, sizeof(DXGI_SWAP_CHAIN_DESC));
 
-	desc.Windowed = !cfg.fullscreen;
-	
-	if (cfg.multisampleCount)
-	{
-		desc.SampleDesc.Count = cfg.multisampleCount;
-		getMultisampleQuality(desc.SampleDesc);
-	}
-	if (cfg.resolutionH || cfg.resolutionW)
-	{
-		desc.BufferDesc.Height = cfg.resolutionH;
-		desc.BufferDesc.Width = cfg.resolutionW;
-	}
-	
-	desc.Flags = m_swapChainFlags;
+	HRESULT hr = m_dxgiSwapchain->GetDesc(&desc);
 
+	if (SUCCEEDED(hr))
+	{
+		displayCfg.fullscreen = !desc.Windowed;
+		displayCfg.multisampleLevel = (uint8)desc.SampleDesc.Count;
+		displayCfg.resolutionH = (uint16)desc.BufferDesc.Height;
+		displayCfg.resolutionW = (uint16)desc.BufferDesc.Width;
+	}
+	else
+	{
+		tswarn("DXGISwapChain::GetDesc() failed with HRESULT %", hr);
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void D3D11Render::rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc)
+{
 	//Release swapchain
 	m_dxgiSwapchain.Reset();
 	//Release targets associated with swapchain
 	m_displayTarget.reset();
 
 	//Recreate swapchain
-	tsassert(SUCCEEDED(m_dxgiFactory->CreateSwapChain((IUnknown*)m_device.Get(), &desc, m_dxgiSwapchain.GetAddressOf())));
+	tsassert(SUCCEEDED(m_dxgiFactory->CreateSwapChain((IUnknown*)m_device.Get(), &scDesc, m_dxgiSwapchain.GetAddressOf())));
 
 	m_dxgiFactory->MakeWindowAssociation(
 		m_hwnd,
@@ -63,47 +115,31 @@ void D3D11Render::doRebuildDisplay()
 	initDisplayTarget();
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	Gets/sets the configuration of the display (swapchain)
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void D3D11Render::setDisplayConfiguration(const SDisplayConfig& displayCfg)
+HRESULT D3D11Render::translateSwapChainDesc(const SDisplayConfig& displayCfg, DXGI_SWAP_CHAIN_DESC& desc)
 {
-	//If the renderapi is currently in a drawing state then we must rebuild the display at a later time
-	if (m_drawActive)
-	{
-		//If display is already marked for rebuild then override previous changes by first delaying the rebuild
-		m_displayNeedRebuild.exchange(false);
-		
-		m_cachedDisplayConfig = displayCfg;
-		
-		//Mark display as ready for rebuild (again if it was previously marked)
-		m_displayNeedRebuild.store(true);
-	}
-	else
-	{
-		m_cachedDisplayConfig = displayCfg;
-		doRebuildDisplay();
-	}
-}
-
-//todo: make thread safe
-void D3D11Render::getDisplayConfiguration(SDisplayConfig& displayCfg)
-{
-	DXGI_SWAP_CHAIN_DESC desc;
 	HRESULT hr = m_dxgiSwapchain->GetDesc(&desc);
 
-	if (SUCCEEDED(hr))
+	desc.Windowed = !displayCfg.fullscreen;
+
+	if (displayCfg.multisampleLevel > 0)
 	{
-		displayCfg.fullscreen = !desc.Windowed;
-		displayCfg.multisampleCount = (uint8)desc.SampleDesc.Count;
-		displayCfg.resolutionH = (uint16)desc.BufferDesc.Height;
-		displayCfg.resolutionW = (uint16)desc.BufferDesc.Width;
+		desc.SampleDesc.Count = displayCfg.multisampleLevel;
+		getMultisampleQuality(desc.SampleDesc);
 	}
-	else
+
+	if (displayCfg.resolutionH > 0)
 	{
-		tswarn("DXGISwapChain::GetDesc() failed with HRESULT %", hr);
+		desc.BufferDesc.Height = displayCfg.resolutionH;
 	}
+
+	if (displayCfg.resolutionW > 0)
+	{
+		desc.BufferDesc.Width = displayCfg.resolutionW;
+	}
+
+	desc.Flags = m_swapChainFlags;
+
+	return hr;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

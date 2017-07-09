@@ -8,13 +8,13 @@
 
 #include <tsgraphics/abi.h>
 
-#include <tsconfig.h>
 #include <tscore/ptr.h>
 #include <tscore/system/memory.h>
-#include <tscore/filesystem/path.h>
+#include <tscore/path.h>
 
 #include "GraphicsCore.h"
 #include "CommandQueue.h"
+#include "Surface.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -22,34 +22,36 @@ namespace ts
 {
 	enum EDisplayMode
 	{
-		eDisplayUnknown	   = 0,
-		eDisplayWindowed   = 1,
-		eDisplayBorderless = 2,
-		eDisplayFullscreen = 3
+		eDisplayWindowed,
+		eDisplayBorderless,
+		eDisplayFullscreen
 	};
 
 	/*
 		Display configuration structure
 	*/
-	struct SGraphicsDisplayInfo
+	struct GraphicsDisplayOptions
 	{
 		//Display dimensions
-		uint32 width = 0;
-		uint32 height = 0;
-		SMultisampling multisampling;
+		uint width = 0;
+		uint height = 0;
+
+		//Multisample count
+		uint multisampleLevel;
+
 		EDisplayMode mode = eDisplayWindowed;
 	};
 
 	/*
 		Graphics System configuration structure
 	*/
-	struct SGraphicsSystemInfo
+	struct GraphicsConfig
 	{
-		//Handle to display (application window)
-		intptr windowHandle = 0;
+		//Handle to drawing surface
+		ISurface* surface = nullptr;
 
-		//Display info
-		SGraphicsDisplayInfo display;
+		//Display settings
+		GraphicsDisplayOptions display;
 
 		//Graphics API id
 		EGraphicsAPIID apiid = EGraphicsAPIID::eGraphicsAPI_Null;
@@ -57,7 +59,7 @@ namespace ts
 		//Root asset loading path for textures/shaders/models
 		Path rootpath;
 	};
-	
+
 	/*
 		Main Graphics Subsystem class
 	*/
@@ -72,39 +74,31 @@ namespace ts
 
 		OPAQUE_PTR(GraphicsSystem, pSystem)
 
-		////////////////////////////////////////////////////////////////////////////////
-
 		//Initialize/deinitialize system
-		TSGRAPHICS_API GraphicsSystem(const SGraphicsSystemInfo&);
+		TSGRAPHICS_API GraphicsSystem(const GraphicsConfig&);
 		TSGRAPHICS_API ~GraphicsSystem();
 
 		//Get list of available adapters
 		TSGRAPHICS_API void getAdapterList(std::vector<SRenderAdapterDesc>& adapters);
 
-		////////////////////////////////////////////////////////////////////////////////
-		// Get/set graphics system properties
-		////////////////////////////////////////////////////////////////////////////////
+		/*
+			Get/set graphics system properties
+		*/
 
-		void setDisplayInfo(EDisplayMode displaymode, uint32 width = 0, uint32 height = 0, SMultisampling sampling = SMultisampling(0))
-		{
-			SGraphicsDisplayInfo config;
-			config.mode = displaymode;
-			config.height = height;
-			config.width = width;
-			config.multisampling = sampling;
-			this->setDisplayInfo(config);
-		}
+		TSGRAPHICS_API void refreshDisplay();
 
-		TSGRAPHICS_API void setDisplayInfo(const SGraphicsDisplayInfo& info);
-		TSGRAPHICS_API void getDisplayInfo(SGraphicsDisplayInfo& info);
-		
-		TSGRAPHICS_API intptr getDisplayHandle() const;
+		TSGRAPHICS_API bool setDisplayResolution(uint w, uint h);
+		TSGRAPHICS_API bool setDisplayMultisamplingLevel(uint ms);
+		TSGRAPHICS_API bool setDisplayMode(EDisplayMode mode);
+
+		TSGRAPHICS_API void getDisplayOptions(GraphicsDisplayOptions& opt);
+
 		TSGRAPHICS_API HTarget getDisplayTarget() const;
 		TSGRAPHICS_API Path getRootPath() const;
 
-		////////////////////////////////////////////////////////////////////////////////
-		// Pipeline methods
-		////////////////////////////////////////////////////////////////////////////////
+		/*
+			Pipeline methods
+		*/
 
 		//Signal draw begin
 		TSGRAPHICS_API void begin();

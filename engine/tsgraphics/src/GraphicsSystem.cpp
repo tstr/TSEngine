@@ -1,44 +1,57 @@
 /*
 	Main Graphics Subsystem source
+
+	todo: fix resizing display in fullscreen mode
 */
 
 #include <tscore/debug/log.h>
+
+#include <mutex>
+#include <atomic>
 
 #include <tsgraphics/GraphicsSystem.h>
 #include <tsgraphics/GraphicsContext.h>
 #include <tsgraphics/api/RenderApi.h>
 
-#include "platform/borderless.h"
-
 using namespace std;
 using namespace ts;
+
+typedef recursive_mutex Lock;
+typedef lock_guard<Lock> Guard;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //	Internal implementation
 /////////////////////////////////////////////////////////////////////////////////////////////////
-struct GraphicsSystem::System
+struct GraphicsSystem::System : public GraphicsConfig
 {
 	GraphicsSystem* system;
-	SGraphicsSystemInfo systemInfo;
+
+	//Primary rendering context
 	IRenderContext* context;
 
-	System(GraphicsSystem* system, const SGraphicsSystemInfo& cfg) :
+	Lock displayLock;
+	atomic<bool> displayNeedRebuild;
+
+	/*
+		Construct system
+	*/
+	System(GraphicsSystem* system, const GraphicsConfig& cfg) :
 		system(system),
-		systemInfo(cfg),
-		context(nullptr)
-	{
+		context(nullptr),
+		GraphicsConfig(cfg)
+	{}
 
-	}
+	~System() {}
 
-	~System()
-	{
 
-	}
+	void tryRebuildDisplay();
+	void doRebuildDisplay();
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-GraphicsSystem::GraphicsSystem(const SGraphicsSystemInfo& cfg)
+GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
+	pSystem(new System(this, cfg))
 {
 	//Configure low level render api
 	SRenderApiConfig apicfg;
@@ -46,8 +59,8 @@ GraphicsSystem::GraphicsSystem(const SGraphicsSystemInfo& cfg)
 	apicfg.display.resolutionH = cfg.display.height;
 	apicfg.display.resolutionW = cfg.display.width;
 	apicfg.display.fullscreen = (cfg.display.mode == EDisplayMode::eDisplayFullscreen);
-	apicfg.display.multisampleCount = cfg.display.multisampling.count;
-	apicfg.windowHandle = cfg.windowHandle;
+	apicfg.display.multisampleLevel = cfg.display.multisampleLevel;
+	apicfg.windowHandle = pSystem->surface->getHandle();
 
 #ifdef _DEBUG
 	apicfg.flags |= ERenderApiFlags::eFlagDebug;
@@ -56,9 +69,19 @@ GraphicsSystem::GraphicsSystem(const SGraphicsSystemInfo& cfg)
 	//Initialize low level render API
 	this->init(cfg.apiid, apicfg);
 
-	//Allocate internal implementation
-	pSystem.reset(new System(this, cfg));
-	
+	//If desired display mode is borderless, ISurface::enableBorderless() must be called manually
+	if (cfg.display.mode == eDisplayBorderless)
+	{
+		cfg.surface->enableBorderless(true);
+		//Refreshing the display forces the display to resize
+		this->refreshDisplay();
+	}
+
+	if (cfg.display.mode == eDisplayFullscreen)
+	{
+		this->refreshDisplay();
+	}
+
 	//Create main render context
 	getApi()->createContext(&pSystem->context);
 }
@@ -97,108 +120,196 @@ void GraphicsSystem::getAdapterList(std::vector<SRenderAdapterDesc>& adapters)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
-//	Manage display settings
+// Manage display settings
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-void GraphicsSystem::getDisplayInfo(SGraphicsDisplayInfo& info)
+bool GraphicsSystem::setDisplayResolution(uint w, uint h)
 {
 	tsassert(pSystem);
 
-	info = pSystem->systemInfo.display;
+	Guard g(pSystem->displayLock);
+
+	pSystem->display.width = w;
+	pSystem->display.height = h;
+
+	pSystem->displayNeedRebuild.store(true);
+
+	return true;
 }
 
-void GraphicsSystem::setDisplayInfo(const SGraphicsDisplayInfo& newInfo)
+void GraphicsSystem::refreshDisplay()
 {
 	tsassert(pSystem);
 
-	auto& info = pSystem->systemInfo.display;
+	Guard g(pSystem->displayLock);
 
-	const EDisplayMode displaymode = newInfo.mode;
-	uint32 w = newInfo.width;
-	uint32 h = newInfo.height;
-	const SMultisampling sampling = newInfo.multisampling;
+	pSystem->surface->getSize(
+		pSystem->display.width,
+		pSystem->display.height
+	);
 
-	SDisplayConfig displaycfg;
-	getApi()->getDisplayConfiguration(displaycfg);
-
-	//Update multisample count
-	if (sampling.count)
-	{
-		if (info.multisampling.count != sampling.count)
-		{
-			info.multisampling = sampling;
-			displaycfg.multisampleCount = sampling.count;
-		}
-	}
-
-	//Update fullscreen state
-	if (displaymode)
-	{
-		if (info.mode != displaymode)
-		{
-			intptr winhandle = pSystem->systemInfo.windowHandle;
-
-			if (displaymode == eDisplayFullscreen)
-			{
-				//Exit borderless if previous mode was borderless
-				if (info.mode == eDisplayBorderless)
-					exitBorderless(winhandle);
-
-				//Enter fullscreen
-				displaycfg.fullscreen = true;
-			}
-			else if (displaymode == eDisplayBorderless)
-			{
-				//Exit fullscreen if the previous mode was fullscreen
-				if (info.mode == eDisplayFullscreen)
-					displaycfg.fullscreen = false;
-				
-				//Enter borderless fullscreen
-				enterBorderless(winhandle);
-			}
-			else if (displaymode == eDisplayWindowed) //Windowed mode
-			{
-				//Exit fullscreen if the previous mode was fullscreen
-				if (info.mode == eDisplayFullscreen)
-					displaycfg.fullscreen = false;
-				//Exit borderless if previous mode was borderless
-				else if (info.mode == eDisplayBorderless)
-					exitBorderless(winhandle);
-
-				//Do nothing
-			}
-
-			info.mode = displaymode;
-		}
-	}
-
-	//Update resolution
-	if (w || h)
-	{
-		w = (w) ? w : info.width;
-		h = (h) ? h : info.height;
-
-		if (info.width != w || info.height != h)
-		{
-			displaycfg.resolutionH = h;
-			displaycfg.resolutionW = w;
-
-			info.width = w;
-			info.height = h;
-		}
-	}
-
-	getApi()->setDisplayConfiguration(displaycfg);
+	pSystem->displayNeedRebuild.store(true);
 }
 
-intptr GraphicsSystem::getDisplayHandle() const
+bool GraphicsSystem::setDisplayMultisamplingLevel(uint level)
 {
-	return pSystem->systemInfo.windowHandle;
+	tsassert(pSystem);
+
+	Guard g(pSystem->displayLock);
+
+	pSystem->display.multisampleLevel = level;
+
+	pSystem->displayNeedRebuild.store(true);
+
+	return true;
 }
+
+bool GraphicsSystem::setDisplayMode(EDisplayMode mode)
+{
+	tsassert(pSystem);
+
+	Guard g(pSystem->displayLock);
+
+	pSystem->display.mode = mode;
+
+	pSystem->displayNeedRebuild.store(true);
+
+	return true;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+void GraphicsSystem::System::tryRebuildDisplay()
+{
+	if (displayNeedRebuild.load())
+	{
+		Guard g(displayLock);
+
+		doRebuildDisplay();
+
+		displayNeedRebuild.store(false);
+	}
+}
+
+void GraphicsSystem::System::doRebuildDisplay()
+{
+	SDisplayConfig config;
+	system->getApi()->getDisplayConfiguration(config);
+
+	/*
+		Change Multisample level
+	*/
+	if (config.multisampleLevel != display.multisampleLevel)
+	{
+		config.multisampleLevel = display.multisampleLevel;
+		system->getApi()->setDisplayConfiguration(config);
+	}
+
+	/*
+		Change display mode
+	*/
+	{
+		EDisplayMode curMode;
+
+		//Get current display mode
+
+		if (config.fullscreen)
+			curMode = eDisplayFullscreen;
+		else if (surface->isBorderless())
+			curMode = eDisplayBorderless;
+		else
+			curMode = eDisplayWindowed;
+
+		//Desired display mode
+		EDisplayMode& mode = display.mode;
+
+		//While current display mode is not the desired display mode
+		while (curMode != mode)
+		{
+			switch (curMode)
+			{
+				case eDisplayWindowed:
+				{
+					if (mode == eDisplayBorderless)
+					{
+						//Enter borderless
+						surface->enableBorderless(true);
+					}
+					else if (mode == eDisplayFullscreen)
+					{
+						//Enter fullscreen
+						config.fullscreen = true;
+						system->getApi()->setDisplayConfiguration(config);
+					}
+
+					curMode = mode;
+					break;
+				}
+
+				case eDisplayBorderless:
+				{
+					curMode = eDisplayWindowed;
+
+					//Exit borderless
+					surface->enableBorderless(false);
+					break;
+				}
+
+				case eDisplayFullscreen:
+				{
+					curMode = eDisplayWindowed;
+
+					//Exit fullscreen
+					config.fullscreen = false;
+					system->getApi()->setDisplayConfiguration(config);
+					break;
+				}
+			}
+		}
+	}
+
+	/*
+		Change resolution
+	*/
+	if ((config.resolutionH != display.height) || (config.resolutionW != display.width))
+	{
+		if (display.mode == eDisplayWindowed)
+		{
+			uint curW = 0;
+			uint curH = 0;
+			surface->getSize(curW, curH);
+			
+			if (curH != display.height || curW != display.width)
+			{
+				surface->resize(display.width, display.height);
+			}
+		}
+
+		config.resolutionW = display.width;
+		config.resolutionH = display.height;
+		config.multisampleLevel = 0;
+		config.fullscreen = display.mode == eDisplayFullscreen;
+
+		system->getApi()->setDisplayConfiguration(config);
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+void GraphicsSystem::getDisplayOptions(GraphicsDisplayOptions& opt)
+{
+	tsassert(pSystem);
+
+	opt = pSystem->display;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// Get properties
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 Path GraphicsSystem::getRootPath() const
 {
-	return pSystem->systemInfo.rootpath;
+	return pSystem->rootpath;
 }
 
 HTarget GraphicsSystem::getDisplayTarget() const
@@ -213,6 +324,9 @@ HTarget GraphicsSystem::getDisplayTarget() const
 void GraphicsSystem::begin()
 {
 	tsassert(pSystem);
+
+	//Rebuild the display if changes have been made
+	pSystem->tryRebuildDisplay();
 
 	//Main context
 	IRenderContext* rc = pSystem->context;
