@@ -45,7 +45,7 @@ namespace ts
 	{
 		uint16 resolutionW = 0;
 		uint16 resolutionH = 0;
-		uint8 multisampleCount = 0;
+		uint8 multisampleLevel = 0;
 		bool fullscreen = false;
 	};
 	

@@ -308,10 +308,10 @@ void Window::enableBorderless(bool enable)
 	tsassert(pImpl);
 	const HWND hwnd = pImpl->windowHandle;
 
-	Window::invoke([=]() {
+	if (enable && !isBorderless())
+	{
+		Window::invoke([=]() {
 
-		if (enable)
-		{
 			//Set borderless mode
 			DEVMODE dev;
 			ZeroMemory(&dev, sizeof(DEVMODE));
@@ -336,18 +336,21 @@ void Window::enableBorderless(bool enable)
 			//tserror("ChangeDisplaySettings returned %", result);
 
 			SetWindowLongPtr(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-			SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height, 0);
+			SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height, SWP_SHOWWINDOW);
 			BringWindowToTop(hwnd);
-		}
-		else
-		{
+		});
+	}
+	else if (!enable && isBorderless())
+	{
+		Window::invoke([=]() {
+
 			//Exit borderless mode
 			SetWindowLongPtr(hwnd, GWL_EXSTYLE, WS_EX_LEFT);
 			SetWindowLongPtr(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
 
-			ShowWindow(hwnd, SW_MAXIMIZE);
-		}
-	});
+			ShowWindow(hwnd, SW_MAXIMIZE);			
+		});
+	}
 }
 
 bool Window::isBorderless() const
@@ -378,11 +381,12 @@ void Window::resize(uint width, uint height)
 			const HWND hwnd = pImpl->windowHandle;
 
 			//Get current size of client area
-			GetWindowRect(hwnd, &r);
+			//GetWindowRect(hwnd, &r);
 
-			//Resize the width and height of the old client area while preserving original position
-			r.right = r.left + width;
-			r.bottom = r.top + height;
+			r.left = (GetSystemMetrics(SM_CXSCREEN) - width) / 2;
+			r.top = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
+			r.right = width;
+			r.bottom = height;
 
 			LONG_PTR styles = GetWindowLongPtr(hwnd, GWL_STYLE);
 			LONG_PTR exStyles = GetWindowLongPtr(hwnd, GWL_EXSTYLE);

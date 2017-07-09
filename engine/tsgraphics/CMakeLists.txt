@@ -6,6 +6,7 @@ set(tsgraphics_inc
 
 	inc/tsgraphics/abi.h
 	
+	inc/tsgraphics/Surface.h
 	inc/tsgraphics/GraphicsSystem.h
 	inc/tsgraphics/GraphicsCore.h
 	inc/tsgraphics/GraphicsContext.h
@@ -74,8 +75,6 @@ SET(tsgraphics_src
 	src/RenderItem.cpp
 	
 	src/platform/Nvoptimus.cpp
-	src/platform/Borderless.h
-	src/platform/Borderless.cpp
 )
 
 SET(tsgraphics_files ${tsgraphics_src} ${tsgraphics_inc})

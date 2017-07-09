@@ -7,7 +7,7 @@
 #include <tsgraphics/shadermanager.h>
 #include <tsgraphics/api/RenderApi.h>
 
-#include <tscore/filesystem/pathhelpers.h>
+#include <tscore/pathutil.h>
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 

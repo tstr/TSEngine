@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <atomic>
+#include <mutex>
 #include <tsgraphics/api/renderapi.h>
 
 #include "Base.h"
@@ -41,10 +42,11 @@ namespace ts
 		D3D11StateManager m_stateManager;
 		
 		std::atomic<bool> m_drawActive;
-		std::atomic<bool> m_displayNeedRebuild;
-		SDisplayConfig m_cachedDisplayConfig;
-		void tryRebuildDisplay();
-		void doRebuildDisplay();
+		std::mutex m_drawMutex;
+
+		//Swapchain methods
+		void rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc);
+		HRESULT translateSwapChainDesc(const SDisplayConfig& displayCfg, DXGI_SWAP_CHAIN_DESC& scDesc);
 		void initDisplayTarget();
 		
 		//All allocated render contexts

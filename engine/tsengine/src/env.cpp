@@ -30,7 +30,7 @@ class EngineWindow : public Window
 private:
 
 	EngineEnv& m_env;
-	int m_exitCode;
+	atomic<int> m_exitCode;
 
 	/*
 		Window event handlers
@@ -38,19 +38,19 @@ private:
 
 	void onResize() override
 	{
-		if (auto render = m_env.getGraphics())
-		{
-			uint w = 0;
-			uint h = 0;
-			Window::getSize(w, h);
-			
-			render->setDisplayInfo(eDisplayUnknown, w, h, SMultisampling(0));
-		}
+		if (auto gfx = m_env.getGraphics())
+			gfx->refreshDisplay();
+	}
+
+	void onActivate() override
+	{
+		if (auto gfx = m_env.getGraphics())
+			gfx->refreshDisplay();
 	}
 
 	void onDestroy() override
 	{
-		m_env.getGraphics()->setDisplayInfo(eDisplayWindowed, 0, 0, 0);
+
 	}
 
 	void onEvent(const PlatformEventArgs& arg) override
@@ -75,12 +75,12 @@ public:
 
 	int getExitCode() const
 	{
-		return m_exitCode;
+		return m_exitCode.load();
 	}
 
 	void setExitCode(int code)
 	{
-		m_exitCode = code;
+		m_exitCode.store(code);
 	}
 };
 
@@ -160,16 +160,16 @@ EngineEnv::EngineEnv(int argc, char** argv)
 	uint32 samplecount = 1;
 	m_vars->get("video.multisamplecount", samplecount);
 
-	SGraphicsSystemInfo graphicscfg;
-	graphicscfg.windowHandle = m_window->getHandle();
-	graphicscfg.display.width = width;
-	graphicscfg.display.height = height;
-	graphicscfg.display.mode = (EDisplayMode)(displaymode + 1);
-	graphicscfg.display.multisampling.count = samplecount;
-	graphicscfg.apiid = EGraphicsAPIID::eGraphicsAPI_D3D11;
-	graphicscfg.rootpath = assetpath;
+	GraphicsConfig gcfg;
+	gcfg.surface = static_cast<ISurface*>(m_window.get());
+	gcfg.display.width = width;
+	gcfg.display.height = height;
+	gcfg.display.mode = (EDisplayMode)displaymode;
+	gcfg.display.multisampleLevel = samplecount;
+	gcfg.apiid = EGraphicsAPIID::eGraphicsAPI_D3D11;
+	gcfg.rootpath = assetpath;
 
-	m_graphicsSystem.reset(new GraphicsSystem(graphicscfg));
+	m_graphicsSystem.reset(new GraphicsSystem(gcfg));
 	m_inputSystem.reset(new InputSystem(m_window.get()));
 
 	/////////////////////////////////////////////////////////////////////////
@@ -197,12 +197,11 @@ int EngineEnv::start(Application& app)
 		m_window->close();
 		//Close events have to be handled manually
 		while (m_window->poll()) {}
-		
+
 		return err;
 	}
 
 	{
-		Timer timer;
 		Stopwatch watch;
 		double dt = 0.0;
 
@@ -212,7 +211,7 @@ int EngineEnv::start(Application& app)
 			watch.start();
 
 			m_graphicsSystem->begin();
-
+			
 			//Update application
 			app.onUpdate(dt);
 
@@ -225,16 +224,15 @@ int EngineEnv::start(Application& app)
 
 	app.onExit();
 
-	//Exit code is stored in the window - workaround
-	auto win = (EngineWindow*)m_window.get();
-	return win->getExitCode();
+	//Exit code is stored in the window
+	return ((EngineWindow*)m_window.get())->getExitCode();
 }
 
 void EngineEnv::exit(int code)
 {
 	//Set environment exit code
 	auto win = (EngineWindow*)m_window.get();
-	win->invoke([=] { win->setExitCode(code); });
+	win->setExitCode(code);
 	//Destroy window
 	win->close();
 }

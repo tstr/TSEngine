@@ -7,7 +7,6 @@
 #include <tsengine/abi.h>
 #include <tsengine/VarTable.h>
 #include <tsengine/EnvInfo.h>
-#include <tsengine/Surface.h>
 
 #include <tscore/path.h>
 #include <tscore/system/memory.h>

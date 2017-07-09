@@ -9,7 +9,6 @@ SET(tsengine_inc
 	inc/tsengine/Env.h
 	inc/tsengine/EnvInfo.h
 	inc/tsengine/VarTable.h
-	inc/tsengine/Surface.h
 
 	inc/tsengine/KeyCodes.h
 	inc/tsengine/Input.h

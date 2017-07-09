@@ -7,7 +7,7 @@
 #include <tscore/types.h>
 #include <tscore/strings.h>
 
-#include <tsengine/Surface.h>
+#include <tsgraphics/Surface.h>
 
 namespace ts
 {

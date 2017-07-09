@@ -8,7 +8,7 @@
 #include <tsgraphics/GraphicsCore.h>
 
 #include <tscore/ptr.h>
-#include <tscore/filesystem/path.h>
+#include <tscore/path.h>
 #include <tscore/strings.h>
 
 #include <vector>
