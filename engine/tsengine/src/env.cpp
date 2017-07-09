@@ -6,6 +6,8 @@
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 #include <tscore/system/thread.h>
+#include <tscore/path.h>
+#include <tscore/pathutil.h>
 #include <tsgraphics/colour.h>
 
 //Subsystems
@@ -152,10 +154,20 @@ EngineEnv::EngineEnv(int argc, char** argv)
 		displaymode = 0;
 	}
 
+	//Resolve asset path
+	Path assetpath = cfgpath.getParent();
+
 	string assetpathbuf;
 	m_vars->get("system.assetdir", assetpathbuf);
-	Path assetpath = cfgpath.getParent();
-	assetpath.addDirectories(assetpathbuf);
+
+	if (isAbsolutePath(assetpathbuf))
+	{
+		assetpath = assetpathbuf;
+	}
+	else
+	{
+		assetpath.addDirectories(assetpathbuf);
+	}
 
 	uint32 samplecount = 1;
 	m_vars->get("video.multisamplecount", samplecount);
