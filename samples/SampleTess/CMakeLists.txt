@@ -20,6 +20,7 @@ ADD_SAMPLE(
 	SOURCES ${src_list}
 	SHADERS ${shader_src_list}
 	SHADER_MANIFEST ${shader_manifest}
+	CONFIG config.ini
 )
 
 ASSIGN_SOURCE_GROUPS(${src_list} ${shader_src_list} ${shader_manifest})

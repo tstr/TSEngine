@@ -14,9 +14,8 @@ SET(src_list
 	src/graphics/Graphics3D.cpp
 	src/graphics/Model.h
 	src/graphics/Model.cpp
-	
-	src/util/info.cpp
-	src/util/info.h
+	src/graphics/ConfigFile.h
+	src/graphics/ConfigFile.cpp
 )
 
 SET(shader_src_list
@@ -31,6 +30,7 @@ ADD_SAMPLE(
 	SOURCES ${src_list}
 	SHADERS ${shader_src_list}
 	SHADER_MANIFEST ${shader_manifest}
+	CONFIG config.ini
 )
 
 ASSIGN_SOURCE_GROUPS(${src_list} ${shader_src_list} ${shader_manifest})
