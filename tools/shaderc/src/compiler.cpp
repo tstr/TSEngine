@@ -6,7 +6,7 @@
 
 #include "compiler.h"
 #include "preprocessor.h"
-#include <tscore/filesystem/pathhelpers.h>
+#include <tscore/pathutil.h>
 
 //Hash function
 #include "crypto/sha256.h"

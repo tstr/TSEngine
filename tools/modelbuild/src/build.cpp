@@ -9,7 +9,7 @@
 #include <string>
 
 //Engine headers
-#include <tscore/filesystem/path.h>
+#include <tscore/path.h>
 #include <tscore/system/time.h>
 //Model format types and constants
 #include <tsgraphics/model/modeldefs.h>

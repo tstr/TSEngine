@@ -14,7 +14,7 @@
 
 #include "preprocessor.h"
 
-#include <tscore/filesystem/pathhelpers.h>
+#include <tscore/pathutil.h>
 #include <tscore/debug/log.h>
 
 #include <fstream>

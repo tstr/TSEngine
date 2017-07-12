@@ -55,8 +55,8 @@
 #include "compiler.h"
 #include "frontend/parser.h"
 
-#include <tscore/filesystem/path.h>
-#include <tscore/filesystem/pathhelpers.h>
+#include <tscore/path.h>
+#include <tscore/pathutil.h>
 
 #include <iostream>
 

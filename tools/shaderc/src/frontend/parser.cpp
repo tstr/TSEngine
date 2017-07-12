@@ -8,7 +8,7 @@
 
 #include "parser.h"
 
-#include <tscore/filesystem/pathhelpers.h>
+#include <tscore/pathutil.h>
 
 #include <cassert>
 #include <iostream>
