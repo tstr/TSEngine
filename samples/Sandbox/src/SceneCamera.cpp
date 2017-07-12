@@ -2,10 +2,28 @@
 	Camera class
 */
 
-#include "camera.h"
+#include "SceneCamera.h"
 
 using namespace std;
 using namespace ts;
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+SceneCamera::SceneCamera(InputSystem* input) :
+	m_inputSystem(input)
+{
+	m_inputSystem->addListener(this);
+	m_moveMouse = false;
+}
+
+SceneCamera::~SceneCamera()
+{
+	m_inputSystem->removeListener(this);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//Input handlers
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 enum EActionFlags
 {
@@ -15,21 +33,16 @@ enum EActionFlags
 	eRight	 = 0x08,
 	eUp		 = 0x10,
 	eDown	 = 0x20,
+	eSpeed   = 0x40,
 };
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//Input handlers
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-int CCamera::onMouse(int16 dx, int16 dy)
+void SceneCamera::onMouseMove(int dx, int dy)
 {
 	m_mouseDX += dx;
 	m_mouseDY += dy;
-
-	return 0;
 }
 
-int CCamera::onKeyDown(EKeyCode code)
+void SceneCamera::onKeyDown(EKeyCode code)
 {
 	switch (code)
 	{
@@ -39,12 +52,17 @@ int CCamera::onKeyDown(EKeyCode code)
 		case eKeyD: m_actionflags |= eRight;   break;
 		case eKeySpace: m_actionflags |= eUp; break;
 		case eKeyCtrlL: m_actionflags |= eDown; break;
+		case eKeyShiftL:m_actionflags |= eSpeed; break;
 	}
 
-	return 0;
+	if (code == eMouseButtonRight)
+	{
+		m_moveMouse = true;
+		m_inputSystem->showCursor(false);
+	}
 }
 
-int CCamera::onKeyUp(EKeyCode code)
+void SceneCamera::onKeyUp(EKeyCode code)
 {
 	switch (code)
 	{
@@ -54,41 +72,32 @@ int CCamera::onKeyUp(EKeyCode code)
 		case eKeyD: m_actionflags &= ~eRight;	break;
 		case eKeySpace: m_actionflags &= ~eUp;  break;
 		case eKeyCtrlL: m_actionflags &= ~eDown; break;
+		case eKeyShiftL:m_actionflags &= ~eSpeed; break;
 	}
 
-	return 0;
-
-}
-
-int CCamera::onMouseDown(const SInputMouseEvent& args)
-{
-	if (args.buttons == eMouseButtonRight)
-	{
-		m_moveMouse = true;
-		m_inputmodule->showCursor(false);
-	}
-	return 0;
-}
-
-int CCamera::onMouseUp(const SInputMouseEvent& args)
-{
-	if (args.buttons == eMouseButtonRight)
+	if (code == eMouseButtonRight)
 	{
 		m_moveMouse = false;
-		m_inputmodule->showCursor(true);
+		m_inputSystem->showCursor(true);
 	}
-	return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void CCamera::update(double dt)
+void SceneCamera::update(double dt)
 {
 	//Update position
 	int8 actions = m_actionflags.load();
 
+	float speed = m_camSpeed;
+
+	if (actions & eSpeed)
+	{
+		speed = speed * 3.0f;
+	}
+
 	//Distance travelled over dt seconds
-	const float dis = m_camSpeed * (float)dt;
+	const float dis = speed * (float)dt;
 
 	//Reset the value of the x/y mouse displacement
 	float dx = (float)m_mouseDX.exchange(0);

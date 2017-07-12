@@ -23,7 +23,8 @@ InputSystem::InputSystem(Window* window, uint flags) :
 	m_window(window),
 	m_flags(flags),
 	m_mouseX(0),
-	m_mouseY(0)
+	m_mouseY(0),
+	m_cursorShown(true)
 {
 	//Verify window is valid
 	tsassert(m_window != nullptr);

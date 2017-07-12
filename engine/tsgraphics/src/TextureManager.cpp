@@ -141,7 +141,8 @@ struct CTextureManager::Manager
 
 		STextureLoadInfo info;
 		
-		textureImport.load(filepath, info);
+		if (!textureImport.load(filepath, info))
+			return eTextureManagerStatus_Fail;
 
 		vector<STextureResourceData> dataDesc(info.desc.arraySize);
 		for (uint32 i = 0; i < info.desc.arraySize; i++)

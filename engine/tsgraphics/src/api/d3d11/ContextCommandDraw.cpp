@@ -93,7 +93,7 @@ void D3D11RenderContext::draw(
 	//Bind constant buffers
 	for (int i = 0; i < SDrawCommand::eMaxConstantBuffers; i++)
 	{
-		ID3D11Buffer* u = command->constantBuffers[0];
+		ID3D11Buffer* u = command->constantBuffers[i];
 		m_context->VSSetConstantBuffers(i, 1, &u);
 		m_context->PSSetConstantBuffers(i, 1, &u);
 		m_context->GSSetConstantBuffers(i, 1, &u);

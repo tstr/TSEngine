@@ -2,32 +2,49 @@
 	Sandbox application
 */
 
-#include <tsengine/env.h>
-#include <tsengine/input/inputmodule.h>
+#pragma once
 
-#include "graphics/Graphics3D.h"
-#include "Camera.h"
+#include <tsengine/Env.h>
+#include <tsengine/Input.h>
+
+#include "3D/Graphics3D.h"
+#include "Scene.h"
+#include "Entity.h"
 
 namespace ts
 {
-	class Sandbox : public IApplication
+	class Sandbox : public Application, private InputSystem::IListener
 	{
 	private:
-		
-		CEngineEnv& mEnv;
+
+		EntityManager m_entityManager;
+
+		Scene m_scene;
+
 		Graphics3D m_g3D;
 
-		CCamera m_camera;
+		
+		std::vector<Entity> m_entities;
+		float m_scale;
 
-		std::vector<CRenderItem> m_commands;
 
 		int onInit() override;
 		void onExit() override;
 		void onUpdate(double deltatime) override;
 
+		void onKeyDown(EKeyCode code) override;
+
 	public:
 
-		Sandbox(CEngineEnv& env);
+		Sandbox(EngineEnv& env);
 		~Sandbox();
+
+		using Application::getEnv;
+
+		EntityManager* getEntities() { return &m_entityManager; }
+
+		Scene* getScene() { return &m_scene; }
+
+		int loadModel(Entity e, const String& name);
 	};
 }

@@ -9,7 +9,9 @@
 #include <tscore/debug/log.h>
 #include <tscore/debug/assert.h>
 #include <tscore/system/time.h>
-#include <tsengine/configfile.h>
+#include <tsengine/VarTable.h>
+
+#include "util/IniReader.h"
 
 using namespace std;
 using namespace ts;
@@ -37,6 +39,8 @@ inline Vector getVectorProperty(string value)
 
 	return v;
 }
+
+static void getAttributeList(vector<SVertexAttribute>& attribs, uint8 vertexFlags);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -113,22 +117,25 @@ bool CModel::import(const Path& path, uint8 attribMask)
 	tsinfo("creating materials \"%\"...", materialpath.str());
 
 	//INI parser
-	ConfigFile matfile(materialpath.str());
+	INIReader matfile(materialpath.str());
 
 	size_t idx = 0;
 
 	int32 basevertex = 0;
+	uint8 modelAttribMask = 0;
 
 	//Iterate over model meshes
 	for (SModelMesh& fmesh : meshes)
 	{
-		SMesh mesh;
-		mesh.indexOffset = fmesh.indexOffset;
-		mesh.indexCount = fmesh.indexCount;
-		mesh.vertexBase = basevertex;
+		Selection select;
+
+		select.submesh.indexOffset = fmesh.indexOffset;
+		select.submesh.indexCount = fmesh.indexCount;
+		select.submesh.vertexBase = basevertex;
 		basevertex += fmesh.numVertices;
 
-		mesh.vertexAttributes = fmesh.vertexAttributeMask;
+		select.submesh.vertexAttributes = fmesh.vertexAttributeMask;
+		modelAttribMask |= fmesh.vertexAttributeMask;
 
 		const char* mname = fmesh.materialName.str();
 
@@ -143,15 +150,15 @@ bool CModel::import(const Path& path, uint8 attribMask)
 		float alpha = 0.0f;
 
 		matfile.getProperty(getKey(mname, "alpha"), alpha);
-		matfile.getProperty(getKey(mname, "shininess"), mesh.material.params.specularPower);
+		matfile.getProperty(getKey(mname, "shininess"), select.material.params.specularPower);
 
 		string buf;
 		matfile.getProperty(getKey(mname, "diffuseColour"), buf);
-		mesh.material.params.diffuseColour = getVectorProperty(buf); buf = "";
+		select.material.params.diffuseColour = getVectorProperty(buf); buf = "";
 		matfile.getProperty(getKey(mname, "ambientColour"), buf);
-		mesh.material.params.ambientColour = getVectorProperty(buf); buf = "";
+		select.material.params.ambientColour = getVectorProperty(buf); buf = "";
 		matfile.getProperty(getKey(mname, "emissiveColour"), buf);
-		mesh.material.params.emissiveColour = getVectorProperty(buf); buf = "";
+		select.material.params.emissiveColour = getVectorProperty(buf); buf = "";
 
 		buf = "";
 		matfile.getProperty(getKey(mname, "diffuseMap"), buf);
@@ -159,8 +166,8 @@ bool CModel::import(const Path& path, uint8 attribMask)
 		{
 			Path texpath(materialroot);
 			texpath.addDirectories(buf);
-			m_graphics->getTextureManager()->load(texpath, mesh.material.diffuseMap, 0);
-			mesh.material.params.useDiffuseMap = true;
+			if (m_graphics->getTextureManager()->load(texpath, select.material.diffuseMap, 0) == eOk)
+				select.material.params.useDiffuseMap = true;
 		}
 
 		buf = "";
@@ -169,8 +176,8 @@ bool CModel::import(const Path& path, uint8 attribMask)
 		{
 			Path texpath(materialroot);
 			texpath.addDirectories(buf);
-			m_graphics->getTextureManager()->load(texpath, mesh.material.normalMap, 0);
-			mesh.material.params.useNormalMap = true;
+			if (m_graphics->getTextureManager()->load(texpath, select.material.normalMap, 0) == eOk)
+				select.material.params.useNormalMap = true;
 		}
 
 		buf = "";
@@ -179,8 +186,8 @@ bool CModel::import(const Path& path, uint8 attribMask)
 		{
 			Path texpath(materialroot);
 			texpath.addDirectories(buf);
-			m_graphics->getTextureManager()->load(texpath, mesh.material.specularMap, 0);
-			mesh.material.params.useSpecularMap = true;
+			if (m_graphics->getTextureManager()->load(texpath, select.material.specularMap, 0) == eOk)
+				select.material.params.useSpecularMap = true;
 		}
 
 		buf = "";
@@ -189,26 +196,38 @@ bool CModel::import(const Path& path, uint8 attribMask)
 		{
 			Path texpath(materialroot);
 			texpath.addDirectories(buf);
-			m_graphics->getTextureManager()->load(texpath, mesh.material.displacementMap, 0);
-			mesh.material.params.useDisplacementMap = true;
+			if (m_graphics->getTextureManager()->load(texpath, select.material.displacementMap, 0) == eOk)
+				select.material.params.useDisplacementMap = true;
 		}
 
 		buf = "";
-		matfile.getProperty(getKey(mname, "ambientMap"), buf);
+		//matfile.getProperty(getKey(mname, "ambientMap"), buf);
 		if (trim(buf) != "")
 		{
 			Path texpath(materialroot);
 			texpath.addDirectories(buf);
-			m_graphics->getTextureManager()->load(texpath, mesh.material.ambientMap, 0);
+			m_graphics->getTextureManager()->load(texpath, select.material.ambientMap, 0);
 		}
+		//*/
 
-		saveMeshInstance(vertices, indices, mesh, attribMask);
-
-		m_meshes.push_back(mesh);
+		m_selections.push_back(select);
 		idx++;
 	}
 
 	tsinfo("materials imported successfully");
+
+	SVertexMesh mesh;
+	mesh.indexData = vector<Index>(&indices[0], &indices[0] + indices.size());
+	mesh.vertexData = vector<byte>((const byte*)&vertices[0], (const byte*)&vertices[0] + (vertices.size() * sizeof(SModelVertex)));
+	mesh.vertexTopology = EVertexTopology::eTopologyTriangleList;
+	mesh.vertexStride = sizeof(SModelVertex);
+
+	getAttributeList(mesh.vertexAttributes, modelAttribMask & attribMask);
+
+	if (EMeshStatus status = m_graphics->getMeshManager()->createMesh(mesh, m_modelMesh))
+	{
+		tswarn("Unable to load mesh data: %", status);
+	}
 
 	return true;
 }
@@ -216,24 +235,6 @@ bool CModel::import(const Path& path, uint8 attribMask)
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define VECTOR_OFFSET(idx) (uint32)(idx * sizeof(Vector))
-
-static void getAttributeList(vector<SVertexAttribute>& attribs, uint8 vertexFlags);
-
-void CModel::saveMeshInstance(const std::vector<SModelVertex>& vertices, const std::vector<ModelIndex>& indices, SMesh& meshDesc, uint8 attribMask)
-{
-	SVertexMesh mesh;
-	mesh.indexData = vector<Index>(&indices[0] + meshDesc.indexOffset, &indices[0] + meshDesc.indexOffset + meshDesc.indexCount);
-	mesh.vertexData = vector<byte>((const byte*)&vertices[0], (const byte*)&vertices[0] + (vertices.size() * sizeof(SModelVertex)));
-	mesh.vertexTopology = EVertexTopology::eTopologyTriangleList;
-	mesh.vertexStride = sizeof(SModelVertex);
-
-	getAttributeList(mesh.vertexAttributes, meshDesc.vertexAttributes & attribMask);
-
-	if (EMeshStatus status = m_graphics->getMeshManager()->createMesh(mesh, meshDesc.id))
-	{
-		tswarn("Unable to load mesh data: %", status);
-	}
-}
 
 void getAttributeList(vector<SVertexAttribute>& attribs, uint8 vertexFlags)
 {

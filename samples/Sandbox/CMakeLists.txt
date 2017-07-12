@@ -7,15 +7,22 @@ SET(src_list
 	src/main.cpp
 	src/Sandbox.h
 	src/Sandbox.cpp
-	src/Camera.h
-	src/Camera.cpp
+	src/SceneCamera.h
+	src/SceneCamera.cpp
+	src/Scene.cpp
+	src/Scene.h
+	src/Entity.h
+	src/TransformComponent.h
 	
-	src/graphics/Graphics3D.h
-	src/graphics/Graphics3D.cpp
-	src/graphics/Model.h
-	src/graphics/Model.cpp
-	src/graphics/ConfigFile.h
-	src/graphics/ConfigFile.cpp
+	src/3D/Graphics3D.h
+	src/3D/Graphics3D.cpp
+	src/3D/Model.h
+	src/3D/Model.cpp
+	src/3D/util/IniReader.h
+	src/3D/util/IniReader.cpp
+	src/3D/MaterialInfo.h
+	src/3D/ColourPass.h
+	src/3D/ColourPass.cpp
 )
 
 SET(shader_src_list
