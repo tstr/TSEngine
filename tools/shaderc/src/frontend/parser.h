@@ -10,7 +10,7 @@
 
 #include "../common.h"
 
-#include <tscore/filesystem/path.h>
+#include <tscore/path.h>
 #include <tscore/system/memory.h>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

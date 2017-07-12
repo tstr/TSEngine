@@ -20,8 +20,8 @@
 #include <tsgraphics/api/RenderApi.h>
 #include <tsgraphics/ShaderManager.h>
 
-#include <tscore/filesystem/path.h>
-#include <tscore/filesystem/pathhelpers.h>
+#include <tscore/path.h>
+#include <tscore/pathutil.h>
 
 #include <Windows.h>
 
@@ -58,7 +58,7 @@ public:
 		SRenderApiConfig config;
 		config.adapterIndex = 0;
 		config.display.fullscreen = false;
-		config.display.multisampleCount = 1;
+		config.display.multisampleLevel = 1;
 		config.display.resolutionH = 1;
 		config.display.resolutionW = 1;
 		config.flags = eFlagDebug;
