@@ -72,7 +72,7 @@ SET(tsgraphics_src
 	src/MeshManager.cpp
 	src/VertexBuilder.cpp
 	src/BufferPool.cpp
-	src/RenderItem.cpp
+	src/GraphicsRenderPass.cpp
 	
 	src/platform/Nvoptimus.cpp
 )

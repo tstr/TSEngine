@@ -52,8 +52,8 @@ CTextureImporter::~CTextureImporter()
 //Load a texture from a given file
 int CTextureImporter::load(const Path& filepath, STextureLoadInfo& info)
 {
-	tsassert(m_state != EState::eStateLoad);
-	m_state = EState::eStateLoad;
+	//tsassert(m_state != EState::eStateLoad);
+	//m_state = EState::eStateLoad;
 
 	tsinfo("Loading texture: \"%\"...", filepath.str());
 
@@ -169,14 +169,14 @@ int CTextureImporter::load(const Path& filepath, STextureLoadInfo& info)
 		}
 	}
 
-	return 0;
+	return true;
 }
 
 //Unload a texture
 void CTextureImporter::unload(STextureLoadInfo& info)
 {
-	tsassert(m_state == EState::eStateLoad);
-	m_state = EState::eStateFree;
+	//tsassert(m_state == EState::eStateLoad);
+	//m_state = EState::eStateFree;
 
 	info.byteDepth = 0;
 	info.byteWidth = 0;

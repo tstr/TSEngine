@@ -16,7 +16,7 @@ function(add_sample)
 	
 	ADD_EXECUTABLE(
 		${add_sample_NAME}
-		${add_sample_SOURCES} ${add_sample_SHADERS} ${add_sample_SHADER_MANIFEST}
+		${add_sample_SOURCES} ${add_sample_SHADERS} ${add_sample_SHADER_MANIFEST} ${add_sample_CONFIG}
 	)
 		
 	if (NOT ${add_sample_SHADER_MANIFEST} STREQUAL "")

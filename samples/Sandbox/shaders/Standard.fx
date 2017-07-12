@@ -29,7 +29,7 @@ PixelInput_PosTex VS(VertexInput_PosTex input)
 	output.pos = input.pos;
 	
 	//transform position
-	//output.pos = mul(output.pos, mesh.world);
+	output.pos = mul(output.pos, mesh.world);
 	output.pos = mul(output.pos, scene.view);
 
 	//save view position of vertex
@@ -37,6 +37,7 @@ PixelInput_PosTex VS(VertexInput_PosTex input)
 	output.pos = mul(output.pos, scene.projection);
 	
 	output.texcoord = input.texcoord;
+	output.texcoord.y = 1.0f - output.texcoord.y;
 
 	return output;
 }

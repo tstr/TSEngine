@@ -5,16 +5,16 @@
 #pragma once
 
 #include <tscore/maths.h>
-#include <tsengine/input/inputmodule.h>
+#include <tsengine/Input.h>
 #include <atomic>
 
 namespace ts
 {
-	class CCamera : private IInputEventListener
+	class SceneCamera : private InputSystem::IListener
 	{
 	private:
 	
-		CInputModule* m_inputmodule = nullptr;
+		InputSystem* m_inputSystem = nullptr;
 		
 		std::atomic<bool> m_moveMouse;
 
@@ -36,27 +36,15 @@ namespace ts
 		const float m_farplane = 1000.0f;
 		
 		//Input handlers
-		int onMouse(int16 dx, int16 dy) override;
-		int onKeyDown(EKeyCode code) override;
-		int onKeyUp(EKeyCode code) override;
-		int onMouseDown(const SInputMouseEvent& args) override;
-		int onMouseUp(const SInputMouseEvent& args) override;
+		void onMouseMove(int dx, int dy) override;
+		void onKeyDown(EKeyCode code) override;
+		void onKeyUp(EKeyCode code) override;
 		
 	public:
 		
-		CCamera() {}
-		
-		CCamera(CInputModule* input) :
-			m_inputmodule(input)
-		{
-			m_inputmodule->addEventListener(this);
-			m_moveMouse = false;
-		}
-
-		~CCamera()
-		{
-			m_inputmodule->removeEventListener(this);
-		}
+		SceneCamera() = default;
+		SceneCamera(InputSystem* input);
+		~SceneCamera();
 		
 		void setPosition(Vector v) { m_camPosition = v; }
 		Vector getPosition() const { return m_camPosition; }

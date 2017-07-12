@@ -34,8 +34,6 @@ GraphicsContext::GraphicsContext(GraphicsSystem* system) :
 
 GraphicsContext::~GraphicsContext()
 {
-	clearDraws();
-
 	//Destroy all cached resources
 	m_shaderManager.clear();
 	m_textureManager.clear();
@@ -47,47 +45,16 @@ GraphicsContext::~GraphicsContext()
 //	Draw command manager methods
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int GraphicsContext::allocDraw(const SDrawCommand& cmdDesc, HDrawCmd& cmd)
+GraphicsContext::ItemID GraphicsContext::createItem()
 {
-	auto api = m_system->getApi();
-
-	ERenderStatus status = api->createDrawCommand(cmd, cmdDesc);
-
-	if (status)
-	{
-		return status;
-	}
-
-	m_drawPool.push_back(cmd);
-
-	return 0;
+	ItemID item;
+	m_itemAllocator.alloc(item);
+	return item;
 }
 
-int GraphicsContext::freeDraw(HDrawCmd cmd)
+bool GraphicsContext::isItem(ItemID renderItem) const
 {
-	auto it = find(m_drawPool.begin(), m_drawPool.end(), cmd);
-
-	if (it == m_drawPool.end())
-	{
-		return ERenderStatus::eFail;
-	}
-
-	auto api = m_system->getApi();
-	api->destroyDrawCommand(cmd);
-	
-	return 0;
-}
-
-void GraphicsContext::clearDraws()
-{
-	auto api = m_system->getApi();
-
-	for (HDrawCmd cmd : m_drawPool)
-	{
-		api->destroyDrawCommand(cmd);
-	}
-
-	m_drawPool.clear();
+	return m_itemAllocator.exists(renderItem);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

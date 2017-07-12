@@ -8,7 +8,7 @@
 #include <tscore/debug/profiling.h>
 
 #include <tsgraphics/GraphicsContext.h>
-#include <tsengine/input/inputmodule.h>
+#include <tsengine/Input.h>
 
 using namespace std;
 using namespace ts;
@@ -23,13 +23,11 @@ void generateCubeMesh(Vector halfextents, vector<Index>& indices, vector<Vector>
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 class Sample :
-	public IApplication,
-	public IInputEventListener,
+	public Application,
+	public InputSystem::IListener,
 	public GraphicsContext
 {
 private:
-
-	CEngineEnv& mEnv;
 
 	size_t frame = 0;
 	double timecount = 0.0;
@@ -145,37 +143,38 @@ private:
 
 public:
 	
-	Sample(CEngineEnv& env) :
-		mEnv(env),
-		GraphicsContext::GraphicsContext(env.getGraphics())
+	Sample(EngineEnv& env) :
+		Application(env),
+		GraphicsContext::GraphicsContext(getEnv().getGraphics())
 	{
-		mEnv.getInput()->addEventListener(this);
+		getEnv().getInput()->addListener(this);
+	}
+
+	~Sample()
+	{
+		getEnv().getInput()->removeListener(this);
 	}
 
 	////////////////////////////////////////////////////////
 	//Input handlers
-	int onKeyDown(EKeyCode code) override
+	void onKeyDown(EKeyCode code) override
 	{
 		if (code == eKeyT)
 		{
 			toggleSolid = !toggleSolid;
 		}
-
-		return 0;
 	}
 
-	int onMouseScroll(const SInputMouseEvent& event) override
+	void onMouseScroll(int deltaScroll) override
 	{
-		scroll += 0.06f * -event.deltaScroll;
-
-		return 0;
+		scroll += 0.06f * -(float)deltaScroll;
 	}
 
 	////////////////////////////////////////////////////////
 
 	int onInit() override
 	{
-		GraphicsSystem* gfx = mEnv.getGraphics();
+		GraphicsSystem* gfx = getEnv().getGraphics();
 		
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Initialize resources
@@ -230,7 +229,7 @@ public:
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Create command
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		CRenderItemInfo itemInfo(this);
+		SDrawCommand command;
 
 		itemInfo.setShader(programId);
 		itemInfo.setConstantBuffer(0, hConstants);
@@ -289,9 +288,9 @@ public:
 		frame++;
 
 		//Get display information/target
-		auto gfx = mEnv.getGraphics();
-		SGraphicsDisplayInfo displayInfo;
-		gfx->getDisplayInfo(displayInfo);
+		auto gfx = getEnv().getGraphics();
+		GraphicsDisplayOptions displayOpt;
+		gfx->getDisplayOptions(displayOpt);
 		HTarget target = gfx->getDisplayTarget();
 
 		//Calculate distance
@@ -304,7 +303,7 @@ public:
 		//data.world = Matrix::rotationY((float)timecount) * Matrix::translation(0.0f, 0.0f, 2.0f);
 		data.world = Matrix::rotationY((Pi / 3) * sin((float)timecount)) * Matrix::translation(meshPos);
 		data.view = Matrix::identity();
-		data.projection = Matrix::perspectiveFieldOfView(Pi / 2, (float)displayInfo.width / displayInfo.height, 0.1f, 20.0f);
+		data.projection = Matrix::perspectiveFieldOfView(Pi / 2, (float)displayOpt.width / displayOpt.height, 0.1f, 20.0f);
 
 		data.lightDir = Vector(0, -0.5f, -1);
 		data.lightDir = Matrix::transform3D(data.lightDir, data.view);
@@ -332,7 +331,7 @@ public:
 
 		batch = queue->createBatch();
 		queue->addCommand(batch, CommandBufferUpdate(hConstants), data);
-		queue->addCommand(batch, CommandDraw(target, (toggleSolid) ? drawSolid.getCommand() : drawWire.getCommand(), SViewport(displayInfo.width, displayInfo.height, 0, 0), SViewport()));
+		queue->addCommand(batch, CommandDraw(target, (toggleSolid) ? drawSolid.getCommand() : drawWire.getCommand(), SViewport(displayOpt.width, displayOpt.height, 0, 0), SViewport()));
 		queue->submitBatch(1, batch);
 
 		this->commit();
@@ -349,7 +348,7 @@ public:
 int main(int argc, char** argv)
 {
 	//Run engine
-	CEngineEnv engine(argc, argv);
+	EngineEnv engine(argc, argv);
 
 	Sample test(engine);
 	

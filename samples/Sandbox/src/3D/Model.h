@@ -4,9 +4,10 @@
 
 #pragma once
 
-#include <tsgraphics/GraphicsContext.h>
-#include <tscore/filesystem/path.h>
+#include <tscore/path.h>
+#include <tscore/ptr.h>
 #include <tsgraphics/model/modeldefs.h>
+#include <tsgraphics/GraphicsContext.h>
 
 namespace ts
 {
@@ -41,25 +42,20 @@ namespace ts
 		Index vertexBase = 0;
 
 		uint8 vertexAttributes = 0;
-
-		MeshId id;
-
-		SMaterial material;
 	};
 
 	class CModel
 	{
-	private:
-
-		GraphicsContext* m_graphics = nullptr;
-
-		Path m_filepath;
-
-		std::vector<SMesh> m_meshes;
-
-		void saveMeshInstance(const std::vector<SModelVertex>& vertices, const std::vector<ModelIndex>& indices, SMesh& meshDesc, uint8 attribMask);
-
 	public:
+
+		struct Selection
+		{
+			SMesh submesh;
+			SMaterial material;
+		};
+
+		typedef std::vector<Selection> SelectionList;
+		typedef SelectionList::const_iterator SelectionIterator;
 
 		CModel(GraphicsContext* graphics);
 		~CModel() {}
@@ -69,7 +65,20 @@ namespace ts
 
 		bool import(const Path& path, uint8 attribMask = 0xff);
 
-		uint32 getMeshCount() const { return (uint32)m_meshes.size(); }
-		const SMesh& getMesh(uint32 idx) const { return m_meshes.at(idx); }
+		SelectionIterator beginSection() const { return m_selections.begin(); }
+		SelectionIterator endSection() const { return m_selections.end(); }
+
+		SelectionList::size_type sectionCount() const { return m_selections.size(); }
+
+		MeshId getMeshID() const { return m_modelMesh; }
+
+	private:
+
+		GraphicsContext* m_graphics;
+
+		Path m_filepath;
+
+		MeshId m_modelMesh;
+		SelectionList m_selections;
 	};
 }
