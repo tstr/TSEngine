@@ -22,7 +22,7 @@ namespace ts
 
 		SceneCamera m_camera;
 
-		ComponentManager<TransformComponent> m_transformComponents;
+		ComponentMap<TransformComponent> m_transformComponents;
 
 	public:
 
