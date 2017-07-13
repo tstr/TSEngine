@@ -54,6 +54,7 @@ namespace ts
 
 		uint32 get() const { return data; }
 		operator uint32() const { return get(); }
+		operator Vector() const { return Vector((float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, (float)a / 255.0f); }
 
 		byte& R() { return r; }
 		byte& G() { return g; }

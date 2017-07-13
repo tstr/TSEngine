@@ -32,15 +32,25 @@ namespace ts
 		std::vector<GraphicsContext::ItemID> items;
 	};
 
+	struct LightSourceComponent
+	{
+		Vector colour;
+
+		float constant;
+		float linear;
+		float quadratic;
+	};
+
 	/*
 		3D renderer
 	*/
-	class Graphics3D : public GraphicsContext
+	class Graphics3D
 	{
 	private:
 
 		Scene* m_scene;
 
+		GraphicsContext m_context;
 		ColourPass m_passColour;
 
 		Matrix m_matrixView;
@@ -49,7 +59,8 @@ namespace ts
 		HBuffer m_constScene;
 		HBuffer m_constMesh;
 
-		ComponentManager<GraphicsComponent> m_graphicsComponents;
+		ComponentMap<GraphicsComponent> m_graphicsComponents;
+		ComponentMap<LightSourceComponent> m_lightSourceComponents;
 
 	public:
 		
@@ -61,7 +72,11 @@ namespace ts
 		Graphics3D(GraphicsSystem* system, Scene* scene);
 		~Graphics3D();
 
-		void createComponent(Entity e, MeshId mesh, const SubmeshInfo* info, size_t infoCount);
+		GraphicsContext* getContext() { return &m_context; }
+
+		void createGraphicsComponent(Entity e, MeshId mesh, const SubmeshInfo* info, size_t infoCount);
+		void createLightComponent(Entity e, Vector colour, float constant, float linear, float quadratic);
+
 		void submit(Entity e);
 
 		void update();

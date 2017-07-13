@@ -27,6 +27,7 @@ SET(src_list
 
 SET(shader_src_list
 	shaders/Common.h
+	shaders/CommonLayouts.h
 	shaders/Standard.fx
 )
 

@@ -14,11 +14,34 @@ enum EConstantIndices
 	INDEX_MATERIAL_CONSTANTS = 2
 };
 
+struct DirectLight
+{
+	Vector colour;
+	Vector dir;
+};
+
+struct DynamicLight
+{
+	Vector colour;
+	Vector pos;
+
+	int enabled = 0;
+
+	//Attenuation factors
+	float attConstant;
+	float attLinear;
+	float attQuadratic;
+};
+
 struct SceneConstants
 {
 	Matrix view;
 	Matrix projection;
 	Vector viewPos;
+	Vector ambient;
+	//Directional light
+	DirectLight direct;
+	DynamicLight dynamic[4];
 };
 
 struct MeshConstants
@@ -31,13 +54,14 @@ struct MeshConstants
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Graphics3D::Graphics3D(GraphicsSystem* system, Scene* scene) :
-	GraphicsContext(system),
+	m_context(system),
 	m_scene(scene),
 	m_graphicsComponents(scene->getEntities()),
-	m_passColour(this)
+	m_lightSourceComponents(scene->getEntities()),
+	m_passColour(&m_context)
 {
-	m_constMesh = getPool()->createConstantBuffer(MeshConstants());
-	m_constScene = getPool()->createConstantBuffer(SceneConstants());
+	m_constMesh = m_context.getPool()->createConstantBuffer(MeshConstants());
+	m_constScene = m_context.getPool()->createConstantBuffer(SceneConstants());
 }
 
 Graphics3D::~Graphics3D()
@@ -46,17 +70,17 @@ Graphics3D::~Graphics3D()
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-// Render Item creation
+// Graphics Component methods
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Graphics3D::createComponent(Entity e, MeshId mesh, const SubmeshInfo* info, size_t infoCount)
+void Graphics3D::createGraphicsComponent(Entity e, MeshId mesh, const SubmeshInfo* info, size_t infoCount)
 {
 	GraphicsComponent component;
 
 	SMeshInstance meshInst;
 
 	//Load mesh instance
-	tsassert(getMeshManager()->getMeshInstance(mesh, meshInst) == eMeshStatus_Ok);
+	tsassert(getContext()->getMeshManager()->getMeshInstance(mesh, meshInst) == eMeshStatus_Ok);
 
 	//Foreach submesh create a render item
 	for (size_t i = 0; i < infoCount; i++)
@@ -78,7 +102,7 @@ void Graphics3D::createComponent(Entity e, MeshId mesh, const SubmeshInfo* info,
 
 		// Set shader
 		SShaderProgram prog;
-		getShaderManager()->getProgram(info[i].states.getShader(), prog);
+		getContext()->getShaderManager()->getProgram(info[i].states.getShader(), prog);
 		command.shaderVertex = prog.hVertex;
 		command.shaderPixel = prog.hPixel;
 		command.shaderGeometry = prog.hGeometry;
@@ -91,7 +115,7 @@ void Graphics3D::createComponent(Entity e, MeshId mesh, const SubmeshInfo* info,
 
 		// Set material constants
 		MemoryBuffer materialConstants = info[i].resources.getConstants();
-		command.constantBuffers[INDEX_MATERIAL_CONSTANTS] = getPool()->createConstantBuffer(materialConstants.pointer(), materialConstants.size());
+		command.constantBuffers[INDEX_MATERIAL_CONSTANTS] = getContext()->getPool()->createConstantBuffer(materialConstants.pointer(), materialConstants.size());
 		command.constantBuffers[INDEX_SCENE_CONSTANTS] = m_constScene;
 		command.constantBuffers[INDEX_MESH_CONSTANTS] = m_constMesh;
 
@@ -105,14 +129,14 @@ void Graphics3D::createComponent(Entity e, MeshId mesh, const SubmeshInfo* info,
 
 			//Load texture properties
 			STextureProperties props;
-			getTextureManager()->getTexProperties(tex, props);
+			getContext()->getTextureManager()->getTexProperties(tex, props);
 
 			unit.arrayCount = props.arraySize;
 			unit.arrayIndex = 0;
 			unit.textureType = props.type;
 
 			//Load texture resource handle
-			getTextureManager()->getTexHandle(tex, unit.texture);
+			getContext()->getTextureManager()->getTexHandle(tex, unit.texture);
 		}
 
 		// Set index buffer
@@ -146,7 +170,7 @@ void Graphics3D::createComponent(Entity e, MeshId mesh, const SubmeshInfo* info,
 		/*
 			Create Render item
 		*/
-		Item item = GraphicsContext::createItem();
+		Item item = getContext()->createItem();
 
 		m_passColour.add(item, command);
 
@@ -172,14 +196,12 @@ void Graphics3D::submit(Entity entity)
 
 
 		GraphicsDisplayOptions opt;
-		getSystem()->getDisplayOptions(opt);
+		getContext()->getSystem()->getDisplayOptions(opt);
 
-		CommandQueue* q = GraphicsContext::getQueue();
+		CommandQueue* q = getContext()->getQueue();
 
 		MeshConstants constants;
 		constants.world = m_scene->getTransform(entity);
-		//constants.world = Matrix();
-
 		Matrix::transpose(constants.world);
 
 		//Allocate command batch
@@ -201,22 +223,66 @@ void Graphics3D::submit(Entity entity)
 
 void Graphics3D::update()
 {
-	HTarget target = getSystem()->getDisplayTarget();
-	CommandQueue* q = GraphicsContext::getQueue();
+	HTarget target = getContext()->getSystem()->getDisplayTarget();
+	CommandQueue* q = getContext()->getQueue();
+
+	//////////////////////////////////////////////////////////////////////////////////////
 
 	SceneConstants constants;
 	constants.view = m_scene->getCamera()->getViewMatrix();
 	constants.projection = m_scene->getCamera()->getProjectionMatrix();
 	constants.viewPos = constants.view.inverse().getTranslation();
+
+	//Ambient light
+	constants.ambient = Vector(0.16f, 0.16f, 0.16f);
+
+	//Directional light
+	constants.direct.colour = RGBA(174, 183, 190);
+	constants.direct.dir = Vector(1.0f, -1.0f, -1.0f, 0);
+	constants.direct.dir.normalize();
+	constants.direct.dir = Matrix::transform4D(constants.direct.dir, constants.view);
+	constants.direct.dir.normalize();
+
+	Vector dynamicColours[] =
+	{
+		colours::Green,
+		colours::LightBlue,
+		colours::Gold,
+		colours::Violet
+	};
+
+	Vector dynamicPos[] =
+	{
+		Vector(+10, 5, +10, 1),
+		Vector(+10, 5, -10, 1),
+		Vector(-10, 5, +10, 1),
+		Vector(-10, 5, -10, 1)
+	};
+
+	//Dynamic lighting
+	for (int i = 0; i < 4; i++)
+	{
+		constants.dynamic[i].enabled = 1;
+		constants.dynamic[i].attConstant = 1.0f;
+		constants.dynamic[i].attLinear = 0.1f;
+		constants.dynamic[i].attQuadratic = 0.01f;
+		constants.dynamic[i].pos = Matrix::transform4D(dynamicPos[i], constants.view);
+		constants.dynamic[i].colour = dynamicColours[i];
+	}
+
+	Vector v = Vector(1.0f, 0.0, 0.0) * 0.01f;
+
 	Matrix::transpose(constants.view);
 	Matrix::transpose(constants.projection);
+
+	//////////////////////////////////////////////////////////////////////////////////////
 
 	CommandBatch* batch = q->createBatch();
 	//q->addCommand(batch, CommandTargetClear(target, (const Vector&)colours::Red, 1.0f));
 	q->addCommand(batch, CommandBufferUpdate(m_constScene), constants);
 	q->submitBatch(0, batch);
 
-	GraphicsContext::commit();
+	getContext()->commit();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////

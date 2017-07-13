@@ -35,47 +35,100 @@ namespace ts
 		}
 	};
 
-	template<class cmp_t>
-	class ComponentManager
+	template<class Component_t, typename = std::enable_if<std::is_move_constructible<Component_t>::value>>
+	class ComponentMap
 	{
 	private:
 
+		struct Entry
+		{
+			//Empty entity is -1
+			Entity key;
+			Component_t value;
+
+			Entry() : key(-1) {}
+			Entry(Entity e, Component_t c) : key(e), value(c) {}
+		};
+
 		EntityManager* m_manager = nullptr;
-		std::vector<cmp_t> m_components;
+		std::vector<Entry> m_components;
 
 	public:
 
-		ComponentManager(EntityManager* manager) :
+		ComponentMap() = default;
+
+		/*
+			Construct a component map object:
+
+			Only maps entities from the entity manager specified as an argument.
+		*/
+		ComponentMap(EntityManager* manager) :
 			m_manager(manager)
 		{
 			tsassert(m_manager);
 		}
 
-		bool getComponent(Entity e, cmp_t& cmp)
+		ComponentMap(ComponentMap&& map)
 		{
-			const size_t idx = HandleInfo<Entity>(e).index;
-
-			if (m_components.size() <= idx || !m_manager->alive(e))
-				return false;
-
-			cmp = m_components.at(idx);
-
-			return true;
+			swap(this->m_manager, map.m_manager);
+			swap(this->m_components, map.m_components);
 		}
 
-		bool setComponent(Entity e, const cmp_t& cmp)
-		{
-			if (!m_manager->alive(e))
-				return false;
+		ComponentMap(const ComponentMap& map) = delete;
 
+		/*
+			Check if a given entity has a corresponding component in this component map
+		*/
+		bool hasComponent(Entity e)
+		{
 			const size_t idx = HandleInfo<Entity>(e).index;
 
-			if (m_components.size() <= idx)
-				m_components.resize(idx + 1);
+			return m_manager && (m_components.at(idx).key != -1);
+		}
 
-			m_components.at(idx) = cmp;
+		/*
+			Get a component entry
+		*/
+		bool getComponent(Entity e, Component_t& cmp) const
+		{
+			const size_t idx = HandleInfo<Entity>(e).index;
 
-			return true;
+			//If entity index in range and entity is still alive
+			if (m_manager && m_components.size() > idx && m_manager->alive(e))
+			{
+				const Entry& entry = m_components.at(idx);
+
+				//If entity has this component then it will have an entry in component list
+				if (entry.key != -1)
+				{
+					cmp = entry.value;
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/*
+			Set a component entry
+		*/
+		bool setComponent(Entity e, const Component_t& cmp)
+		{
+			//If entity exists
+			if (m_manager && m_manager->alive(e))
+			{
+				const size_t idx = HandleInfo<Entity>(e).index;
+
+				//If component array is not correct size then resize 
+				if (m_components.size() <= idx)
+					m_components.resize(idx + 1);
+
+				m_components.at(idx) = Entry(e, cmp);
+
+				return true;
+			}
+			
+			return false;
 		}
 	};
 

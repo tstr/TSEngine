@@ -40,7 +40,7 @@ int Sandbox::onInit()
 	}
 
 	getScene()->getCamera()->setPosition(Vector(0, 1.0f, -4.0f));
-	getScene()->getCamera()->setSpeed(8.0f);
+	getScene()->getCamera()->setSpeed(15.0f);
 	m_scale = 0.1f;
 
 	///////////////////////////////////////////////////////////////////
@@ -65,19 +65,26 @@ int Sandbox::onInit()
 	m_entityManager.create(sponza);
 	m_entityManager.create(cube);
 
-	if (int err = loadModel(sponza, "sponza/sponza.tsm"))
-		return err;
+	{
+		if (int err = loadModel(sponza, "sponza/sponza.tsm"))
+			return err;
 
-	if (int err = loadModel(cube, "cube.tsm"))
-		return err;
+		//Set transforms
+		getScene()->setTransform(sponza, Matrix::scale(m_scale));
 
-	//Set transforms
-	getScene()->setTransform(sponza, Matrix::scale(m_scale));
-	getScene()->setTransform(cube, Matrix::translation(Vector(0, 1, 0)));
+		//Save entities
+		m_entities.push_back(sponza);
+	}
 
-	//Save entities
-	m_entities.push_back(sponza);
-	m_entities.push_back(cube);
+	{
+		if (int err = loadModel(cube, "cube.tsm"))
+			return err;
+
+		//Set transforms
+		getScene()->setTransform(cube, Matrix::translation(Vector(0, 1, 0)));
+
+		m_entities.push_back(cube);
+	}
 
 	///////////////////////////////////////////////////////////////////
 
@@ -95,11 +102,11 @@ void Sandbox::onExit()
 
 int Sandbox::loadModel(Entity entity, const String& modelfile)
 {
-	Path p(m_g3D.getSystem()->getRootPath());
+	Path p(m_g3D.getContext()->getSystem()->getRootPath());
 	p.addDirectories(modelfile);
-	CModel model(&m_g3D);
+	CModel model(m_g3D.getContext());
 
-	if (!model.import(p, eModelVertexAttributePosition | eModelVertexAttributeTexcoord))
+	if (!model.import(p, eModelVertexAttributePosition | eModelVertexAttributeTexcoord | eModelVertexAttributeNormal))
 	{
 		tserror("unable to import model \"%\"", p.str());
 		return -1;
@@ -114,7 +121,7 @@ int Sandbox::loadModel(Entity entity, const String& modelfile)
 		SubmeshInfo info;
 
 		ShaderId program;
-		if (auto status = m_g3D.getShaderManager()->load("SandboxShader", program))
+		if (auto status = m_g3D.getContext()->getShaderManager()->load("SandboxShader", program))
 		{
 			return status;
 		}
@@ -143,7 +150,7 @@ int Sandbox::loadModel(Entity entity, const String& modelfile)
 	}
 
 	//Attach a graphics component to entity
-	m_g3D.createComponent(entity, model.getMeshID(), &submeshes[0], submeshes.size());
+	m_g3D.createGraphicsComponent(entity, model.getMeshID(), &submeshes[0], submeshes.size());
 
 	return 0;
 }
