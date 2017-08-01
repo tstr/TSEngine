@@ -1,0 +1,19 @@
+#
+#	Field type testing
+#
+resource Test0
+{
+	byte field0;
+	bool field1;
+	
+	int16 field2;
+	int32 field3;
+	int64 field4;
+	
+	uint16 field5;
+	uint32 field6;
+	uint64 field7;
+	
+	float32 field8;
+	float64 field9;
+}

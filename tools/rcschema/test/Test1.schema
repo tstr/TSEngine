@@ -1,0 +1,9 @@
+#
+#	Testing dynamic fields
+#
+resource Test1
+{
+	string s0;
+	uint32[] array0;
+	float32[] array1;
+}
