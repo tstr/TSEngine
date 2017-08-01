@@ -8,14 +8,12 @@ PROJECT (tse)
 
 ################################################################################################
 
-OPTION(TS_TEST "enable tests" OFF)
+OPTION(TS_BUILD_TESTS "enable tests" OFF)
 #OPTION(TS_BUILD_TOOLS "build tools" ON)
 
-IF(TS_TEST)
-	
+if(TS_BUILD_TESTS)
 	enable_testing()
-	
-ENDIF()
+endif()
 
 if("${PROJECT_BINARY_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
 	message(FATAL_ERROR "In-source builds are not permitted")
@@ -27,14 +25,12 @@ SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin/")
 SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin/")
 SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/")
 
-set(CMAKE_INCLUDE_CURRENT_DIR 1)
+set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
+set(CMAKE_USE_RELATIVE_PATHS TRUE)
 
-set (TS_BINARY_INSTALL "${CMAKE_INSTALL_PREFIX}/bin")
-set (TS_LIBRARY_INSTALL "${CMAKE_INSTALL_PREFIX}/lib")
-set (TS_HEADER_INSTALL "${CMAKE_INSTALL_PREFIX}/inc")
-
-# Project include directory
-INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/inc")
+set(TS_BINARY_INSTALL "${CMAKE_INSTALL_PREFIX}/bin")
+set(TS_LIBRARY_INSTALL "${CMAKE_INSTALL_PREFIX}/lib")
+set(TS_HEADER_INSTALL "${CMAKE_INSTALL_PREFIX}/inc")
 
 # System Libs
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS 1)
@@ -43,7 +39,7 @@ set(CMAKE_INSTALL_DEBUG_LIBRARIES 0)
 include(InstallRequiredSystemLibraries)
 
 # Module path
-SET (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmakemodules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmakemodules")
 
 ################################################################################################
 #	functions
@@ -51,15 +47,34 @@ SET (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmakemodules"
 
 #Create source groups based on the directory structure
 function(assign_source_groups)
-	foreach(file ${ARGN})
+	foreach(_file ${ARGN})
+		
+		#Resolve absolute path
+		get_filename_component(source_file "${_file}" ABSOLUTE)
+		
+		#Attempt to determine if the file is in the source or build tree
+		string(FIND "${source_file}" "${CMAKE_CURRENT_SOURCE_DIR}" is_in_src)
+		string(FIND "${source_file}" "${CMAKE_CURRENT_BINARY_DIR}" is_in_build)
+		
+		#If this file is in the build tree
+		if(is_in_build EQUAL 0)
+			file(RELATIVE_PATH source_file ${CMAKE_CURRENT_BINARY_DIR} ${source_file})
+		#Otherwise if this file is in the source tree
+		elseif(is_in_src EQUAL 0)
+			file(RELATIVE_PATH source_file ${CMAKE_CURRENT_SOURCE_DIR} ${source_file})
+		endif()
 		
 		#Get parent directory
-		get_filename_component(source_dir "${file}" DIRECTORY)
+		get_filename_component(source_dir "${source_file}" DIRECTORY)
 		
 		#Make sure we are using windows slashes
-		string(REPLACE "/" "\\" source_dir "${source_dir}")
+		#string(REPLACE "/" "\\" source_dir "${source_dir}")
+		file(TO_NATIVE_PATH "${source_dir}" source_dir)
 		
-		source_group("${source_dir}" FILES "${file}")
+		#Debug print
+		#message("[${is_in_src}||${is_in_build}]${source_file}")
+		
+		source_group("${source_dir}" FILES "${_file}")
 		
 	endforeach()
 endfunction()

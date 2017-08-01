@@ -16,12 +16,7 @@ ADD_EXECUTABLE(
 	${modelbuild_src}
 )
 
-INSTALL(
-	TARGETS modelbuild
-	RUNTIME DESTINATION ${TS_BINARY_INSTALL}
-	LIBRARY DESTINATION ${TS_BINARY_INSTALL}
-	ARCHIVE DESTINATION ${TS_LIBRARY_INSTALL}
-)
+install_tools(modelbuild)
 
 assign_source_groups(${modelbuild_src})
 

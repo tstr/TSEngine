@@ -16,12 +16,7 @@ ADD_EXECUTABLE(
 	${texbuild_src}
 )
 
-INSTALL(
-	TARGETS texbuild
-	RUNTIME DESTINATION ${TS_BINARY_INSTALL}
-	LIBRARY DESTINATION ${TS_BINARY_INSTALL}
-	ARCHIVE DESTINATION ${TS_LIBRARY_INSTALL}
-)
+install_tools(texbuild)
 
 assign_source_groups(${texbuild_src})
 

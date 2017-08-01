@@ -36,12 +36,7 @@ ADD_EXECUTABLE(
 	${shaderc_src}
 )
 
-INSTALL(
-	TARGETS shaderc
-	RUNTIME DESTINATION ${TS_BINARY_INSTALL}
-	LIBRARY DESTINATION ${TS_BINARY_INSTALL}
-	ARCHIVE DESTINATION ${TS_LIBRARY_INSTALL}
-)
+install_tools(shaderc)
 
 assign_source_groups(${shaderc_src})
 
@@ -51,6 +46,10 @@ TARGET_LINK_LIBRARIES(
 )
 
 #####################################################################################################################
+# Testing
+#####################################################################################################################
+
+if(TS_BUILD_TESTS)
 
 set(test_src
 	test/shaders/shader.vs
@@ -79,5 +78,12 @@ ADD_TEST(
 	COMMAND $<TARGET_FILE:TestShaderc> "$<TARGET_FILE:shaderc>" "${CMAKE_CURRENT_SOURCE_DIR}/test/" "${CMAKE_CURRENT_BINARY_DIR}/test/"
 	#COMMAND $<TARGET_FILE:shaderc> -t "${CMAKE_CURRENT_SOURCE_DIR}/test/manifest.shm" -s "${CMAKE_CURRENT_SOURCE_DIR}/test/shaders/" -o "${CMAKE_CURRENT_BINARY_DIR}/test/bin/" && $<TARGET_FILE:TestShaderc> "${CMAKE_CURRENT_BINARY_DIR}/test/bin/"
 )
+
+SET_TARGET_PROPERTIES(
+	TestShaderc
+	PROPERTIES FOLDER tools/tests
+)
+
+endif()
 
 #####################################################################################################################
