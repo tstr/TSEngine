@@ -132,16 +132,23 @@ void test2()
 	builder.set_position(pos);
 	builder.set_velocity(vel);
 	builder.set_rotation(rot);
+	builder.set_flag(FLAG_2);
+	
 	builder.build(data);
 	assert(data.good());
 
 	Test2Loader loader(data);
+	assert(data.good());
+
 	assert(loader.get_position().x == pos.x);
 	assert(loader.get_position().y == pos.y);
 	assert(loader.get_position().z == pos.z);
+	
 	assert(loader.get_velocity().x == vel.x);
 	assert(loader.get_velocity().y == vel.y);
 	assert(loader.get_velocity().z == vel.z);
+	
+	assert(loader.get_flag() == FLAG_2);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

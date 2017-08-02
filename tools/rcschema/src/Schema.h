@@ -159,16 +159,25 @@ namespace ts
 		class Schema
 		{
 		public:
-			
+
+			using EnumSet = std::vector<String>;
+			using ResourceSet = std::vector<Resource>;
+
 			struct CompositeType
 			{
 				String name;
 				FieldSet fields;
 			};
 
+			struct EnumType
+			{
+				String name;
+				EnumSet enums;
+			};
+
 			using CompositeTypeList = std::vector<CompositeType>;
-			using ResourceSet = std::vector<Resource>;
-			
+			using EnumTypeList = std::vector<EnumType>;
+
 			//Constructors
 			Schema() { initPrebuiltTypes(); }
 			Schema(const String& name) : m_name(name) { initPrebuiltTypes(); }
@@ -184,6 +193,7 @@ namespace ts
 
 			const ResourceSet& getResourceSet() const { return m_resources; }
 			const CompositeTypeList& getCompositeTypes() const { return m_compositeTypes; }
+			const EnumTypeList& getEnumTypes() const { return m_enumTypes; }
 
 			//Resource methods
 			bool isResource(const String& name) const;
@@ -194,7 +204,8 @@ namespace ts
 			bool getTypeInfo(const String& typeName, TypeInfo& info) const;
 			//Define a custom type
 			bool defineType(const String& typeName, const FieldSet& fieldSet);
-			
+			bool defineEnum(const String& typeName, const EnumSet& enums);
+
 			//Name property
 			String getName() const { return m_name; }
 			void setName(const String& name) { m_name = name; }
@@ -216,7 +227,9 @@ namespace ts
 			String m_name;
 			ResourceSet m_resources;
 			TypeMap m_types;
+
 			CompositeTypeList m_compositeTypes;
+			EnumTypeList m_enumTypes;
 		};
 	}
 }

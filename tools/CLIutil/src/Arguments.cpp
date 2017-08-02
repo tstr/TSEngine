@@ -30,21 +30,21 @@ static String formatParameterTag(const String& name)
 //	Set parameter handlers
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ArgumentReader::addParameter(const String& name, String& value)
+void ArgumentReader::addParameter(const String& name, String& value, const String& desc)
 {
 	//Set parameter callback
 	m_parameterMap[formatParameterTag(name)] = Parameter(
 		[&value](String& s) {
 		value = s;
-	}, 1);
+	}, 1, desc);
 }
 
-void ArgumentReader::addOption(const String& name, bool& present)
+void ArgumentReader::addOption(const String& name, bool& present, const String& desc)
 {
 	m_parameterMap[formatParameterTag(name)] = Parameter(
 		[&present](String& s) {
 		present = true;
-	}, 0);
+	}, 0, desc);
 }
 
 void ArgumentReader::setUnused(ParameterList& list)
@@ -128,16 +128,28 @@ void ArgumentReader::print(ostream& stream)
 		//Ignore the unused parameter because it does not have a name
 		if (param.first != "")
 		{
-			stream << param.first;
+			stream << setw(25) << left;
 
 			if (param.second.hasArgs)
 			{
-				stream << " <value>";
+				//Print parameter name
+				stream << format("% <argument>", param.first);
+			}
+			else
+			{
+				stream << param.first;
+			}
+
+			//If a parameter description has been specified
+			if (param.second.desc.size() > 0)
+			{
+				stream << setw(0) << internal;
+				stream << ": ";
+				stream << param.second.desc;
 			}
 
 			stream << endl;
 		}
-
 	}
 }
 

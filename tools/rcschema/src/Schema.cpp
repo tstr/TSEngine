@@ -228,4 +228,35 @@ bool Schema::defineType(const String& typeName, const FieldSet& fields)
 	return true;
 }
 
+bool Schema::defineEnum(const String& typeName, const EnumSet& enums)
+{
+	//Type name must not be an already defined resource or type
+	if (isType(typeName) || isResource(typeName))
+	{
+		return false;
+	}
+
+	//Must not be an array typename
+	if (isArrayTypeName(typeName))
+	{
+		return false;
+	}
+
+	TypeInfo info;
+	info.flags = TYPE_IS_PRIMITIVE;
+	info.size = sizeof(uint32);
+	info.name = typeName;
+
+	//Add type entry
+	m_types.insert(make_pair(typeName, info));
+
+	//Add enum type
+	EnumType enumType;
+	enumType.name = typeName;
+	enumType.enums = enums;
+	m_enumTypes.push_back(enumType);
+
+	return true;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

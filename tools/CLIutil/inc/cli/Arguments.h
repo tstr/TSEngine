@@ -46,8 +46,8 @@ namespace ts
 			typedef std::vector<String> ParameterList;
 
 			//Add parameters and options
-			void addParameter(const String& name, String& value);
-			void addOption(const String& name, bool& present);
+			void addParameter(const String& name, String& value, const String& description = "");
+			void addOption(const String& name, bool& present, const String& description = "");
 			void setUnused(ParameterList& list);
 			
 			//Parse c-style CLI arguments
@@ -65,15 +65,17 @@ namespace ts
 			{
 				bool hasArgs;
 				ParameterCallback callback;
+				String desc;
 
 				Parameter() :
 					callback([](String&) {}),
 					hasArgs(0)
 				{}
 
-				Parameter(ParameterCallback callback, bool has = false) :
+				Parameter(ParameterCallback callback, bool has = false, const String& desc = "") :
 					callback(callback),
-					hasArgs(has)
+					hasArgs(has),
+					desc(desc)
 				{}
 			};
 			
