@@ -137,7 +137,7 @@ public:
 	}
 
 	//Peek current token in sequence
-	const Token& peekCur() const
+	const Token& current() const
 	{
 		//Check bounds
 		if (m_tokenIter == m_tokens.end())
@@ -166,7 +166,7 @@ public:
 		}
 	}
 
-	//Return current token in sequence and increment token counter
+	//Return next token in sequence and increment token counter
 	const Token& next()
 	{
 		if (m_tokenIter == m_tokens.end())
@@ -201,7 +201,7 @@ public:
 
 	static bool isSymbol(char c)
 	{
-		return (c == ';') || (c == '{') || (c == '}');
+		return (c == ';') || (c == '{') || (c == '}') || (c == ',');
 	}
 
 	/*
@@ -367,6 +367,11 @@ void SchemaReader::parse(const TokenList& tokens, Schema& schema)
 		{
 			parseDataType(parser, schema);
 		}
+		//Enum type declaration
+		else if (declaration == "enum")
+		{
+			parseEnumType(parser, schema);
+		}
 		else
 		{
 			throw ParserException(declaration, "<DECLARATION>");
@@ -382,7 +387,7 @@ void SchemaReader::parseResource(TokenParser& parser, Schema& schema)
 	//Expected resource identifier
 	if (TokenParser::isIdentifier(parser.next()))
 	{
-		Resource curRsc = Resource(&schema, parser.peekCur());
+		Resource curRsc = Resource(&schema, parser.current());
 
 		//Parse field set
 		parseFields(parser, curRsc.getFields());
@@ -396,7 +401,7 @@ void SchemaReader::parseResource(TokenParser& parser, Schema& schema)
 	}
 	else
 	{
-		throw ParserException(parser.peekCur(), "<IDENTIFIER>");
+		throw ParserException(parser.current(), "<IDENTIFIER>");
 	}
 }
 
@@ -408,7 +413,7 @@ void SchemaReader::parseDataType(TokenParser& parser, Schema& schema)
 	//If is identifier
 	if (TokenParser::isIdentifier(parser.next()))
 	{
-		const String& dataTypeName = parser.peekCur();
+		const String& dataTypeName = parser.current();
 		FieldSet dataTypeFields(&schema);
 
 		//Parse field set
@@ -423,7 +428,74 @@ void SchemaReader::parseDataType(TokenParser& parser, Schema& schema)
 	}
 	else
 	{
-		throw ParserException(parser.peekCur(), "<IDENTIFIER>");
+		throw ParserException(parser.current(), "<IDENTIFIER>");
+	}
+}
+
+/*
+	Parse user defined enum type
+*/
+void SchemaReader::parseEnumType(TokenParser& parser, Schema& schema)
+{
+	//If is identifier
+	if (TokenParser::isIdentifier(parser.next()))
+	{
+		const String& enumTypeName = parser.current();
+		Schema::EnumSet enumSet;
+
+		//Expected open brace
+		if (parser.next() == "{")
+		{
+			//While the next token does not equal a closing brace
+			while (parser.hasNext())
+			{
+				//If next token is a closing brace
+				if (parser.peek() == "}")
+				{
+					//Exit loop
+					parser.next();
+					break;
+				}
+
+				//Expected enum value
+				if (TokenParser::isIdentifier(parser.peek()))
+				{
+					enumSet.push_back(parser.next());
+
+					//Expected end of value statement this is the last enum value
+					if (parser.next() != ",")
+					{
+						if (parser.current() == "}")
+						{
+							break;
+						}
+						else
+						{
+							throw ParserException(parser.current(), ",");
+						}
+					}
+				}
+				else
+				{
+					throw ParserException(parser.current(), "<IDENTIFIER>");
+				}
+			}
+
+			//Save enum type
+			if (!schema.defineEnum(enumTypeName, enumSet))
+			{
+				cerr << "ERROR: Unable to define enum type \"" << enumTypeName << "\"\n";
+				throw Exception();
+			}
+		}
+		else
+		{
+			throw ParserException(parser.current(), "{");
+		}
+	}
+	else
+	{
+		throw ParserException(parser.current(), "<IDENTIFIER>");
 	}
 }
 
@@ -461,7 +533,7 @@ void SchemaReader::parseFields(TokenParser& parser, FieldSet& fields)
 					//Expected end of statement
 					if (parser.next() != ";")
 					{
-						throw ParserException(parser.peekCur(), ";");
+						throw ParserException(parser.current(), ";");
 					}
 				}
 				else
@@ -485,7 +557,7 @@ void SchemaReader::parseFields(TokenParser& parser, FieldSet& fields)
 	}
 	else
 	{
-		throw ParserException(parser.peekCur(), "{");
+		throw ParserException(parser.current(), "{");
 	}
 }
 

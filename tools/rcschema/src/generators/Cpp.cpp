@@ -14,23 +14,22 @@ using namespace ts::rc;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CPPGenerator::generate(const Schema& schema, const Path& outputDir)
+bool CPPGenerator::generate(const Schema& schema, const Path& outputDir, uint32 flags)
 {
 	const String headerName = schema.getName() + ".rcs.h";
 	
 	Path headerFilePath;
 
-	if (String(outputDir.str()) == "")
+	if (!isDirectory(outputDir))
 	{
-		headerFilePath = headerName;
-	}
-	else
-	{
-		headerFilePath = outputDir;
-		headerFilePath.addDirectories(headerName);
+		cerr << "ERROR: output directory \"" << outputDir.str() << "\" does not exist\n";
+		return false;
 	}
 
-	fstream headerFile(createFile(headerFilePath, ios::out));
+	headerFilePath = outputDir;
+	headerFilePath.addDirectories(headerName);
+
+	fstream headerFile(headerFilePath.str(), ios::out);
 
 	if (headerFile.fail())
 	{
@@ -42,20 +41,12 @@ bool CPPGenerator::generate(const Schema& schema, const Path& outputDir)
 		Generate header file
 	*/
 
-	const char header_comment[] =
-		"/*\n"
+	//Header comment at top of file
+	headerFile << format("/*\n"
 		"    Machine generated file.\n\n"
 		"    %\n" // File name
-		"*/\n\n";
-
-	//Field accessor method templates
-	const char method_getter_decl[] = "inline % get_%() const ";
-	const char method_getter_body[] = "{ return load<%>(_field_%); }";
-	const char method_setter_decl[] = "inline void set_%(% value) ";
-	const char method_setter_body[] = "{ store(_field_%, value); }";
-
-	//Header comment at top of file
-	headerFile << format(header_comment, headerName);
+		"*/\n\n",
+		headerName);
 
 	headerFile << "#pragma once\n\n";
 
@@ -68,6 +59,21 @@ bool CPPGenerator::generate(const Schema& schema, const Path& outputDir)
 
 	//Namespace
 	headerFile << "namespace ts { namespace rc {\n\n";
+
+	//User defined enums
+	for (const Schema::EnumType& enumtype : schema.getEnumTypes())
+	{
+		//Begin enum declaration
+		headerFile << "enum " << enumtype.name << "\n{\n";
+
+		for (const String& value : enumtype.enums)
+		{
+			headerFile << format("    %,\n", value);
+		}
+
+		//End enum
+		headerFile << "};\n\n";
+	}
 
 	//User defined data types
 	for (const Schema::CompositeType& comptype : schema.getCompositeTypes())
@@ -87,8 +93,15 @@ bool CPPGenerator::generate(const Schema& schema, const Path& outputDir)
 	//Each schema has a corresponding loader class
 	for (const Resource& rcs : schema)
 	{
-		generateBuilderClass(headerFile, rcs);
-		generateLoaderClass(headerFile, rcs);
+		if (flags & GENERATE_BUILDER)
+		{
+			generateBuilderClass(headerFile, rcs);
+		}
+
+		if (flags & GENERATE_LOADER)
+		{
+			generateLoaderClass(headerFile, rcs);
+		}
 	}
 
 	headerFile << "}}\n";

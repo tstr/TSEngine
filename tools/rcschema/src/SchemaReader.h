@@ -38,6 +38,7 @@ namespace ts
 			void parse(const TokenList& tokens, Schema& schema);
 			void parseResource(TokenParser& parser, Schema& schema);
 			void parseDataType(TokenParser& parser, Schema& schema);
+			void parseEnumType(TokenParser& parser, Schema& schema);
 			void parseFields(TokenParser& parser, FieldSet& fields);
 		};
 	}

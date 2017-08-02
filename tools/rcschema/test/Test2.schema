@@ -2,6 +2,15 @@
 #	Testing user defined types
 #
 
+# Enum type
+enum TestFlag
+{
+	FLAG_0,
+	FLAG_1,
+	FLAG_2
+}
+
+# Inline struct types
 data Vector3
 {
 	float32 x;
@@ -9,6 +18,7 @@ data Vector3
 	float32 z;
 }
 
+# Inline struct composed of other inline structs
 data Matrix3x3
 {
 	Vector3 a;
@@ -20,5 +30,8 @@ resource Test2
 {
 	Vector3 position;
 	Vector3 velocity;
+	
 	Matrix3x3 rotation;
+
+	TestFlag flag;
 }

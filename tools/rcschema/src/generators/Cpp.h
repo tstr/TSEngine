@@ -26,7 +26,7 @@ namespace ts
 
 			CPPGenerator() = default;
 
-			bool generate(const Schema& schema, const Path& outputdir = "") override;
+			bool generate(const Schema& schema, const Path& outputdir, uint32 flags) override;
 		};
 	}
 }
