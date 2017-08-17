@@ -17,10 +17,13 @@ namespace ts
 			void generateBuilderClass(std::ostream& file, const Resource& rsc);
 			void generateLoaderClass(std::ostream& file, const Resource& rsc);
 
-			size_t generateFieldDescriptorTable(std::ostream& file, const Resource& rcs);
+			uint32 generateFieldTable(std::ostream& file, const FieldSet& fields);
 
 			void generateFieldSetter(std::ostream& file, const Field& field);
 			void generateFieldGetter(std::ostream& file, const Field& field);
+
+			//Get the corresponding CPP type for a given field
+			String translateFieldType(const Field& field) const;
 
 		public:
 

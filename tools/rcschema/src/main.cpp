@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 		cerr << "ERROR: Expected list of files\n";
 		return CLI_EXIT_INVALID_ARGUMENT;
 	}
-	
+
 	for (String fileName : fileList)
 	{
 		Schema schema;
@@ -82,6 +82,9 @@ int main(int argc, char** argv)
 			uint32 flags = GENERATE_ALL;
 			if (noBuilder) flags &= ~GENERATE_BUILDER;
 			if (noLoader) flags &= ~GENERATE_LOADER;
+
+			//Debug print
+			cout << fileName << " -> " << schema.getName() << ".rcs.h\n";
 
 			//Run C++ generator
 			if (!CPPGenerator().generate(schema, outPath, flags))

@@ -1,0 +1,35 @@
+#
+#	Test references between resources and recursive resources
+#
+
+namespace test;
+
+#
+#	Binary Tree type
+#
+resource Node
+{
+	Node nodeLeft;
+	Node nodeRight;
+
+	int32 value;
+}
+
+resource BinaryTree
+{
+	Node rootNode;
+}
+
+#
+#	Tree type
+#
+resource TreeNode
+{
+	uint32 value;
+	TreeNode[] nodes;
+}
+
+resource Tree
+{
+	TreeNode root;
+}

@@ -1,9 +1,18 @@
 #
 #	Testing dynamic fields
 #
+
+namespace test;
+
 resource Test1
 {
-	string s0;
+	# Array of chars
+	string str;
+	
+	# Array of primitive types
 	uint32[] array0;
-	float32[] array1;
+	byte[] array1;
+
+	# Array of strings
+	string[] strArray;
 }

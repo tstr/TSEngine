@@ -18,11 +18,9 @@ namespace ts
 
 		enum ETypeFlags
 		{
-			TYPE_IS_REFERENCE = 1,
-			TYPE_IS_PRIMITIVE = 2,
-
-			TYPE_IS_ARRAY     = 4 | TYPE_IS_REFERENCE,
-			TYPE_IS_STRING    = 6 | TYPE_IS_REFERENCE,
+			TYPE_IS_PRIMITIVE = 1,
+			TYPE_IS_REFERENCE = 2,
+			TYPE_IS_RESOURCE =  4 | TYPE_IS_REFERENCE,
 		};
 
 		struct TypeInfo
@@ -45,6 +43,7 @@ namespace ts
 		{
 			String name;
 			TypeInfo type;
+			bool isArray;
 
 			bool operator==(const Field& rhs) const { return name == rhs.name; }
 			bool operator==(const String& rhs) const { return name == rhs; }
@@ -78,7 +77,7 @@ namespace ts
 			Schema* getSchema() { return m_schema; }
 
 			//Add/remove fields by name
-			bool add(const String& name, const String& typeName);
+			bool add(const String& name, const String& typeName, bool isArray = false);
 			void remove(const String& name);
 
 			//Get total size in bytes
@@ -125,6 +124,9 @@ namespace ts
 				m_fields = r.m_fields;
 				return *this;
 			}
+
+			//Test if resource has been fully defined
+			bool isComplete() const { return m_schema != nullptr; }
 
 			//Schema property
 			Schema* getSchema() const { return m_schema; }
@@ -197,6 +199,7 @@ namespace ts
 
 			//Resource methods
 			bool isResource(const String& name) const;
+			void declareResource(const String& name); //Forward declare a resource
 			bool addResource(const Resource& rsc);
 
 			//Type methods
@@ -210,12 +213,18 @@ namespace ts
 			String getName() const { return m_name; }
 			void setName(const String& name) { m_name = name; }
 
+			//Namespace property
+			void setNamespace(const String& nameSpace) { m_nameSpace = nameSpace; }
+			String getNamespace() const { return m_nameSpace; }
+
 			void clear()
 			{
 				m_name.clear();
+				m_nameSpace.clear();
 				m_resources.clear();
 				m_types.clear();
 				m_compositeTypes.clear();
+				m_enumTypes.clear();
 			}
 
 		private:
@@ -227,6 +236,7 @@ namespace ts
 			String m_name;
 			ResourceSet m_resources;
 			TypeMap m_types;
+			String m_nameSpace;
 
 			CompositeTypeList m_compositeTypes;
 			EnumTypeList m_enumTypes;

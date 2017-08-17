@@ -135,7 +135,7 @@ namespace ts
 		return elems;
 	}
 	
-	static std::vector<String>& split(const String &str, const String& delim)
+	static std::vector<String> split(const String &str, const String& delim)
 	{
 		String s(str);
 		size_t pos = 0;
