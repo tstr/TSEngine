@@ -116,12 +116,25 @@ private:
 
 	Token m_nullToken;
 
+	bool m_debugPrint;
+
+	//Debug filter - called everytime next() is called
+	const Token& _filter(const Token& token) const
+	{
+		if (m_debugPrint)
+		{
+			cout << "[" << token.data << "]\n";
+		}
+		return token;
+	}
+
 public:
 
 	//Constructor
-	TokenParser(const TokenList& list) :
+	TokenParser(const TokenList& list, bool debugPrint = false) :
 		m_tokens(list),
-		m_tokenIter(m_tokens.begin())
+		m_tokenIter(m_tokens.begin()),
+		m_debugPrint(debugPrint)
 	{}
 
 	/*
@@ -171,11 +184,11 @@ public:
 	{
 		if (m_tokenIter == m_tokens.end())
 		{
-			return m_nullToken;
+			return _filter(m_nullToken);
 		}
 		else
 		{
-			return *(++m_tokenIter);
+			return _filter(*(++m_tokenIter));
 		}
 	}
 
@@ -201,7 +214,7 @@ public:
 
 	static bool isSymbol(char c)
 	{
-		return (c == ';') || (c == '{') || (c == '}') || (c == ',');
+		return (c == ';') || (c == '{') || (c == '}') || (c == ',') || (c == '[') || (c == ']');
 	}
 
 	/*
@@ -335,22 +348,14 @@ void SchemaReader::tokenize(istream& characters, TokenList& tokens)
 /*
 	Process tokens according to definition:
 
-	decl ::= <type> <identifier>; <decl>
-	schema ::= resource <identifier> { <decl> } <schema>
+	field ::= <type> <identifier>; <field>
+	schema ::= (resource|data) <identifier> { <field> } <schema>
 */
 void SchemaReader::parse(const TokenList& tokens, Schema& schema)
 {
-	/*
-	//debug print tokens
-	cout << "-----------------------------------\n";
-	for (const String& tok : tokens)
-	{
-		cout << "[" << tok << "]\n";
-	}
-	cout << "-----------------------------------\n";
-	//*/
-
-	TokenParser parser(tokens);
+	//Debug print tokens
+	const bool debug = false;
+	TokenParser parser(tokens, debug);
 
 	while (parser.hasNext())
 	{
@@ -372,6 +377,16 @@ void SchemaReader::parse(const TokenList& tokens, Schema& schema)
 		{
 			parseEnumType(parser, schema);
 		}
+		//Namespace declaration
+		else if (declaration == "namespace")
+		{
+			schema.setNamespace(parser.next());
+
+			if (parser.next() != ";")
+			{
+				throw ParserException(parser.current(), ";");
+			}
+		}
 		else
 		{
 			throw ParserException(declaration, "<DECLARATION>");
@@ -387,10 +402,13 @@ void SchemaReader::parseResource(TokenParser& parser, Schema& schema)
 	//Expected resource identifier
 	if (TokenParser::isIdentifier(parser.next()))
 	{
+		//Forward declare resource
+		schema.declareResource(parser.current());
+
 		Resource curRsc = Resource(&schema, parser.current());
 
 		//Parse field set
-		parseFields(parser, curRsc.getFields());
+		parseFields(parser, curRsc.getFields(), true);
 
 		//Save schema
 		if (!schema.addResource(curRsc))
@@ -416,8 +434,8 @@ void SchemaReader::parseDataType(TokenParser& parser, Schema& schema)
 		const String& dataTypeName = parser.current();
 		FieldSet dataTypeFields(&schema);
 
-		//Parse field set
-		parseFields(parser, dataTypeFields);
+		//Parse field set - disallowing reference types
+		parseFields(parser, dataTypeFields, false);
 
 		//Save data type
 		if (!schema.defineType(dataTypeName, dataTypeFields))
@@ -505,7 +523,7 @@ void SchemaReader::parseEnumType(TokenParser& parser, Schema& schema)
 
 	{ <field-entry0>; <field-entry1>; ... ; }
 */
-void SchemaReader::parseFields(TokenParser& parser, FieldSet& fields)
+void SchemaReader::parseFields(TokenParser& parser, FieldSet& fields, bool allowReferences)
 {
 	//Expected open brace
 	if (parser.next() == "{")
@@ -523,12 +541,44 @@ void SchemaReader::parseFields(TokenParser& parser, FieldSet& fields)
 
 			String fieldName;
 			String fieldType;
+			bool fieldIsArray = false;
+
+			/*
+				field entry format:
+
+				<field-entry> ::= <TYPE> <IDENTIFIER>; | <TYPE> [] <IDENTIFIER>;
+			*/
 
 			//Expected type
 			if (fields.getSchema()->isType(fieldType = parser.next()))
 			{
+				Token cur = parser.next();
+
+				//If array brackets are present, continue
+				//Only if references are allowed
+				if (cur == "[")
+				{
+					if (!allowReferences)
+					{
+						cerr << "ERROR: array types are not allowed\n";
+						throw Exception();
+					}
+
+					//Expect closing bracket
+					if (parser.next() == "]")
+					{
+						//Field must be an array of fieldTypes
+						fieldIsArray = true;
+						cur = parser.next();
+					}
+					else
+					{
+						throw ParserException(parser.current(), "]");
+					}
+				}
+
 				//Expected identifier
-				if (TokenParser::isIdentifier(fieldName = parser.next()))
+				if (TokenParser::isIdentifier(fieldName = cur))
 				{
 					//Expected end of statement
 					if (parser.next() != ";")
@@ -547,10 +597,17 @@ void SchemaReader::parseFields(TokenParser& parser, FieldSet& fields)
 				throw Exception();
 			}
 
-			//Save field
-			if (!fields.add(fieldName, fieldType))
+			//If references are not allowed - verify if fieldType is not a reference type
+			if (!allowReferences && fields.getSchema()->isResource(fieldType))
 			{
-				cerr << "ERROR: unable to add field: type=\"" << fieldType << "\", name=\"" << fieldName << "\"\n";
+				cerr << "ERROR: reference types are not allowed\n";
+				throw Exception();
+			}
+
+			//Save field
+			if (!fields.add(fieldName, fieldType, fieldIsArray))
+			{
+				cerr << "ERROR: unable to add field: type=\"" << fieldType << "\", name=\"" << fieldName << "\", isArray=" << fieldIsArray << "\n";
 				throw Exception();
 			}
 		}

@@ -13,6 +13,8 @@ SET (rcschema_src
 	src/IGenerator.h
 	src/generators/Cpp.h
 	src/generators/Cpp.cpp
+	
+	inc/rcschema.h
 )
 
 ADD_EXECUTABLE(
@@ -31,6 +33,14 @@ TARGET_LINK_LIBRARIES(
 )
 
 #####################################################################################################################
+#	Generated header dependencies
+#####################################################################################################################
+
+ADD_LIBRARY(rcschemaLib INTERFACE)
+target_include_directories(rcschemaLib INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/inc/")
+target_link_libraries(rcschema INTERFACE rcschemaLib)
+
+#####################################################################################################################
 #	Testing
 #####################################################################################################################
 
@@ -45,6 +55,7 @@ set(rcschema_inputs
 	test/Test0.schema
 	test/Test1.schema
 	test/Test2.schema
+	test/Test3.schema
 )
 
 # Test outputs
@@ -52,6 +63,7 @@ set(rcschema_outputs
 	"${test_output_dir}/Test0.rcs.h"
 	"${test_output_dir}/Test1.rcs.h"
 	"${test_output_dir}/Test2.rcs.h"
+	"${test_output_dir}/Test3.rcs.h"
 )
 
 ADD_CUSTOM_COMMAND(
@@ -82,9 +94,8 @@ TARGET_INCLUDE_DIRECTORIES(TestRCSchema PRIVATE ${test_output_dir})
 TARGET_LINK_LIBRARIES(
 	TestRCSchema PRIVATE
 	tscore
+	rcschemaLib
 )
-
-ADD_DEPENDENCIES(TestRCSchema rcschema)
 
 # Add test suite
 ADD_TEST(

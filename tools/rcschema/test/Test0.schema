@@ -1,6 +1,7 @@
 #
 #	Field type testing
 #
+
 resource Test0
 {
 	byte field0;

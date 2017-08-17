@@ -42,7 +42,7 @@ String getBaseTypeName(const String& typeName)
 //	Field Set
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool FieldSet::add(const String& name, const String& type)
+bool FieldSet::add(const String& name, const String& type, bool isArray)
 {
 	//If a field with this name does not already exist
 	if (find(begin(), end(), name) == end())
@@ -55,6 +55,7 @@ bool FieldSet::add(const String& name, const String& type)
 			Field field;
 			field.name = name;
 			field.type = info;
+			field.isArray = isArray;
 			
 			//Save field entry
 			Base::push_back(field);
@@ -102,14 +103,36 @@ bool Schema::isResource(const String& name) const
 	return find(m_resources.begin(), m_resources.end(), name) != m_resources.end();
 }
 
+void Schema::declareResource(const String& name)
+{
+	auto it = find(m_resources.begin(), m_resources.end(), name);
+
+	//If resource does not already exist
+	if (it == m_resources.end())
+	{
+		m_resources.push_back(Resource(nullptr, name));
+	}
+}
+
 bool Schema::addResource(const Resource& rsc)
 {
 	auto it = find(m_resources.begin(), m_resources.end(), rsc.getName());
 
+	//If resource entry does not exist
 	if (it == m_resources.end())
 	{
+		//Insert new entry
 		m_resources.push_back(rsc);
 		return true;
+	}
+	else
+	{
+		//If resource was predeclared then overwrite entry
+		if (!it->isComplete())
+		{
+			*it = rsc;
+			return true;
+		}
 	}
 
 	return false;
@@ -135,63 +158,46 @@ void Schema::initPrebuiltTypes()
 		DEF_TYPE_ENTRY("uint64", 8, TYPE_IS_PRIMITIVE),
 		DEF_TYPE_ENTRY("float32", 4, TYPE_IS_PRIMITIVE),
 		DEF_TYPE_ENTRY("float64", 8, TYPE_IS_PRIMITIVE),
-		DEF_TYPE_ENTRY("string", 4, TYPE_IS_STRING),
+		DEF_TYPE_ENTRY("string", 4, TYPE_IS_REFERENCE),
 	});
 }
 
 bool Schema::isType(const String& typeName) const
 {
-	return m_types.find(getBaseTypeName(typeName)) != m_types.end();
+	return (m_types.find(getBaseTypeName(typeName)) != m_types.end()) || isResource(typeName);
 }
 
-bool Schema::getTypeInfo(const String& _typeName, TypeInfo& info) const
+bool Schema::getTypeInfo(const String& typeName, TypeInfo& info) const
 {
-	String baseTypeName = _typeName;
-	bool typeIsReference = false;
-
-	//If given type is an array type
-	if (isArrayTypeName(_typeName))
+	//If typename is a resource
+	if (isResource(typeName))
 	{
-		//Get base type without array brackets
-		baseTypeName = getBaseTypeName(_typeName);
-		typeIsReference = true;
+		info.flags = TYPE_IS_RESOURCE;
+		info.name = typeName;
+		info.size = sizeof(uint32);
 	}
-
-	//Find base type
-	auto it = m_types.find(baseTypeName);
-
-	//If base type was found
-	if (it != m_types.end())
+	else
 	{
-		//Get TypeInfo structure
-		info = it->second;
+		//Find type name
+		auto it = m_types.find(typeName);
 
-		//If input type is a reference type
-		if (typeIsReference)
+		//If type was not found
+		if (it == m_types.end())
 		{
-			//Then if base type is a primitive type
-			if ((info.flags & TYPE_IS_PRIMITIVE) == TYPE_IS_PRIMITIVE)
-			{
-				info.flags = TYPE_IS_ARRAY;
-			}
-			//Otherwise if base type is reference type
-			else if ((info.flags & TYPE_IS_REFERENCE) == TYPE_IS_REFERENCE)
-			{
-				//return error - cannot have references to references
-				return false;
-			}
+			return false;
 		}
 
-		return true;
+		//Get TypeInfo structure from table
+		info = it->second;
 	}
 
-	return false;
+	return true;
 }
 
 bool Schema::defineType(const String& typeName, const FieldSet& fields)
 {
 	//Type name must not be an already defined resource or type
-	if (isType(typeName) || isResource(typeName))
+	if (isType(typeName))
 	{
 		return false;
 	}

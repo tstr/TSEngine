@@ -39,7 +39,7 @@ namespace ts
 			void parseResource(TokenParser& parser, Schema& schema);
 			void parseDataType(TokenParser& parser, Schema& schema);
 			void parseEnumType(TokenParser& parser, Schema& schema);
-			void parseFields(TokenParser& parser, FieldSet& fields);
+			void parseFields(TokenParser& parser, FieldSet& fields, bool allowReferences = true);
 		};
 	}
 }
