@@ -225,8 +225,8 @@ namespace ts
 		eShaderStageVertex,
 		eShaderStagePixel,
 		eShaderStageGeometry,
-		eShaderStageHull,
-		eShaderStageDomain,
+		eShaderStageTessCtrl, //Hull
+		eShaderStageTessEval, //Domain
 		eShaderStageCompute
 	};
 	

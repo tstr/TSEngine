@@ -98,10 +98,10 @@ bool HLSLCompiler::compile(const std::string& code, MemoryBuffer& codebuffer, co
 	case eShaderStageGeometry:
 		shadertarget.setStage("gs");
 		break;
-	case eShaderStageHull:
+	case eShaderStageTessCtrl:
 		shadertarget.setStage("hs");
 		break;
-	case eShaderStageDomain:
+	case eShaderStageTessEval:
 		shadertarget.setStage("ds");
 		break;
 	case eShaderStageCompute:

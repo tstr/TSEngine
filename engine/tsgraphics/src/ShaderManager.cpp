@@ -14,67 +14,20 @@
 #include <vector>
 #include <map>
 
+#include "schemas/Shader.rcs.h"
+
 using namespace std;
 using namespace ts;
+using namespace tsr;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	Shader loader
+//	Functions
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-enum EShaderBackend : uint8
+inline uint32 formatSignature(char a, char b, char c, char d)
 {
-	eBackendHLSL_SM5 = 1,
-	eBackendHLSL_SM5_1 = 2,
-	eBackendHLSL_SM6 = 3,
-	eBackendSPIRV = 4,
-};
-
-//File structures
-#pragma pack(push, 1)
-struct SHA256Hash
-{
-	uint64 a = 0;
-	uint64 b = 0;
-	uint64 c = 0;
-	uint64 d = 0;
-
-	operator bool() const
-	{
-		return a || b;
-	}
-
-	bool operator<(const SHA256Hash& rhs) const
-	{
-		return tie(a, b, c, d) < tie(rhs.a, rhs.b, rhs.c, rhs.d);
-	}
-
-	bool operator==(const SHA256Hash& rhs) const
-	{
-		return tie(a, b, c, d) == tie(rhs.a, rhs.b, rhs.c, rhs.d);
-	}
-
-	//Returns number of characters needed to represent the hash as a string excluding the null terminator
-	constexpr static size_t charCount()
-	{
-		return sizeof(SHA256Hash) * 2;
-	}
-};
-
-typedef SHA256Hash Hash;
-
-//Shader object file header
-struct SShaderObjectHeader
-{
-	//TSHO
-	uint32 tag;
-
-	Hash stageVertex;
-	Hash stageHull;
-	Hash stageDomain;
-	Hash stageGeometry;
-	Hash stagePixel;
-};
-#pragma pack(pop)
+	return (d << 24) | (c << 16) | (b << 8) | (a << 0);
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -87,12 +40,11 @@ struct CShaderManager::Manager
 
 	vector<SShaderProgram> programs;
 	map<string, ShaderId> programMap;
-	map<Hash, HShader> programStageMap;
 
 	uint flags = 0;
 
-	//Finds shader stage in cache directory and loads it
-	EShaderManagerStatus loadShaderStage(Path cacheDir, Hash stageHash, HShader& shader, EShaderStage stage);
+	//Load compiled shader stage from resource
+	EShaderManagerStatus loadProgramStage(HShader& shader, EShaderStage stageEnum, const tsr::ShaderStage& stage);
 	//Finds shader program in given file
 	EShaderManagerStatus loadProgram(const string& shaderName, ShaderId& id);
 };
@@ -169,68 +121,68 @@ void CShaderManager::setLoadPath(const Path& shaderpath)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-string hashToStr(Hash hash)
+EShaderManagerStatus CShaderManager::Manager::loadProgramStage(HShader& hShader, EShaderStage stageEnum, const tsr::ShaderStage& stage)
 {
-	//Format 128bit hash - 32 hex chars
-	char hashStr[Hash::charCount() + 1] = { 0 };
-	snprintf(hashStr, sizeof(hashStr) - 1, "%llx%llx%llx%llx", hash.a, hash.b, hash.c, hash.d);
+	uint32 signature = 0;
 
-	return hashStr;
-}
-
-string idToStr(EShaderBackend id)
-{
-	char idStr[9] = { 0 };
-	snprintf(idStr, sizeof(idStr) - 1, "%02x", id);
-	return idStr;
-}
-
-EShaderManagerStatus CShaderManager::Manager::loadShaderStage(Path cacheDir, Hash stageHash, HShader& hShader, EShaderStage stage)
-{
-	auto it = programStageMap.find(stageHash);
-
-	//If the stage has not already been loaded
-	if (it == programStageMap.end())
+	switch (stageEnum)
 	{
-		//Search for shader in cache directory
-		cacheDir.addDirectories(hashToStr(stageHash));
-		hShader = HSHADER_NULL;
+	case EShaderStage::eShaderStageVertex:
+		signature = formatSignature('S', 'V', 'T', 'X');
+		break;
+	case EShaderStage::eShaderStageGeometry:
+		signature = formatSignature('S', 'G', 'E', 'O');
+		break;
+	case EShaderStage::eShaderStageTessCtrl:
+		signature = formatSignature('S', 'T', 'E', 'C');
+		break;
+	case EShaderStage::eShaderStageTessEval:
+		signature = formatSignature('S', 'T', 'E', 'V');
+		break;
+	case EShaderStage::eShaderStagePixel:
+		signature = formatSignature('S', 'P', 'I', 'X');
+		break;
+	}
 
-		if (!isFile(cacheDir))
+	//Determine which compiled stages to load
+	const EGraphicsAPIID apiid = system->getApiID();
+
+	//Verify stage signature
+	if (signature != stage.signature())
+	{
+		return eShaderManagerStatus_StageCorrupt;
+	}
+
+	switch (apiid)
+	{
+	case eGraphicsAPI_D3D11:
+
+		//If stage is present
+		if (stage.has_code_hlslSM5())
 		{
-			return eShaderManagerStatus_StageNotFound;
+			//Create stage
+			ERenderStatus status = system->getApi()->createShader(
+				hShader,
+				stage.code_hlslSM5().data(),
+				(uint32)stage.code_hlslSM5().length(),
+				stageEnum
+			);
+
+			if (status)
+			{
+				return eShaderManagerStatus_StageCorrupt;
+			}
 		}
-
-		//Read stage file into buffer
-		ifstream stageFile(cacheDir.str(), ios::binary);
-
-		vector<char> buffer;
-
-		stageFile.seekg(0, ios::end);
-		const streampos fileSize = stageFile.tellg();
-		buffer.resize(fileSize);
-
-		stageFile.seekg(0, ios::beg);
-		stageFile.read(&buffer[0], fileSize);
-
-		//Create shader instance
-		if (ERenderStatus status = system->getApi()->createShader(hShader, &buffer[0], (uint32)buffer.size(), stage))
+		else
 		{
+			//Exit failure
 			return eShaderManagerStatus_StageCorrupt;
 		}
 
-		//Cache shader stage
-		programStageMap[stageHash] = hShader;
-	}
-	else
-	{
-		//Set stage to shader instane found in cache
-		hShader = it->second;
+		break;
 
-		if (hShader == HSHADER_NULL)
-		{
-			return eShaderManagerStatus_StageNotFound;
-		}
+	default:
+		return eShaderManagerStatus_StageNotFound;
 	}
 
 	return eShaderManagerStatus_Ok;
@@ -253,76 +205,51 @@ EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderNa
 			return eShaderManagerStatus_ProgramNotFound;
 		}
 
-		ifstream file(shaderFile.str(), ios::binary);
+		rc::ResourceLoader loader(ifstream(shaderFile.str(), ios::binary));
 
-		//Read header
-		SShaderObjectHeader header;
-		file.read((char*)&header, sizeof(SShaderObjectHeader));
-
-		if (file.fail())
+		if (loader.fail())
 		{
 			return eShaderManagerStatus_Fail;
 		}
 
-		//Validate header
-		if (header.tag != 'OHST')
+		tsr::Shader& shaderRsc = loader.deserialize<tsr::Shader>();
+
+		//Verify signature
+		if (shaderRsc.signature() != formatSignature('T', 'S', 'S', 'H'))
 		{
 			return eShaderManagerStatus_StageCorrupt;
 		}
 
-		//Determine location of shader programs based in render api selected
-		const EGraphicsAPIID apiid = system->getApiID();
-
-		EShaderBackend backendId;
-		switch (apiid)
-		{
-		case eGraphicsAPI_D3D11:
-			backendId = EShaderBackend::eBackendHLSL_SM5;
-			break;
-		default:
-			backendId = (EShaderBackend)0;
-		}
-
-		Path cacheDir = shaderPath;
-		cacheDir.addDirectories("cache");
-		cacheDir.addDirectories(idToStr(backendId));
-
-		if (!isDirectory(cacheDir))
-		{
-			tswarn("a shader cache directory could not be found for this Renderer configuration (%)", apiid);
-			return eShaderManagerStatus_StageNotFound;
-		}
-
-		//Load each stage if their hashes are not null
+		//Load each stage if they exist
 		SShaderProgram program;
 
-		if (header.stageVertex)
+		if (shaderRsc.has_vertex())
 		{
-			if (auto err = loadShaderStage(cacheDir, header.stageVertex, program.hVertex, EShaderStage::eShaderStageVertex))
+			if (auto err = loadProgramStage(program.hVertex, EShaderStage::eShaderStageVertex, shaderRsc.vertex()))
 				return err;
 		}
 
-		if (header.stageHull)
+		if (shaderRsc.has_tessControl())
 		{
-			if (auto err = loadShaderStage(cacheDir, header.stageHull, program.hHull, EShaderStage::eShaderStageHull))
+			if (auto err = loadProgramStage(program.hHull, EShaderStage::eShaderStageTessCtrl, shaderRsc.tessControl()))
 				return err;
 		}
 
-		if (header.stageDomain)
+		if (shaderRsc.has_tessEval())
 		{
-			if (auto err = loadShaderStage(cacheDir, header.stageDomain, program.hDomain, EShaderStage::eShaderStageDomain))
+			if (auto err = loadProgramStage(program.hDomain, EShaderStage::eShaderStageTessEval, shaderRsc.tessEval()))
 				return err;
 		}
 
-		if (header.stageGeometry)
+		if (shaderRsc.has_geometry())
 		{
-			if (auto err = loadShaderStage(cacheDir, header.stageGeometry, program.hGeometry, EShaderStage::eShaderStageGeometry))
+			if (auto err = loadProgramStage(program.hGeometry, EShaderStage::eShaderStageGeometry, shaderRsc.geometry()))
 				return err;
 		}
 
-		if (header.stagePixel)
+		if (shaderRsc.has_pixel())
 		{
-			if (auto err = loadShaderStage(cacheDir, header.stagePixel, program.hPixel, EShaderStage::eShaderStagePixel))
+			if (auto err = loadProgramStage(program.hPixel, EShaderStage::eShaderStagePixel, shaderRsc.pixel()))
 				return err;
 		}
 

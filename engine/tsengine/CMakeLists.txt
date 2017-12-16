@@ -1,6 +1,10 @@
+#####################################################################################
 #
 #	tsengine
 #
+#	 Central system module
+#
+#####################################################################################
 
 SET(tsengine_inc
 	
@@ -36,21 +40,14 @@ SET(tsengine_src
 	src/EnvConfig.cpp
 )
 
-SET(tsengine_files ${tsengine_src} ${tsengine_inc})
-
-add_engine_library(
+add_engine_module(
 	NAME tsengine
 	SOURCES ${tsengine_src}
 	HEADERS ${tsengine_inc}
-	HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/inc"
+	PUBLIC_DIR inc
+	PRIVATE_DIR src
 )
 
 target_link_libraries(tsengine PUBLIC tscore tsgraphics)
 
-target_include_directories(
-	tsengine
-	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc
-	PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-assign_source_groups(${tsengine_files})
+#####################################################################################

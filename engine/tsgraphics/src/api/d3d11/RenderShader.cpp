@@ -58,7 +58,7 @@ ERenderStatus D3D11Render::createShader(
 			return eOk;
 		}
 
-		case (EShaderStage::eShaderStageHull):
+		case (EShaderStage::eShaderStageTessCtrl):
 		{
 			ComPtr<ID3D11HullShader> hullshader;
 			HRESULT hr = m_device->CreateHullShader(bytecode, bytecodesize, nullptr, hullshader.GetAddressOf());
@@ -68,7 +68,7 @@ ERenderStatus D3D11Render::createShader(
 			return eOk;
 		}
 
-		case (EShaderStage::eShaderStageDomain):
+		case (EShaderStage::eShaderStageTessEval):
 		{
 			ComPtr<ID3D11DomainShader> domainshader;
 			HRESULT hr = m_device->CreateDomainShader(bytecode, bytecodesize, nullptr, domainshader.GetAddressOf());

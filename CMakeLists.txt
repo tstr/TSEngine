@@ -25,8 +25,8 @@ SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin/")
 SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin/")
 SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib/")
 
-set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
-set(CMAKE_USE_RELATIVE_PATHS TRUE)
+set(CMAKE_INCLUDE_CURRENT_DIR OFF)
+set(CMAKE_USE_RELATIVE_PATHS ON)
 
 set(TS_BINARY_INSTALL "${CMAKE_INSTALL_PREFIX}/bin")
 set(TS_LIBRARY_INSTALL "${CMAKE_INSTALL_PREFIX}/lib")
@@ -38,8 +38,8 @@ set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${BIN_INSTALL}")
 set(CMAKE_INSTALL_DEBUG_LIBRARIES 0)
 include(InstallRequiredSystemLibraries)
 
-# Module path
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmakemodules")
+# Module paths
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmakemodules")
 
 ################################################################################################
 #	functions
@@ -120,16 +120,16 @@ endif()
 #create the configuration file
 CONFIGURE_FILE (
 	"${PROJECT_SOURCE_DIR}/tsconfig.h.in"
-	"${PROJECT_BINARY_DIR}/cfg/tsconfig.h"
+	"${PROJECT_BINARY_DIR}/config/tsconfig.h"
 )
 
 #create version info file
 CONFIGURE_FILE(
 	"${PROJECT_SOURCE_DIR}/tsversion.h.in"
-	"${PROJECT_BINARY_DIR}/cfg/tsversion.h"
+	"${PROJECT_BINARY_DIR}/config/tsversion.h"
 )
 
-INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/cfg")
+INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/config")
 
 ################################################################################################
 #	projects
@@ -137,11 +137,11 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/cfg")
 
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Engine libraries
-ADD_SUBDIRECTORY(engine)
-
 # Engine tools
 ADD_SUBDIRECTORY(tools)
+
+# Engine libraries
+ADD_SUBDIRECTORY(engine)
 
 # Engine samples
 ADD_SUBDIRECTORY(samples)

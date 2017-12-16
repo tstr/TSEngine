@@ -121,7 +121,7 @@ int Sandbox::loadModel(Entity entity, const String& modelfile)
 		SubmeshInfo info;
 
 		ShaderId program;
-		if (auto status = m_g3D.getContext()->getShaderManager()->load("SandboxShader", program))
+		if (auto status = m_g3D.getContext()->getShaderManager()->load("Standard", program))
 		{
 			return status;
 		}

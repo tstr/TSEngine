@@ -13,7 +13,7 @@ SET (modelbuild_src
 
 ADD_EXECUTABLE(
 	modelbuild
-	${modelbuild_src}
+	${modelbuild_src} ${modelbuild_schemas}
 )
 
 install_tools(modelbuild)

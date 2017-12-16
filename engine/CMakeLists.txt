@@ -8,19 +8,28 @@ include(GenerateExportHeader)
 
 SET(TS_BUILD_SHARED_LIBRARIES CACHE BOOL OFF)
 
-set(ENGINE_FOLDER )
+set(ENGINE_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+set(ENGINE_FOLDER engine)
 
-#Add a component library
-function(add_engine_library)
+#
+#	Add an engine module library:
+#
+#	NAME		- name of target
+#	SOURCES		- list of private sources
+#	HEADERS		- list of public headers
+#	PUBLIC_DIR	- public header directory
+#	PRIVATE_DIR - private header directory
+#
+function(add_engine_module)
 	
 	set(options)
-	set(args NAME HEADER_DIR)
+	set(args NAME PUBLIC_DIR PRIVATE_DIR)
 	set(argsMulti SOURCES HEADERS)
-	cmake_parse_arguments(add_engine_library "${options}" "${args}" "${argsMulti}" ${ARGN})
+	cmake_parse_arguments(param "${options}" "${args}" "${argsMulti}" ${ARGN})
 	
-	set(libname ${add_engine_library_NAME})
-	set(libsrcs ${add_engine_library_SOURCES})
-	set(libhead ${add_engine_library_HEADERS})
+	set(libname ${param_NAME})
+	set(libsrcs ${param_SOURCES})
+	set(libhdrs ${param_HEADERS})
 	
 	set(libtype STATIC)
 	
@@ -31,23 +40,20 @@ function(add_engine_library)
 	add_library(
 		${libname}
 		${libtype}
-		${libsrcs} ${libhead}
+		${libsrcs} ${libhdrs}
 	)
 	
-	set(macro_libname ${libname})
-	string(TOUPPER ${macro_libname} macro_libname)
+	assign_source_groups(${libsrcs} ${libhdrs})
 	
+	string(TOUPPER ${libname} macro_libname)
+	string(TOLOWER ${libname} export_filename)
+
 	GENERATE_EXPORT_HEADER(
 		${libname}
 		STATIC_DEFINE TS_LIBRARY_STATIC
 		EXPORT_MACRO_NAME "${macro_libname}_API"
 		NO_EXPORT_MACRO_NAME "${macro_libname}_API_NO"
-	)
-	
-	#Add location of libname_export.h file to public interface
-	TARGET_INCLUDE_DIRECTORIES(
-		${libname}
-		PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
+		EXPORT_FILE_NAME "${param_PUBLIC_DIR}/${export_filename}_export.h"
 	)
 	
 	SET_TARGET_PROPERTIES(${libname} PROPERTIES LINKER_LANGUAGE CXX)
@@ -59,24 +65,33 @@ function(add_engine_library)
 		ARCHIVE DESTINATION ${TS_LIBRARY_INSTALL}
 	)
 	
-	if (NOT add_engine_library_HEADER_DIR STREQUAL "")
+	# If private directory specified
+	if (NOT param_PRIVATE_DIR STREQUAL "")
+		
+		TARGET_INCLUDE_DIRECTORIES(${libname} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/${param_PRIVATE_DIR}")
+		TARGET_INCLUDE_DIRECTORIES(${libname} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/${param_PRIVATE_DIR}")
+		
+	endif()
 	
-		INSTALL(
-			DIRECTORY "${add_engine_library_HEADER_DIR}/"
-			DESTINATION ${TS_HEADER_INSTALL}
-		)
+	# If public directory specified
+	if (NOT param_PUBLIC_DIR STREQUAL "")
+		
+		TARGET_INCLUDE_DIRECTORIES(${libname} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${param_PUBLIC_DIR}")
+		TARGET_INCLUDE_DIRECTORIES(${libname} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/${param_PUBLIC_DIR}")
+		
+		INSTALL(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${param_PUBLIC_DIR}/" DESTINATION ${TS_HEADER_INSTALL})
 		
 	endif()
 	
 	SET_TARGET_PROPERTIES(
 		${libname}
-		PROPERTIES FOLDER engine
+		PROPERTIES FOLDER ${ENGINE_FOLDER}
 	)
 	
 endfunction()
 
 ################################################################################################
-#	engine components
+#	Engine modules
 ################################################################################################
 
 ADD_SUBDIRECTORY(tscore)

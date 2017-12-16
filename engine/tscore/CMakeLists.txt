@@ -1,6 +1,10 @@
+#####################################################################################
 #
 #	tscore
 #
+#	 Core utility module
+#
+#####################################################################################
 
 set(tscore_inc
 	
@@ -47,19 +51,12 @@ SET(tscore_src
 	src/pathutil.cpp
 )
 
-SET(tscore_files ${tscore_src} ${tscore_inc})
-
-add_engine_library(
+add_engine_module(
 	NAME tscore
 	SOURCES ${tscore_src}
 	HEADERS ${tscore_inc}
-	HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/inc"
+	PUBLIC_DIR inc
+	PRIVATE_DIR src
 )
 
-target_include_directories(
-	tscore
-	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc
-	PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-assign_source_groups(${tscore_files})
+#####################################################################################

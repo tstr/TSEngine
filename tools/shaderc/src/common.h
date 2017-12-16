@@ -7,35 +7,30 @@
 #include <tscore/types.h>
 #include <tscore/strings.h>
 
-#include "preprocessor.h"
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct SShaderStageInfo
+namespace tsr
 {
-	ts::Path sourceFile;
-	std::string entryPoint;
-	std::vector<ts::SPreprocessorMacro> macros;
-};
+	enum VariableType;
+	enum ResourceType;
+	
+	class ShaderReflectionBuilder;
+	class ShaderStageBuilder;
+	class ShaderBuilder;
+}
 
-struct SShaderInfo
+namespace ts
 {
-	SShaderStageInfo vertexStage;
-	SShaderStageInfo hullStage;
-	SShaderStageInfo domainStage;
-	SShaderStageInfo geometryStage;
-	SShaderStageInfo pixelStage;
-};
-
-enum EShaderStage
-{
-	eShaderStageUnknown,
-	eShaderStageVertex,
-	eShaderStagePixel,
-	eShaderStageGeometry,
-	eShaderStageHull,
-	eShaderStageDomain,
-	eShaderStageCompute
-};
+	enum EShaderStage
+	{
+		eShaderStageUnknown,
+		eShaderStageVertex,
+		eShaderStageTessCtrl, //hull
+		eShaderStageTessEval, //domain
+		eShaderStageGeometry,
+		eShaderStagePixel,
+		eShaderStageCompute
+	};
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

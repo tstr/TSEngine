@@ -44,9 +44,7 @@ public:
 	GraphicsToolSystem(intptr winhandle, const Path& loadpath) :
 		m_handle(winhandle),
 		m_loadpath(loadpath)
-	{
-		m_loadpath.addDirectories("shaders/bin");
-	}
+	{}
 
 	~GraphicsToolSystem()
 	{
@@ -198,23 +196,22 @@ int main(int argc, char** argv)
 	}
 
 	string compilerPath(argv[1]);
-	string inputPath(argv[2]);
-	string outputPath(argv[3]);
+	string inputPath(Path(argv[2]).str());
+	string outputPath(Path(argv[3]).str());
 
 	//Exit with failure if Shaderc tool does not exist
 	if (!isFile(compilerPath))
 	{
+		print("ERROR: can't find shaderc.");
 		return EXIT_FAILURE;
 	}
 
 	//Format command line arguments
 	stringstream stream;
-	stream << " -t ";
-	stream << inputPath << "/manifest.shm";
-	stream << " -s ";
-	stream << inputPath << "/shaders/";
-	stream << " -o ";
-	stream << outputPath << "/shaders/bin/";
+	stream << " --out ";
+	stream << outputPath;
+	stream << " ";
+	stream << inputPath << "/shader.s";
 
 	print(stream.str());
 	
@@ -249,7 +246,7 @@ int main(int argc, char** argv)
 	print("Beginning shader verification...");
 
 	//Try and load a shader
-	if (EShaderManagerStatus status = system.getShaderManager()->load("Shader", programId))
+	if (EShaderManagerStatus status = system.getShaderManager()->load("shader", programId))
 	{
 		print("ERROR: Shader failed to verify (" + to_string(status) + ")");
 		return (int)status;

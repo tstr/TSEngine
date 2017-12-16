@@ -1,6 +1,10 @@
+#####################################################################################
 #
 #	tsgraphics
 #
+#	 Graphical subsystem module
+#
+#####################################################################################
 
 set(tsgraphics_inc
 
@@ -75,23 +79,34 @@ SET(tsgraphics_src
 	src/GraphicsRenderPass.cpp
 	
 	src/platform/Nvoptimus.cpp
+	
+	src/model/Reader.h
+	src/model/Reader.cpp
 )
 
-SET(tsgraphics_files ${tsgraphics_src} ${tsgraphics_inc})
-
-add_engine_library(
+add_engine_module(
 	NAME tsgraphics
 	SOURCES ${tsgraphics_src}
 	HEADERS ${tsgraphics_inc}
-	HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/inc"
+	PUBLIC_DIR inc
+	PRIVATE_DIR src
 )
-
-target_include_directories(
-	tsgraphics
-	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc
-	PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-assign_source_groups(${tsgraphics_files})
 
 TARGET_LINK_LIBRARIES(tsgraphics PUBLIC tscore)
+
+#####################################################################################
+#	Generate resource schema headers
+#####################################################################################
+
+include(ResourceSchemaGen)
+
+set(schema_files
+	inc/tsgraphics/schemas/Model.schema
+	inc/tsgraphics/schemas/Shader.schema
+)
+
+target_cpp_rschemas(TARGET tsgraphics HEADER_VAR schemas_hdrs SCHEMAS ${schema_files} APPENDPATH)
+assign_source_groups(${schemas_hdrs} ${schema_files})
+INSTALL(FILES ${schemas_hdrs} ${schema_files} DESTINATION "${TS_HEADER_INSTALL}/tsgraphics/schemas")
+
+#####################################################################################

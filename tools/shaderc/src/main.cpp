@@ -52,124 +52,127 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "compiler.h"
-#include "frontend/parser.h"
-
 #include <tscore/path.h>
 #include <tscore/pathutil.h>
 
 #include <iostream>
+
+#include <cli/Arguments.h>
+#include <cli/Constants.h>
+
+#include "ShaderCompiler.h"
+#include "ShaderParser.h"
+#include "Preprocessor.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
 using namespace ts;
 
-bool parseCLIargs(int argc, char** argv, Path& manifest, Path& outputDir, Path& sourceDir);
-
 int main(int argc, char** argv)
 {
-	Path manifestPath;
-	Path outputDir;
-	Path sourceDir;
+	//Arguments
+	String outputDirName;
+	vector<String> shaderFileNames;
 
-	//Get CLI parameters
-	if (!parseCLIargs(argc, argv, manifestPath, outputDir, sourceDir))
+	//Parse command line arguments
+	cli::ArgumentReader args;
+	args.addParameter("out", outputDirName, "Output directory for compiled shaders");
+	args.setUnused(shaderFileNames);
+	
+	if (int err = args.parse(argc, argv))
 	{
-		return EXIT_FAILURE;
-	}
-
-	if (!isFile(manifestPath))
-	{
-		cerr << "Shader manifest file does not exist: \"" << manifestPath.str() << "\"\n";
-		return EXIT_FAILURE;
-	}
-
-	if (!isDirectory(sourceDir))
-	{
-		cerr << "Shader source directory does not exist: \"" << sourceDir.str() << "\"\n";
-		return EXIT_FAILURE;
+		return cli::CLI_EXIT_INVALID_ARGUMENT;
 	}
 
 	// existence of output directory does not neeed to be validated
 	// it can be created on the fly
+	Path outputDir = outputDirName;
 
-	//Parse manifest
-	CShaderInfoParser parser(manifestPath);
+	ShaderCompiler compileEngine;
 
-	if (!parser)
+	// For each shader source file
+	for (const Path shaderPath : shaderFileNames)
 	{
-		cerr << "Failed to create CShaderInfoParser\n";
-		return EXIT_FAILURE;
-	}
-
-	CShaderCompileEngine compileEngine(
-		sourceDir,
-		outputDir
-	);
-
-	//Compile shaders listed in manifest
-	for (uint32 i = 0; i < parser.getShaderCount(); i++)
-	{
-		SShaderInfo inf;
-		string name;
-
-		parser.getShaderInfo(i, name, inf);
-
-		if (int err = compileEngine.compileShader(name.c_str(), inf))
+		if (isFile(shaderPath))
 		{
-			return EXIT_FAILURE;
-		}
-	}
+			//Shader source stream
+			stringstream shaderSource;
 
-	return EXIT_SUCCESS;
-}
+			//Preprocessing step
+			CPreprocessor pp;
+			pp.setCommentStrip(true);
+			
+			//Strip comments and resolve preprocessor directives
+			if (EPreprocessorStatus ppStatus = pp.process(shaderPath, shaderSource))
+			{
+				cerr << "Error " << ppStatus << " unable to preprocess source file \"" << shaderPath.str() << "\"\n";
+				return cli::CLI_EXIT_FAILURE;
+			}
+			else
+			{
+				//Parsing step - extract reflection info from shader source
+				ShaderParser parser(shaderSource);
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
+				if (parser.good())
+				{
+					//Reset read
+					shaderSource.seekg(0);
 
-bool parseCLIargs(int argc, char** argv, Path& manifest, Path& outputDir, Path& sourceDir)
-{
-	char curArg = 0;
+					ShaderCompilerOptions opt;
+					opt.vsEntry = (parser.isFunction("VS")) ? "VS" : "";
+					opt.tcsEntry = (parser.isFunction("TC")) ? "TC" : "";
+					opt.tesEntry = (parser.isFunction("TE")) ? "TE" : "";
+					opt.gsEntry = (parser.isFunction("GS")) ? "GS" : "";
+					opt.psEntry = (parser.isFunction("PS")) ? "PS" : "";
 
-	for (int i = 1; i < argc; i++)
-	{
-		string arg(trim(argv[i]));
+					//Resolve object filename
+					string objectFileName = shaderPath.str();
+					objectFileName = objectFileName.substr(0, objectFileName.find_last_of('.'));
+					objectFileName += ".tsh";
+					objectFileName = Path(objectFileName).getDirectoryTop().str();
 
-		if (arg[0] == '-')
-		{
-			curArg = arg[1];
+					//Resolve path
+					Path objectPath = outputDirName;
+					objectPath.addDirectories(objectFileName);
+
+					//Create shader object file
+					fstream shaderObjectFile(createFile(objectPath, ios::binary | ios::ate | ios::out));
+
+					if (shaderObjectFile.fail())
+					{
+						cerr << "Unable to create shader object file \"" << objectPath.str() << "\"\n";
+						return cli::CLI_EXIT_FAILURE;
+					}
+
+					//Debug print
+					cout << shaderPath.str() << " -> " << objectPath.str() << endl;
+
+					//Compilation step
+					if (int err = compileEngine.compile(shaderSource, shaderObjectFile, opt))
+					{
+						cerr << "Unable to compile source file file \"" << shaderPath.str() << "\"\n";
+						return cli::CLI_EXIT_FAILURE;
+					}
+
+					//Force writes to file just in case
+					shaderObjectFile.flush();
+				}
+				else
+				{
+					cerr << "Unable to parse metadata from source file \"" << shaderPath.str() << "\"\n";
+					return cli::CLI_EXIT_FAILURE;
+				}
+			}
 		}
 		else
 		{
-			switch (curArg)
-			{
-			case 't':
-			{
-				manifest = arg;
-				curArg = 0;
-				break;
-			}
-			case 'o':
-			{
-				outputDir = arg;
-				curArg = 0;
-				break;
-			}
-			case 's':
-			{
-				sourceDir = arg;
-				curArg = 0;
-				break;
-			}
-			default:
-			{
-				cerr << "Invalid argument specified: " << arg << "\n";
-			}
-			};
+			cerr << "Unable to find source file \"" << shaderPath.str() << "\"\n";
+			return cli::CLI_EXIT_FAILURE;
 		}
 	}
 
-	return true;
+	return cli::CLI_EXIT_SUCCESS;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

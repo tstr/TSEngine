@@ -14,7 +14,7 @@ cbuffer uniforms : register(b0)
 	float  u_tessScale;
 	float  u_tessFactor;
 	float  u_time;
-}
+};
 
 struct VSinput
 {
