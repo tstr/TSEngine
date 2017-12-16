@@ -1,0 +1,13 @@
+#
+#	3D Model schema
+#
+
+namespace tsr;
+
+resource Model
+{
+	uint32 vertexStride;
+	
+	byte[] vertexData;
+	uint32[] indexData;
+}

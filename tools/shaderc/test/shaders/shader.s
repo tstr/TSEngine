@@ -6,7 +6,10 @@ cbuffer uniforms : register(b0)
 	uint   u_resH;
 	float  u_time;
 	float  u_tessFactor;
-}
+};
+
+Texture2D tex : register(t0);
+SamplerState texSampler : register(s0);
 
 struct VSinput
 {
@@ -28,4 +31,10 @@ PSinput VS(VSinput input)
 	output.texcoord = texcoord;
 
 	return output;
+}
+
+float4 PS(PSinput input) : SV_TARGET
+{
+	float f = length(input.texcoord - float2(0.5, 0.5));
+	return float4(0, 0, f, f);
 }

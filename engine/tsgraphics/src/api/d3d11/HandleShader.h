@@ -39,13 +39,13 @@ namespace ts
 
 		D3D11Shader(ID3D11HullShader* s, MemoryBuffer&& buf) :
 			m_shaderInterface((ID3D11DeviceChild*)s),
-			m_shaderStage(eShaderStageHull),
+			m_shaderStage(eShaderStageTessCtrl),
 			m_shaderBytecode(buf)
 		{}
 
 		D3D11Shader(ID3D11DomainShader* s, MemoryBuffer&& buf) :
 			m_shaderInterface((ID3D11DeviceChild*)s),
-			m_shaderStage(eShaderStageDomain),
+			m_shaderStage(eShaderStageTessEval),
 			m_shaderBytecode(buf)
 		{}
 

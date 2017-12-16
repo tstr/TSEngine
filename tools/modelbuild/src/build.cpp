@@ -11,8 +11,10 @@
 //Engine headers
 #include <tscore/path.h>
 #include <tscore/system/time.h>
+
 //Model format types and constants
 #include <tsgraphics/model/modeldefs.h>
+#include <tsgraphics/schemas/Model.rcs.h>
 
 //Assimp headers
 #include "assimp\Importer.hpp"

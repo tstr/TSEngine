@@ -7,7 +7,6 @@
 	 - "if" and "elif" preprocessor commands
 	 - prevent infinite macro recursion
 	 - handle syntax errors properly
-	 - remove comments from the output
 */
 
 #pragma once
@@ -18,122 +17,43 @@
 #include <tscore/debug/log.h>
 
 #include <fstream>
-#include <map>
-#include <vector>
-#include <stack>
+#include <regex>
 
 using namespace std;
 using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-const char* getPreprocessorStatusString(EPreprocessorStatus status);
+/*
+	Helper function
 
-namespace std
-{
-	template<>
-	struct less<PreprocessorString>
-	{
-		//Operator <
-		bool operator()(const PreprocessorString& left, const PreprocessorString& right) const
-		{
-			return (strcmp(left.str(), right.str()) < 0);
-		}
-	};
-}
+	Strip C style comments from a stream (input) and write result to stream (output)
+*/
+static void stripComments(istream& input, ostream& output);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-class CPreprocessor
-{
-private:
-	
-	map<PreprocessorString, PreprocessorString> m_macroTable;	//Table of macros name/value pairs
-	vector<Path> m_includeDirs;									//List of include file directories to search through
-	stack<bool> m_macroStateStack;								//Stack for tracking the states of nested conditional statements
-
-	void evaluateText(string& text);
-
-	bool getMacroValue(const PreprocessorString& name, PreprocessorString& value)
-	{
-		//Look up macro name in table
-		auto it = m_macroTable.find(name);
-
-		//Check if iterator is valid
-		if (it != m_macroTable.end())
-		{
-			value = it->second;
-			return true;
-		}
-
-		return false;
-	}
-
-	inline bool isMacro(const PreprocessorString& name)
-	{
-		return (m_macroTable.find(name) != m_macroTable.end());
-	}
-
-	inline bool isStatement(const string& statement)
-	{
-		return (!statement.empty() && statement.front() == '#');
-	}
-
-	inline bool isCommand(const string& statement, const string& command)
-	{
-		return statement.find(command) == 1;
-	}
-
-public:
-
-	//Add an array of paths for the preprocessor to search for include files in
-	void addIncludeDirs(const Path* includeDirs, uint includeDirCount)
-	{
-		if (includeDirs && includeDirCount)
-			for (uint i = 0; i < includeDirCount; i++)
-				m_includeDirs.push_back(includeDirs[i]);
-	}
-
-	//Add an array of macros for the preprocessor to use
-	void addMacros(const SPreprocessorMacro* macros, uint macroCount)
-	{
-		if (macros && macroCount)
-			for (uint i = 0; i < macroCount; i++)
-				m_macroTable[macros[i].name] = macros[i].value;
-	}
-	
-	int process(const Path& filepath, ostream& out);
-};
-
-/////////////////////////////////////////////////////////////////////////////////////////////////
-
-namespace ts
-{
-	EPreprocessorStatus preprocessFile(
-		const Path& filepath,
-		ostream& outputbuf,
-		const SPreprocessorMacro* macros,
-		uint macroCount,
-		const Path* includeDirs,
-		uint includeDirCount
-	)
-	{
-		CPreprocessor pp;
-
-		pp.addIncludeDirs(includeDirs, includeDirCount);
-		pp.addMacros(macros, macroCount);
-
-		return (EPreprocessorStatus)pp.process(filepath, outputbuf);
-	}
-}
-
-//Preprocess a file
-int CPreprocessor::process(const Path& filepath, ostream& outstream)
+/*
+	Preprocess a given file
+*/
+EPreprocessorStatus CPreprocessor::process(const Path& filepath, ostream& outstream)
 {
 	//Open the file stream
-	ifstream file(filepath.str());
-
-	if (file.fail())
+	stringstream text;
+	
+	//If comment stripping is enabled
+	if (m_stripComments)
+	{
+		//Strip comments from input before preprocessing
+		stripComments(ifstream(filepath.str()), text);
+	}
+	else
+	{
+		//Otherwise just preprocess raw input
+		text << ifstream(filepath.str()).rdbuf();
+	}
+	
+	if (text.fail())
 	{
 		return ePreprocessStatus_FileNotFound;
 	}
@@ -148,9 +68,9 @@ int CPreprocessor::process(const Path& filepath, ostream& outstream)
 	m_macroStateStack.push(true);		//current scope is visible so set root state to true
 
 	//Iterate over each line in the file
-	string linebuf;
-	string lineraw;
-	while (getline(file, lineraw))
+	String linebuf;
+	String lineraw;
+	while (getline(text, lineraw))
 	{
 		linebuf = trim(lineraw);
 
@@ -171,14 +91,14 @@ int CPreprocessor::process(const Path& filepath, ostream& outstream)
 				size_t speechPosEnd = linebuf.find_last_of('\"');
 
 				//Check if speech marks are present - ""
-				if (speechPosStart == speechPosEnd || speechPosStart == string::npos || speechPosEnd == string::npos)
+				if (speechPosStart == speechPosEnd || speechPosStart == String::npos || speechPosEnd == String::npos)
 				{
 					//If normal speech marks are not present then search for angled braces instead - <>
 					speechPosStart = linebuf.find_first_of('<');
 					speechPosEnd = linebuf.find_last_of('>');
 
 					//If the angled braces are not present either then the include statement is invalid
-					if (speechPosStart == speechPosEnd || speechPosStart == string::npos || speechPosEnd == string::npos)
+					if (speechPosStart == speechPosEnd || speechPosStart == String::npos || speechPosEnd == String::npos)
 						return ePreprocessStatus_SyntaxError;
 
 					needSearch = true;
@@ -219,7 +139,7 @@ int CPreprocessor::process(const Path& filepath, ostream& outstream)
 					continue;
 
 				//Find first whitespace character
-				size_t firstpos = linebuf.find_first_not_of(' ', linebuf.find_first_of(' '));
+				size_t firstpos = min(linebuf.find_first_not_of(' ', linebuf.find_first_of(' ')), linebuf.find_first_not_of('\t', linebuf.find_first_of('\t')));
 
 				//The define command must have a macro name as an argument - return failure
 				if (firstpos == string::npos)
@@ -229,15 +149,15 @@ int CPreprocessor::process(const Path& filepath, ostream& outstream)
 				}
 
 				//Find second whitespace character
-				size_t secpos = linebuf.find_first_of(' ', firstpos);
+				size_t secpos = min(linebuf.find_first_of(' ', firstpos), linebuf.find_first_of('\t', firstpos));
 
 				SPreprocessorMacro macro;
-				macro.name.set(linebuf.substr(firstpos, secpos - firstpos));
+				macro.name = linebuf.substr(firstpos, secpos - firstpos);
 
 				if (secpos != string::npos)
-					macro.value.set(linebuf.substr(secpos + 1)); //only set the macro value if the statement defines one
+					macro.value = linebuf.substr(secpos + 1); //only set the macro value if the statement defines one
 
-				m_macroTable[macro.name] = macro.value;
+				m_macroTable[macro.name] = trim(macro.value);
 			}
 			//Check if preprocessor command is a undefine statement
 			else if (isCommand(linebuf, "undef"))
@@ -317,8 +237,8 @@ int CPreprocessor::process(const Path& filepath, ostream& outstream)
 		{
 			if (write_lines)
 			{
-				evaluateText(lineraw);
-				outstream << lineraw << endl;
+				outstream << evaluateText(lineraw);
+				outstream << endl;
 			}
 		}
 	}
@@ -326,56 +246,125 @@ int CPreprocessor::process(const Path& filepath, ostream& outstream)
 	return ePreprocessStatus_Ok;
 }
 
-void CPreprocessor::evaluateText(string& text)
+//Replace "from" in "str" with "to"
+bool replace(String& str, const String& from, const String& to)
 {
-	string token;
+	size_t start_pos = str.find(from);
 
-	ptrdiff textOffset = 0; //Start index of the token
-	ptrdiff textIdx = 0;	  //Current index
+	if (start_pos == String::npos)
+		return false;
 
-	//Iterate over string which is to be evaluated
-	for (; textIdx < (ptrdiff)text.size(); textIdx++)
+	str.replace(start_pos, from.length(), to);
+	
+	return true;
+};
+
+// todo: reimplement: this is a very broken way of evaluating macros,
+// will not work if the same macro appears twice in the same string
+String CPreprocessor::evaluateText(const String& text)
+{
+	//Result buffer
+	string buf(text);
+
+	//Identifier regex
+	static const regex rgx("([a-zA-Z_][a-zA-Z0-9_]*)");
+
+	using Iter = regex_iterator<string::const_iterator>;
+
+	for (Iter it(text.begin(), text.end(), rgx); it != Iter(); it++)
 	{
-		char c = text[textIdx];
+		auto macroIt = m_macroTable.find(it->str());
 
-		//Check if char is a number or letter
-		if (isdigit(c) || isalpha(c))
+		if (macroIt != m_macroTable.end())
 		{
-			token += c; //add char to token
+			//Search and replace again
+			//Workaround because regex_replace doesn't have a custom replacer predicate
+			replace(buf, it->str(), evaluateText(macroIt->second));
 		}
+	}
+
+	return buf;
+}
+
+void stripComments(istream& input, ostream& output)
+{
+	//Commenting states, mutually exclusive
+	bool in_block_comment = false;
+	bool in_line_comment = false;
+
+	//Having the prev char be the cur char is a bit counter intuitive but it works
+	char cur = 0;
+
+	while (input)
+	{
+		//The next char is actually the current char
+		//We look ahead by one
+		char nxt = 0;
+		input.read(&nxt, 1);
+
+		//If in commenting state
+		if (in_block_comment || in_line_comment)
+		{
+			//Detect end of comment depending on current comment type
+
+			if (in_block_comment)
+			{
+				//If end of block comment
+				if ((cur == '*') && (nxt == '/'))
+				{
+					//Reset to writing state
+					in_block_comment = false;
+					nxt = 0;
+				}
+			}
+			else if (in_line_comment)
+			{
+				//If end of line comment
+				if (nxt == '\n')
+				{
+					//Reset to writing state
+					in_line_comment = false;
+					nxt = 0;
+				}
+			}
+		}
+		//Otherwise if in writing state
 		else
 		{
-			PreprocessorString macroValue;
-
-			if (getMacroValue(token, macroValue))
+			//If current char marks start of comment
+			if (cur == '/')
 			{
-				//Save length of section being replaced and section that is replacing it
-				ptrdiff oldlen = (ptrdiff)(textIdx - textOffset) - 1;
-				ptrdiff newlen = (ptrdiff)macroValue.length();
-				//Difference between lengths is the amount each index needs to be incremented by
-				ptrdiff deltalen = newlen - oldlen;
+				//Determine comment type
+				if (nxt == '*')
+				{
+					in_block_comment = true;
+					cur = 0;
+				}
+				else if (nxt == '/')
+				{
+					in_line_comment = true;
+					cur = 0;
+				}
 
-				//Construct string of macro value and evaluate recursively
-				string valstr(macroValue.str());
-				evaluateText(valstr);
-
-				text.replace(textOffset + 1, oldlen, valstr);
-
-				//Increment by new difference
-				textOffset += deltalen;
-				textIdx += deltalen;
+				//If nxt char doesn't match start of comment
+				//just continue writing to the output as normal
 			}
 
-			textOffset = textIdx;
-
-			token.clear();
+			//If not in commenting state
+			//And current char isn't null
+			if (!in_block_comment && !in_line_comment && cur != 0)
+				//Write to output
+				output.write(&cur, 1);
 		}
+
+		//Current is next
+		cur = nxt;
 	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-static const char* getPreprocessorStatusString(EPreprocessorStatus status)
+const char* CPreprocessor::getPreprocessorStatusString(EPreprocessorStatus status)
 {
 	switch (status)
 	{

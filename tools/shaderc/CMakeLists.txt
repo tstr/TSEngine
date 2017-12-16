@@ -19,15 +19,22 @@ SET (shaderc_src
 	src/backend/hlsl.h
 	src/backend/hlsl.cpp
 	
-	src/frontend/tree.h
-	src/frontend/parser.h
-	src/frontend/parser.cpp
+	src/Common.h
+	src/ShaderCompiler.h
+	src/ShaderCompiler.cpp
+
+    src/util/Scanner.h
+    src/util/Scanner.cpp
+    src/util/Token.h
+    src/util/CharTypes.h
+    
+	src/Preprocessor.h
+	src/Preprocessor.cpp
+    src/ShaderParser.h
+    src/ShaderParser.cpp
+    src/ShaderType.h
+	src/ShaderType.cpp
 	
-	src/common.h
-	src/compiler.h
-	src/compiler.cpp
-	src/preprocessor.h
-	src/preprocessor.cpp
 	src/main.cpp
 )
 
@@ -42,7 +49,8 @@ assign_source_groups(${shaderc_src})
 
 TARGET_LINK_LIBRARIES(
 	shaderc PRIVATE
-	tscore
+	tsgraphics
+    CLIutil
 )
 
 #####################################################################################################################
@@ -52,9 +60,7 @@ TARGET_LINK_LIBRARIES(
 if(TS_BUILD_TESTS)
 
 set(test_src
-	test/shaders/shader.vs
-	test/shaders/shader.ps
-	test/manifest.shm
+	test/shaders/shader.s
 	test/TestCompiler.cpp
 )
 
@@ -75,7 +81,7 @@ ADD_DEPENDENCIES(TestShaderc shaderc)
 
 ADD_TEST(
 	NAME TestShaderc
-	COMMAND $<TARGET_FILE:TestShaderc> "$<TARGET_FILE:shaderc>" "${CMAKE_CURRENT_SOURCE_DIR}/test/" "${CMAKE_CURRENT_BINARY_DIR}/test/"
+	COMMAND $<TARGET_FILE:TestShaderc> "$<TARGET_FILE:shaderc>" "${CMAKE_CURRENT_SOURCE_DIR}/test/shaders" "${CMAKE_CURRENT_BINARY_DIR}/test/shaders"
 	#COMMAND $<TARGET_FILE:shaderc> -t "${CMAKE_CURRENT_SOURCE_DIR}/test/manifest.shm" -s "${CMAKE_CURRENT_SOURCE_DIR}/test/shaders/" -o "${CMAKE_CURRENT_BINARY_DIR}/test/bin/" && $<TARGET_FILE:TestShaderc> "${CMAKE_CURRENT_BINARY_DIR}/test/bin/"
 )
 

@@ -23,24 +23,22 @@ SET(src_list
 	src/3D/MaterialInfo.h
 	src/3D/ColourPass.h
 	src/3D/ColourPass.cpp
+	
+	shaders/Common.h
+	shaders/CommonLayouts.h
 )
 
 SET(shader_src_list
-	shaders/Common.h
-	shaders/CommonLayouts.h
 	shaders/Standard.fx
 )
-
-SET(shader_manifest shaders/Sandbox.shm)
 
 ADD_SAMPLE(
 	NAME Sandbox
 	SOURCES ${src_list}
 	SHADERS ${shader_src_list}
-	SHADER_MANIFEST ${shader_manifest}
 	CONFIG config.ini
 )
 
-ASSIGN_SOURCE_GROUPS(${src_list} ${shader_src_list} ${shader_manifest})
+ASSIGN_SOURCE_GROUPS(${src_list} ${shader_src_list})
 
 TARGET_LINK_LIBRARIES(Sandbox PUBLIC tsengine)

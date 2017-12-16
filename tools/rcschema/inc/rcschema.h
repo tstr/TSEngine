@@ -771,7 +771,7 @@ namespace rc
 			Get loader state
 		*/
 		bool success() const { return m_success; }
-		bool fail() const { !m_success; }
+		bool fail() const { return !m_success; }
 		operator bool() const { return success(); }
 		
 		/*

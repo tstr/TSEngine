@@ -9,7 +9,7 @@ cbuffer uniforms : register(b0)
 	uint   u_resH;
 	float  u_time;
 	float  u_tessFactor;
-}
+};
 
 struct VSinput
 {

@@ -11,19 +11,22 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-class HLSLCompiler : public IShaderBackend
+namespace ts
 {
-private:
+	class HLSLCompiler : public IShaderBackend
+	{
+	private:
 
-	void* m_module = nullptr;
+		void* m_module = nullptr;
 
-public:
+	public:
 
-	HLSLCompiler();
-	~HLSLCompiler();
-	
-	EShaderBackend getId() const override { return eBackendHLSL_SM5; }
-	bool compile(const std::string& code, ts::MemoryBuffer& codebuffer, const char* entrypoint, EShaderStage stage) override;
-};
+		HLSLCompiler();
+		~HLSLCompiler();
+
+		EShaderBackend getId() const override { return eBackendHLSL_SM5; }
+		bool compile(const std::string& code, ts::MemoryBuffer& codebuffer, const char* entrypoint, EShaderStage stage) override;
+	};
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

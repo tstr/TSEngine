@@ -1,0 +1,148 @@
+#
+#	Shader Resource Schema:
+#
+#	Shader programs are resources composed of a set of stages,
+#	Each stage contains a set of compiled bytecodes for different backends.
+#
+
+# import "Image.schema"
+
+namespace tsr;
+
+############################################################################################
+
+enum VariableType
+{
+	VARIABLE_TYPE_UNKNOWN,
+	
+	VARIABLE_TYPE_INT32,
+	VARIABLE_TYPE_UINT32,
+	VARIABLE_TYPE_BOOL,
+	
+	VARIABLE_TYPE_FLOAT,
+	VARIABLE_TYPE_FLOAT2,
+	VARIABLE_TYPE_FLOAT3,
+	VARIABLE_TYPE_FLOAT4,
+	
+	VARIABLE_TYPE_FLOAT2x2,
+	VARIABLE_TYPE_FLOAT3x3,
+	VARIABLE_TYPE_FLOAT4x4,
+	
+	VARIABLE_TYPE_DOUBLE,
+	VARIABLE_TYPE_DOUBLE2,
+	VARIABLE_TYPE_DOUBLE3,
+	VARIABLE_TYPE_DOUBLE4,
+	
+	VARIABLE_TYPE_MATRIX,
+}
+
+enum ResourceType
+{
+	RESOURCE_TYPE_UNKNOWN,
+	
+	RESOURCE_TYPE_IMAGE1D,
+	RESOURCE_TYPE_IMAGE2D,
+	RESOURCE_TYPE_IMAGE3D,
+	RESOURCE_TYPE_IMAGECUBE,
+	
+	RESOURCE_TYPE_ARRAY_IMAGE2D,
+	RESOURCE_TYPE_ARRAY_IMAGECUBE,
+	
+	RESOURCE_TYPE_SAMPLER,
+}
+
+resource ShaderVariable
+{
+	uint32 offset;
+	VariableType type;
+	string name;
+}
+
+resource ShaderConstants
+{
+	# Is a system buffer
+	bool isSystem;
+	
+	ShaderVariable [] values;
+}
+
+resource ShaderResource
+{
+	ResourceType type;
+	string name;
+}
+
+resource ShaderInputVariable
+{
+	bool isSystem; 
+	
+	VariableType type;
+	string name;
+}
+
+resource ShaderOutputTarget
+{
+	# ImageFormat format;
+}
+
+#
+#	Reflection
+#
+resource ShaderReflection
+{
+	# SRFL
+	uint32 signature;
+	
+	# Input
+	ShaderInputVariable [] inputs;
+	# Output
+	ShaderOutputTarget [] outputs;
+	
+	# Constants
+	ShaderConstants [] constants;
+	# Resources
+	ShaderResource [] resources;
+	
+	# Entry point
+	string vsEntryPoint;
+	string psEntryPoint;
+	string gsEntryPoint;
+	string tesEntryPoint;
+	string tevEntryPoint;
+}
+
+############################################################################################
+
+#
+#	Shader stage
+#
+resource ShaderStage
+{
+	uint32 signature;
+	
+	# shader bytecode buffers
+	byte [] code_hlslSM5;	# d3d11
+	byte [] code_hlslSM6;	# d3d12
+	byte [] code_spirv;		# vulkan
+}
+
+#
+#	Shader program
+#
+resource Shader
+{
+	# TSSH
+	uint32 signature;
+	
+	# Shader stages
+	ShaderStage vertex;			# SVTX
+	ShaderStage pixel;			# SPIX
+	ShaderStage geometry;		# SGEO
+	ShaderStage tessEval;		# STEV
+	ShaderStage tessControl;	# STEC
+	
+	# Shader reflection
+	ShaderReflection reflection;	
+}
+
+############################################################################################
