@@ -11,6 +11,7 @@ SamplerState texsample : register(s0);
 /*
 	Vertex Stage
 */
+[stage("vertex")]
 PixelInput_PosTexNorm VS(VertexInput_PosTexNorm input)
 {
 	PixelInput_PosTexNorm output = (PixelInput_PosTexNorm)0;
@@ -42,6 +43,7 @@ PixelInput_PosTexNorm VS(VertexInput_PosTexNorm input)
 /*
 	Pixel Stage
 */
+[stage("pixel")]
 float4 PS(PixelInput_PosTexNorm input) : SV_Target0
 {
 	//Normalize view space normal

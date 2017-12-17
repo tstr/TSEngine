@@ -15,6 +15,7 @@
 #include <tscore/strings.h>
 #include <tscore/types.h>
 
+#include "ShaderAnnotations.h"
 #include "ShaderType.h"
 
 namespace ts
@@ -38,6 +39,8 @@ namespace ts
 			Register reg;
 			String name;
 			std::vector<StructMember> members;
+
+			ShaderAnnotationSet Annotations;
 
 			ConstantsDeclaration() {}
 			ConstantsDeclaration(const String& name) : name(name) {}
@@ -65,6 +68,8 @@ namespace ts
 			String returnSemantic;
 			std::vector<StructMember> parameters;
 			String name;
+
+			ShaderAnnotationSet Annotations;
 
 			FunctionDeclaration() : returnType(nullptr) {}
 			FunctionDeclaration(const String& name) : name(name) {}
@@ -121,6 +126,7 @@ namespace ts
 		FunctionDeclSet m_functions;
 
 		Register parseRegister(Scanner& scanner, const String& prefixes);
+		void parseAnnotations(Scanner& scanner, ShaderAnnotationSet& Annotations);
 		void parseFunctionParameters(Scanner& scanner, std::vector<StructMember>& parameters);
 		void parseFunctionDeclaration(Scanner& scanner);
 		void parseStructMember(Scanner& scanner, StructMemberInfo& member);

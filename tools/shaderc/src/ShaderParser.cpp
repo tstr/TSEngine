@@ -134,6 +134,15 @@ ShaderParser::Register ShaderParser::parseRegister(Scanner& scan, const String& 
 	return reg;
 }
 
+void ShaderParser::parseAnnotations(Scanner& scan, ShaderAnnotationSet& Annotations)
+{
+	// [
+	scan.tryNext(TOKEN_SQUARE_OPEN);
+
+
+	// ]
+}
+
 void ShaderParser::parseFunctionParameters(Scanner& scan, std::vector<StructMember>& parameters)
 {
 	// (
