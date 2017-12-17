@@ -39,7 +39,7 @@ function(compile_shaders)
 		add_custom_command(
 			OUTPUT ${shader_object}
 			COMMAND ${SHADER_COMPILER_COMMAND} --out "${_out_dir}" ${shader_source} >> "${SHADER_COMPILER_LOG_FILE}"
-			DEPENDS ${param_SOURCES}
+			DEPENDS ${SHADER_COMPILER_TARGET} ${param_SOURCES}
 			COMMENT "Compiling shader ${shader_source}"
 			VERBATIM
 		)
