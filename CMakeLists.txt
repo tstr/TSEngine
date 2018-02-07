@@ -6,10 +6,9 @@ CMAKE_MINIMUM_REQUIRED (VERSION 3.8)
 
 PROJECT (tse)
 
-# Cache options
-option(TS_BUILD_TESTS "build tests" ON)
-option(TS_BUILD_SAMPLES "build sample applications" ON)
-set(TS_ASSET_PATH "${PROJECT_SOURCE_DIR}/assets" CACHE PATH "Path to assets directory")
+if("${PROJECT_BINARY_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+	message(FATAL_ERROR "In-source builds are not permitted")
+endif()
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     #set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE )
@@ -17,18 +16,20 @@ endif()
 
 #set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE )
 
+################################################################################################
+
+# Cache options
+option(TS_BUILD_TESTS "build tests" ON)
+option(TS_BUILD_SAMPLES "build sample applications" ON)
+set(TS_ASSET_PATH "${PROJECT_SOURCE_DIR}/assets" CACHE PATH "Path to assets directory")
+
 # Display IDE folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
-if("${PROJECT_BINARY_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
-	message(FATAL_ERROR "In-source builds are not permitted")
-endif()
-
+# CMake module locations
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external")
 
-################################################################################################
-
+# Override default project outputs
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/output/bin/")
 SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/output/bin/")
 SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/output/lib/")
@@ -47,7 +48,7 @@ include(InstallRequiredSystemLibraries)
 #	configuration file
 ################################################################################################
 
-#git
+# git information
 include(GetGitRevisionDescription)
 include(GetGitCommitDescription)
 
@@ -69,9 +70,11 @@ CONFIGURE_FILE(
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/config")
 
 ################################################################################################
-
 # External dependencies
-include(ExternalAssimp)
+################################################################################################
+
+# Include external dependencies
+include(${PROJECT_SOURCE_DIR}/external/All.cmake)
 
 if(TS_BUILD_TESTS)
 	enable_testing()
