@@ -43,6 +43,8 @@ function(add_sample)
 		"${CMAKE_CURRENT_BINARY_DIR}/${ARG_CONFIG}"
 	)
 	
+	INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/${ARG_CONFIG}" DESTINATION ${TS_BINARY_INSTALL})
+	
 endfunction()
 
 ################################################################################################

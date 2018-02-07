@@ -2,17 +2,14 @@
 #	Assimp external project module
 #####################################################################################################################
 
-message(STATUS "Configuring external project: assimp")
-
-include(ExternalProject)
-
 ExternalProject_Add(
 	ep_assimp
-	PREFIX "${CMAKE_CURRENT_BINARY_DIR}/external"
+	PREFIX ${EP_PREFIX}
 	GIT_REPOSITORY https://github.com/assimp/assimp.git
-	GIT_TAG master
+	GIT_TAG "v4.1.0"
+	
+	INSTALL_DIR ${EP_STAGE_DIR}
 	UPDATE_COMMAND ""
-	#INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
 	
 	CMAKE_ARGS
     	-DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> 
@@ -31,7 +28,7 @@ SET_TARGET_PROPERTIES(ep_assimp PROPERTIES FOLDER external)
 
 ExternalProject_Get_Property(ep_assimp INSTALL_DIR)
 
-# Ensure install directories exist
+# Ensure install directories exist at configure time
 file(MAKE_DIRECTORY "${INSTALL_DIR}/include")
 file(MAKE_DIRECTORY "${INSTALL_DIR}/lib")
 
