@@ -34,7 +34,7 @@ SET (shaderc_src
     src/ShaderParser.cpp
     src/ShaderType.h
 	src/ShaderType.cpp
-	src/ShaderAttribute.h
+	src/ShaderAnnotation.h
 	
 	src/main.cpp
 )

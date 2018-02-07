@@ -8,7 +8,7 @@ set (SHADER_COMPILER_OUTPUT_DIR "${PROJECT_SOURCE_DIR}/assets/shaderbin/")
 set (SHADER_COMPILER_COMMAND "$<TARGET_FILE:shaderc>")
 set (SHADER_COMPILER_TARGET shaderc)
 
-file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/shadergen/")
+file(MAKE_DIRECTORY "${TS_ASSET_PATH}/shadergen/")
 
 #
 #	Set up automatic recompilation of shaders

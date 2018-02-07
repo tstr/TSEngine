@@ -15,7 +15,7 @@
 #include <tscore/strings.h>
 #include <tscore/types.h>
 
-#include "ShaderAnnotations.h"
+#include "ShaderAnnotation.h"
 #include "ShaderType.h"
 
 namespace ts

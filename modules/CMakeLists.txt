@@ -4,12 +4,15 @@
 #
 ################################################################################################
 
+include(CommonHelpers)
 include(GenerateExportHeader)
 
 SET(TS_BUILD_SHARED_LIBRARIES CACHE BOOL OFF)
 
-set(ENGINE_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-set(ENGINE_FOLDER engine)
+set(MODULE_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+set(MODULE_FOLDER modules)
+set(MODULE_EXPORT_GROUP tsengine-modules)
+set(MODULE_LIST)
 
 #
 #	Add an engine module library:
@@ -43,6 +46,8 @@ function(add_engine_module)
 		${libsrcs} ${libhdrs}
 	)
 	
+	list(APPEND MODULE_LIST ${libname})
+	
 	assign_source_groups(${libsrcs} ${libhdrs})
 	
 	string(TOUPPER ${libname} macro_libname)
@@ -60,10 +65,14 @@ function(add_engine_module)
 	
 	INSTALL(
 		TARGETS ${libname}
+		EXPORT ${MODULE_EXPORT_GROUP}
 		RUNTIME DESTINATION ${TS_BINARY_INSTALL}
 		LIBRARY DESTINATION ${TS_BINARY_INSTALL}
 		ARCHIVE DESTINATION ${TS_LIBRARY_INSTALL}
 	)
+    
+    # Install PDB if it exists
+	install_target_pdb(${libname})
 	
 	# If private directory specified
 	if (NOT param_PRIVATE_DIR STREQUAL "")
@@ -71,13 +80,23 @@ function(add_engine_module)
 		TARGET_INCLUDE_DIRECTORIES(${libname} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/${param_PRIVATE_DIR}")
 		TARGET_INCLUDE_DIRECTORIES(${libname} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/${param_PRIVATE_DIR}")
 		
+		TARGET_INCLUDE_DIRECTORIES(${libname}
+			PRIVATE
+				"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${param_PRIVATE_DIR}>"
+				"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/${param_PRIVATE_DIR}>"
+		)
+		
 	endif()
 	
 	# If public directory specified
 	if (NOT param_PUBLIC_DIR STREQUAL "")
 		
-		TARGET_INCLUDE_DIRECTORIES(${libname} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${param_PUBLIC_DIR}")
-		TARGET_INCLUDE_DIRECTORIES(${libname} PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/${param_PUBLIC_DIR}")
+		TARGET_INCLUDE_DIRECTORIES(${libname}
+			PUBLIC
+				"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${param_PUBLIC_DIR}>"
+				"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/${param_PUBLIC_DIR}>"
+				"$<INSTALL_INTERFACE:${TS_HEADER_INSTALL}>"
+		)
 		
 		INSTALL(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${param_PUBLIC_DIR}/" DESTINATION ${TS_HEADER_INSTALL})
 		
@@ -85,7 +104,7 @@ function(add_engine_module)
 	
 	SET_TARGET_PROPERTIES(
 		${libname}
-		PROPERTIES FOLDER ${ENGINE_FOLDER}
+		PROPERTIES FOLDER ${MODULE_FOLDER}
 	)
 	
 endfunction()
@@ -99,3 +118,9 @@ ADD_SUBDIRECTORY(tsengine)
 ADD_SUBDIRECTORY(tsgraphics)
 
 ################################################################################################
+
+# Import file
+# install(
+    # EXPORT ${MODULE_EXPORT_GROUP}
+    # DESTINATION "lib/cmake"
+# )

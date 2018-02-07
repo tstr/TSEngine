@@ -6,7 +6,7 @@
 
 #include <tsconfig.h>
 
-#ifdef TS_PLATFORM_WIN32
+#ifdef WIN32
 
 #include <windows.h>
 #include <ctime>

@@ -4,7 +4,7 @@
 
 #include "Reader.h"
 
-#include "schemas/Model.rcs.h"
+#include "tsgraphics/schemas/Model.rcs.h"
 
 using namespace ts;
 using namespace tsr;
