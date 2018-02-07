@@ -3,9 +3,17 @@
 */
 
 //Operating system
-#cmakedefine TS_PLATFORM_WIN32
-#cmakedefine TS_PLATFORM_UNIX
-#cmakedefine TS_PLATFORM_APPLE
+#ifndef WIN32
+#cmakedefine WIN32
+#endif
+
+#ifndef UNIX
+#cmakedefine UNIX
+#endif
+
+#ifndef APPLE
+#cmakedefine APPLE
+#endif
 
 //Engine components are built as shared libraries
 #cmakedefine TS_BUILD_SHARED_LIBRARIES

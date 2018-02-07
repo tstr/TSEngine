@@ -14,7 +14,7 @@
 #include <vector>
 #include <map>
 
-#include "schemas/Shader.rcs.h"
+#include "tsgraphics/schemas/Shader.rcs.h"
 
 using namespace std;
 using namespace ts;

@@ -4,13 +4,20 @@
 #
 ################################################################################################
 
+include(CommonHelpers)
+
 function(install_tools)
 	INSTALL(
 		TARGETS ${ARGV}
-		RUNTIME DESTINATION "${TS_BINARY_INSTALL}/tools"
-		LIBRARY DESTINATION "${TS_BINARY_INSTALL}/tools"
-		ARCHIVE DESTINATION "${TS_LIBRARY_INSTALL}/tools"
+		RUNTIME DESTINATION "${TS_BINARY_INSTALL}"
+		LIBRARY DESTINATION "${TS_BINARY_INSTALL}"
+		ARCHIVE DESTINATION "${TS_LIBRARY_INSTALL}"
 	)
+	
+	foreach(_target ${ARGV})
+		install_target_pdb(${_target})
+	endforeach()
+	
 endfunction()
 
 #engine tools
