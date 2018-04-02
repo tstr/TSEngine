@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace ts
 {
 	typedef char int8;
@@ -22,8 +24,9 @@ namespace ts
 	typedef wchar_t wchar;
 	typedef unsigned char byte;
 
-	typedef int64 intptr;
-	typedef int64 ptrdiff;
+	typedef intptr_t intptr;
+	typedef uintptr_t uintptr;
+	typedef ptrdiff_t ptrdiff;
 
 	typedef uint32 uint;
 }
