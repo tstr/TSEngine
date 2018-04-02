@@ -24,14 +24,14 @@ namespace ts
 	private:
 		
 		//Range
-		void* m_start;
-		void* m_end;
+		uintptr m_start;
+		uintptr m_end;
 
 		//True if class owns memory
 		bool m_owns = false;
 		
 		//Stack pointer
-		std::atomic<void*> m_ptr;
+		std::atomic<uintptr> m_ptr;
 		
 		inline void* alignPtr(void* ptr, size_t alignment)
 		{
@@ -49,9 +49,9 @@ namespace ts
 			Construct an empty allocator
 		*/
 		LinearAllocator() :
-			m_start(nullptr),
-			m_end(nullptr),
-			m_ptr(nullptr),
+			m_start(0),
+			m_end(0),
+			m_ptr(0),
 			m_owns(false)
 		{}
 		
@@ -59,12 +59,12 @@ namespace ts
 			Preallocate a chunk of memory of given capacity
 		*/
 		LinearAllocator(size_t capacity) :
-			m_start(nullptr),
-			m_end(nullptr),
+			m_start(0),
+			m_end(0),
 			m_owns(true)
 		{
-			m_start = (void*)new byte[capacity];
-			m_end = (void*)((size_t)m_start + capacity);
+			m_start = (uintptr)new byte[capacity];
+			m_end = (uintptr)((size_t)m_start + capacity);
 			m_ptr = m_start;
 		}
 		
@@ -73,8 +73,8 @@ namespace ts
 		*/
 		LinearAllocator(void* begin, void* end)
 		{
-			m_start = begin;
-			m_end = end;
+			m_start = (uintptr)begin;
+			m_end = (uintptr)end;
 			m_ptr = m_start;
 			m_owns = false;
 		}
@@ -91,11 +91,11 @@ namespace ts
 		LinearAllocator(const LinearAllocator&) = delete;
 		
 		//Allocate a chunk of memory from the stack
-		void* alloc(size_t size, size_t alignment = 16)
+		void* alloc(ptrdiff size, ptrdiff alignment = 16)
 		{
 			size += alignment - 1;
 			
-			void* mem = m_ptr.fetch_add(size);
+			auto mem = (void*)m_ptr.fetch_add(size);
 			
 			if (((size_t)mem + size) > (size_t)m_end)
 			{
@@ -130,8 +130,8 @@ namespace ts
 				delete[] (byte*)m_start;
 			}
 
-			m_start = (void*)new byte[capacity];
-			m_end = (void*)((size_t)m_start + capacity);
+			m_start = (uintptr)new byte[capacity];
+			m_end = (uintptr)((size_t)m_start + capacity);
 			m_ptr = m_start;
 
 			m_owns = true;
@@ -146,8 +146,8 @@ namespace ts
 				delete[](byte*)m_start;
 			}
 
-			m_start = start;
-			m_end = end;
+			m_start = (uintptr)start;
+			m_end = (uintptr)end;
 			m_ptr = m_start;
 
 			m_owns = false;
@@ -157,32 +157,32 @@ namespace ts
 
 		const void* getStart() const
 		{
-			return m_start;
+			return (const void*)m_start;
 		}
 
 		const void* getTop() const
 		{
-			return m_ptr;
+			return (const void*)m_ptr.load();
 		}
 
 		const void* getEnd() const
 		{
-			return m_end;
+			return (const void*)m_end;
 		}
 
 		void* getStart()
 		{
-			return m_start;
+			return (void*)m_start;
 		}
 
 		void* getTop()
 		{
-			return m_ptr;
+			return (void*)m_ptr.load();
 		}
 
 		void* getEnd()
 		{
-			return m_end;
+			return (void*)m_end;
 		}
 	};
 

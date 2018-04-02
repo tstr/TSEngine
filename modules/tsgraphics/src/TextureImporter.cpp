@@ -39,7 +39,7 @@ enum EState
 CTextureImporter::CTextureImporter()
 {
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-	tsassert(!Gdiplus::GdiplusStartup(&m_token, &gdiplusStartupInput, 0));
+	tsassert(!Gdiplus::GdiplusStartup((ULONG_PTR*)&m_token, &gdiplusStartupInput, 0));
 }
 
 CTextureImporter::~CTextureImporter()

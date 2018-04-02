@@ -74,7 +74,7 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}/config")
 ################################################################################################
 
 # Include external dependencies
-include(${PROJECT_SOURCE_DIR}/external/All.cmake)
+include(${PROJECT_SOURCE_DIR}/external/External.cmake)
 
 if(TS_BUILD_TESTS)
 	enable_testing()

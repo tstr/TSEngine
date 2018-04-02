@@ -31,7 +31,7 @@ namespace ts
 	{
 	private:
 
-		uint64 m_token = 0;
+		uintptr m_token = 0;
 		uint32 m_state = 0;
 
 		std::vector<uint32> m_buffer;
