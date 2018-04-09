@@ -1,0 +1,21 @@
+#
+#   Data Builder tool
+#
+
+include(PythonUtils)
+
+set(DATABUILD_INPUT_DIR  "${PROJECT_SOURCE_DIR}/data")
+set(DATABUILD_OUTPUT_DIR "${PROJECT_BINARY_DIR}/data")
+set(DATABUILD_TOOL "${PYWRAPPER_COMMAND}" "${PROJECT_SOURCE_DIR}/tools/dbuild.py")
+
+file(MAKE_DIRECTORY ${DATABUILD_OUTPUT_DIR})
+
+add_custom_target(DATA_BUILD ALL
+	WORKING_DIRECTORY ${DATABUILD_OUTPUT_DIR}
+    COMMAND ${DATABUILD_TOOL} build -i ${DATABUILD_INPUT_DIR}
+)
+
+set_target_properties(
+	DATA_BUILD
+	PROPERTIES FOLDER tools
+)

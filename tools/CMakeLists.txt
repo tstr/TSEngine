@@ -25,14 +25,15 @@ ADD_SUBDIRECTORY(CLIutil)
 ADD_SUBDIRECTORY(rcschema)
 ADD_SUBDIRECTORY(modelbuild)
 ADD_SUBDIRECTORY(shaderc)
-ADD_SUBDIRECTORY(texbuild)
+
+# resource connectors
+add_subdirectory(connectors)
 
 SET_TARGET_PROPERTIES(
 	rcschema
 	CLIutil
 	modelbuild
 	shaderc
-	texbuild
 	PROPERTIES FOLDER tools
 )
 
