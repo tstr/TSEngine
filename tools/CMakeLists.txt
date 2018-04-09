@@ -26,8 +26,8 @@ ADD_SUBDIRECTORY(rcschema)
 ADD_SUBDIRECTORY(modelbuild)
 ADD_SUBDIRECTORY(shaderc)
 
-# resource connectors
-add_subdirectory(connectors)
+# resource exporters
+add_subdirectory(exporters)
 
 SET_TARGET_PROPERTIES(
 	rcschema

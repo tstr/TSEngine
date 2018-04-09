@@ -1,5 +1,5 @@
 """
-    Connector module
+    Exporter module
 """
 
 import sys
@@ -7,15 +7,15 @@ import importlib
 import pkgutil
 import os, os.path as path
 
-class Connector:
+class Exporter:
     """
-        Connector base interface
+        Exporter base interface
     """
     pass
 
-def load_connectors(paths):
+def load_exporters(paths):
     """
-        Load a list of connector classes from a given set of module paths
+        Load a list of exporter classes from a given set of module paths
     """
     # Extend module search path
     sys.path.extend(paths)
@@ -24,10 +24,10 @@ def load_connectors(paths):
     for importer, module_name, ispkg in pkgutil.iter_modules(path=paths):
         importlib.import_module(module_name)
 
-    return Connector.__subclasses__()
+    return Exporter.__subclasses__()
 
-def get_connectors():
+def get_exporters():
     """
-        Returns list of available connector classes
+        Returns list of available exporter classes
     """
-    return Connector.__subclasses__()
+    return Exporter.__subclasses__()
