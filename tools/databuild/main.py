@@ -1,19 +1,18 @@
 
 import os, os.path as path
-from .connectors import load_connectors
+from .exporters import load_exporters
 
 """
     DataBuild command line entry point
 """
 def main(args):
     
-    # Find connector directory
-    con_dir = path.abspath(args[0])
-    con_dir = path.abspath(path.join(con_dir, os.pardir, "connectors"))
+    # Find exporter directory
+    exp_dir = path.abspath(args[0])
+    exp_dir = path.abspath(path.join(exp_dir, os.pardir, "exporters"))
 
-    # Load connectors
-    for con in load_connectors([con_dir]):
-        print(con)
+    # Load exporter classes
+    for exp in load_exporters([exp_dir]):
+        print(exp)
 
     print(args)
-    return 0

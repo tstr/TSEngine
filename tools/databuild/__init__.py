@@ -2,5 +2,5 @@
     Public API
 """
 
-from .connectors import Connector
+from .exporters import Exporter
 from .main import main
