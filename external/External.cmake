@@ -2,6 +2,11 @@
 #   External dependency management
 #
 
+if(DEFINED __EXTERNAL_INCLUDED)
+    return()
+endif()
+set(__EXTERNAL_INCLUDED TRUE)
+
 # Workaround for not being able to alias imported targets
 macro(add_imported_alias _alias _target)
     add_library(${_alias} INTERFACE IMPORTED)
@@ -12,6 +17,9 @@ macro(add_imported_alias _alias _target)
 endmacro()
 
 option (TS_USE_CONAN "Use Conan to fetch dependencies" TRUE)
+
+find_package(PythonInterp REQUIRED)
+find_package(PythonLibs REQUIRED)
 
 if (TS_USE_CONAN)
 
@@ -43,12 +51,17 @@ if (TS_USE_CONAN)
 
     # Run Conan
     conan_cmake_run(
-        CONANFILE "external/conanfile.txt"
+        CONANFILE "conanfile.txt"
         BASIC_SETUP CMAKE_TARGETS NO_OUTPUT_DIRS
     )
 
+    # Pybind dependencies
+    target_include_directories(CONAN_PKG::pybind11 INTERFACE ${PYTHON_INCLUDE_DIR})
+    target_link_libraries(CONAN_PKG::pybind11 INTERFACE ${PYTHON_LIBRARY})
+
     # Set aliases
     add_imported_alias(assimp CONAN_PKG::Assimp)
+    add_imported_alias(pybind11 CONAN_PKG::pybind11)
 
 else()
 

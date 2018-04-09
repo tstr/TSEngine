@@ -1,5 +1,2 @@
-
-#Only ignore the build folder
-
-/build
-/assets/shaderbin
+__pycache__/
+build/

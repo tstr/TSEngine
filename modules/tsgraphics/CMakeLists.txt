@@ -98,7 +98,7 @@ TARGET_LINK_LIBRARIES(tsgraphics PUBLIC tscore)
 #	Generate resource schema headers
 #####################################################################################
 
-include(ResourceSchemaGen)
+include(ResourceSchemaTool)
 
 set(schema_files
 	inc/tsgraphics/schemas/Model.schema
