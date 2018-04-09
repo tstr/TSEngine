@@ -32,6 +32,6 @@ endif()
 #   - adds runtime output dir
 #   - adds project root
 set(PYWRAPPER_COMMAND
-    "${CMAKE_COMMAND}" -E env "PYTHONPATH=${PROJECT_BINARY_DIR}/bin/$<CONFIG>/${_sep}${PROJECT_SOURCE_DIR}${_sep}$ENV{PYTHONPATH}"
+    "${CMAKE_COMMAND}" -E env "PYTHONPATH=${PROJECT_BINARY_DIR}/bin/$<CONFIG>/${_sep}${PROJECT_SOURCE_DIR}${_sep}${PROJECT_SOURCE_DIR}/tools/${_sep}$ENV{PYTHONPATH}"
     "${PYTHON_EXECUTABLE}"
 )
