@@ -1,6 +1,6 @@
 
-import os, os.path as path
-from .exporters import load_exporters
+import os
+from .context import Context
 
 """
     DataBuild command line entry point
@@ -8,20 +8,16 @@ from .exporters import load_exporters
 def main(args):
     
     # Find exporter directory
-    exp_dir = path.abspath(args[0])
-    exp_dir = path.abspath(path.join(exp_dir, os.pardir, "exporters"))
+    exp_dir = os.path.abspath(args[0])
+    exp_dir = os.path.abspath(os.path.join(exp_dir, os.pardir, "exporters"))
 
-    exporter_set = load_exporters([exp_dir])
-    root_dir = args[1]
+    data_dir = args[1]
 
-    # Load exporter classes
-    for exp in exporter_set:
-        print(exp)
+    print("data-dir:    ", data_dir)
+    print("output-dir:  ", os.getcwd())
+    print("exporter-dir:", exp_dir)
 
-    for dirpath, dirnames, filenames in os.walk(root_dir):
-        for file in filenames:
-            for exp in exporter_set:
-                if exp.exportable(file):
-                    print(exp.__name__, "=>", file)
-    
+    ctx = Context(os.getcwd(), exp_dir, data_dir)
+    ctx.process()
+
     print(args)

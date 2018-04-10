@@ -5,7 +5,6 @@
 ################################################################################################
 
 include(CommonHelpers)
-include(ShaderCompiler)
 
 set(SAMPLES_FOLDER samples)
 
@@ -23,8 +22,6 @@ function(add_sample)
 	)
 	
 	install_target_pdb(${ARG_NAME})
-	
-	target_compile_shaders(TARGET ${ARG_NAME} SOURCES ${ARG_SHADERS})
 	
 	INSTALL(
 		TARGETS ${ARG_NAME}
