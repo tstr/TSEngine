@@ -17,5 +17,5 @@ add_custom_target(DATA_BUILD ALL
 
 set_target_properties(
 	DATA_BUILD
-	PROPERTIES FOLDER tools
+	PROPERTIES FOLDER data
 )
