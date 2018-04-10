@@ -11,18 +11,39 @@ class Exporter:
     """
         Exporter base interface
     """
-    def __init__(self, filepath):
-        self.filepath = filepath
+    def __init__(self, filepath, context):
+        self.context = context
+        self.source = filepath
 
     @staticmethod
     def exportable(filename):
         return False
 
-    def outputs(self): pass
-    def depends(self): pass
-    def depfile(self): pass
-    
-    def export(self): pass
+    """
+        Fetch dependency info
+    """
+    def info(self, deps): pass
+
+    """
+        Run the exporter
+    """
+    def run(self): pass
+
+    # Utility methods
+    def rel_source(self):
+        return os.path.relpath(self.source, self.context.datadir)
+
+
+class DependencyInfo:
+    """
+        Dependency info structure
+    """
+    def __init__(self):
+        self.inputs = []
+        self.outputs = []
+        self.deps = []
+        self.depfile = ""
+
 
 def load_exporters(paths):
     """

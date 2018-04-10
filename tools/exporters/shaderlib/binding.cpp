@@ -1,89 +1,30 @@
 /*
-	Shader compiler tool
-
-	usage:
-		
-		shaderc -t manifest.shm -o shaders/bin/ -s shaders/
-
-		-t : target manifest, specifies list of shaders to compile and how to compile them
-		-s : location of shader source files
-		-o : output directory for compiled shaders
-
-
-	directory structure:
-		
-		shaders/
-			bin/
-				cache/
-					00001/
-						28f721f7391ae39.cache
-						...
-
-					00002/
-						28f721f7391ae39.cache
-						...
-
-				shader.tsh
-				...
-					
-			src/
-				shader.vs
-				shader.ps
-				...
-
-			manifest.shm
-
-
-	manifest.shm example:
-		
-		shader Shader
-		{
-			stage vertex
-			{
-				file = "shader.vs";
-			}
-
-			stage pixel
-			{
-				file = "shader.ps";
-			}
-		}
+    ShaderLib python bindings
 */
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
-
-#include <tscore/path.h>
-#include <tscore/pathutil.h>
-
 #include <iostream>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/iostream.h>
 
-#include <cli/Arguments.h>
-#include <cli/Constants.h>
+#include "src/ShaderCompiler.h"
+#include "src/ShaderParser.h"
+#include "src/Preprocessor.h"
 
-#include "ShaderCompiler.h"
-#include "ShaderParser.h"
-#include "Preprocessor.h"
-
-/////////////////////////////////////////////////////////////////////////////////////////////////
+namespace py = pybind11;
 
 using namespace std;
 using namespace ts;
 
-int main(int argc, char** argv)
+/*
+	Compile a list of shader sources and store the resulting objects in the given output directory
+*/
+bool compile(const std::vector<std::string>& shaderFileNames, const std::string& outputDirName)
 {
-	//Arguments
-	String outputDirName;
-	vector<String> shaderFileNames;
-
-	//Parse command line arguments
-	cli::ArgumentReader args;
-	args.addParameter("out", outputDirName, "Output directory for compiled shaders");
-	args.setUnused(shaderFileNames);
-	
-	if (int err = args.parse(argc, argv))
-	{
-		return cli::CLI_EXIT_INVALID_ARGUMENT;
-	}
+	py::scoped_ostream_redirect stream(
+        std::cout,                               // std::ostream&
+        py::module::import("sys").attr("stdout") // Python output
+    );
 
 	// existence of output directory does not neeed to be validated
 	// it can be created on the fly
@@ -102,12 +43,12 @@ int main(int argc, char** argv)
 			//Preprocessing step
 			CPreprocessor pp;
 			pp.setCommentStrip(true);
-			
+
 			//Strip comments and resolve preprocessor directives
 			if (EPreprocessorStatus ppStatus = pp.process(shaderPath, shaderSource))
 			{
 				cerr << "Error " << ppStatus << " unable to preprocess source file \"" << shaderPath.str() << "\"\n";
-				return cli::CLI_EXIT_FAILURE;
+				return false;
 			}
 			else
 			{
@@ -142,7 +83,7 @@ int main(int argc, char** argv)
 					if (shaderObjectFile.fail())
 					{
 						cerr << "Unable to create shader object file \"" << objectPath.str() << "\"\n";
-						return cli::CLI_EXIT_FAILURE;
+						return false;
 					}
 
 					//Debug print
@@ -152,7 +93,7 @@ int main(int argc, char** argv)
 					if (int err = compileEngine.compile(shaderSource, shaderObjectFile, opt))
 					{
 						cerr << "Unable to compile source file file \"" << shaderPath.str() << "\"\n";
-						return cli::CLI_EXIT_FAILURE;
+						return false;
 					}
 
 					//Force writes to file just in case
@@ -161,18 +102,21 @@ int main(int argc, char** argv)
 				else
 				{
 					cerr << "Unable to parse metadata from source file \"" << shaderPath.str() << "\"\n";
-					return cli::CLI_EXIT_FAILURE;
+					return false;
 				}
 			}
 		}
 		else
 		{
 			cerr << "Unable to find source file \"" << shaderPath.str() << "\"\n";
-			return cli::CLI_EXIT_FAILURE;
+			return false;
 		}
 	}
 
-	return cli::CLI_EXIT_SUCCESS;
+	return true;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
+PYBIND11_MODULE(shaderlib, m)
+{
+    m.def("compile", &compile);
+}

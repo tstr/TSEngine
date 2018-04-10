@@ -21,19 +21,13 @@ function(install_tools)
 endfunction()
 
 #engine tools
-ADD_SUBDIRECTORY(CLIutil)
-ADD_SUBDIRECTORY(rcschema)
-ADD_SUBDIRECTORY(modelbuild)
-ADD_SUBDIRECTORY(shaderc)
-
-# resource exporters
+add_subdirectory(CLIutil)
+add_subdirectory(rcschema)
 add_subdirectory(exporters)
 
 SET_TARGET_PROPERTIES(
 	rcschema
 	CLIutil
-	modelbuild
-	shaderc
 	PROPERTIES FOLDER tools
 )
 
