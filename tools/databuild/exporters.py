@@ -11,7 +11,18 @@ class Exporter:
     """
         Exporter base interface
     """
-    pass
+    def __init__(self, filepath):
+        self.filepath = filepath
+
+    @staticmethod
+    def exportable(filename):
+        return False
+
+    def outputs(self): pass
+    def depends(self): pass
+    def depfile(self): pass
+    
+    def export(self): pass
 
 def load_exporters(paths):
     """
