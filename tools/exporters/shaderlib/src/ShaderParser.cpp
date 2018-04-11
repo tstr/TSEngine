@@ -64,7 +64,6 @@ ShaderParser::FunctionDeclaration ShaderParser::getFunction(const String& name) 
 	}
 }
 
-
 bool ShaderParser::isResource(const String& name) const
 {
 	return m_resources.find(ResourceDeclaration(name)) != m_resources.end();
@@ -134,12 +133,39 @@ ShaderParser::Register ShaderParser::parseRegister(Scanner& scan, const String& 
 	return reg;
 }
 
-void ShaderParser::parseAnnotations(Scanner& scan, ShaderAnnotationSet& Annotations)
+void ShaderParser::parseAnnotations(Scanner& scan, ShaderAnnotationSet& annotations)
 {
 	// [
-	scan.tryNext(TOKEN_SQUARE_OPEN);
+	if (scan.isNext(TOKEN_SQUARE_OPEN))
+	{
+		scan.next();
 
+		while (!scan.isNext(TOKEN_SQUARE_CLOSE))
+		{
+			//Annotation name
+			ShaderAnnotation a(scan.tryNext(TOKEN_IDENTIFIER));
 
+			//Annotation args
+			//(
+			if (scan.isNext(TOKEN_BRACKET_OPEN))
+			{
+				scan.next();
+
+				while (!scan.isNext(TOKEN_BRACKET_CLOSE))
+				{
+					scan.next();
+				}
+			}
+			//)
+
+			annotations.add(a);
+
+			if (scan.isNext(TOKEN_COMMA))
+				scan.next();
+		}
+
+		scan.next();
+	}
 	// ]
 }
 
@@ -188,9 +214,11 @@ void ShaderParser::parseFunctionParameters(Scanner& scan, std::vector<StructMemb
 
 void ShaderParser::parseFunctionDeclaration(Scanner& scan)
 {
-	//<type> <identifier> ( [<typeA> <param0>, <typeB> <param1>, ...] ) [: <semantic>] { ... }
+	//[<annotations>] <type> <identifier> ( [<typeA> <param0>, <typeB> <param1>, ...] ) [: <semantic>] { ... }
 
 	FunctionDeclaration func;
+
+	parseAnnotations(scan, func.annotations);
 
 	func.returnType = m_types->type(scan.tryNext(TOKEN_IDENTIFIER));
 
@@ -256,10 +284,13 @@ void ShaderParser::parseResourceDeclaration(Scanner& scan)
 
 void ShaderParser::parseConstantsDeclaration(Scanner& scan)
 {
+	ConstantsDeclaration constants;
+
+	parseAnnotations(scan, constants.annotations);
+
 	scan.tryNext(TOKEN_CBUFFER);
 	{
 		//struct <identifier>
-		ConstantsDeclaration constants;
 		constants.name = scan.tryNext(TOKEN_IDENTIFIER).text;
 
 		// : register(b0)
@@ -427,7 +458,7 @@ bool ShaderParser::parse(istream& stream)
 	catch (ParserException& e)
 	{
 		//Log error
-		//cerr << e.what() << endl;
+		cerr << e.what() << endl;
 		m_state = false;
 	}
 

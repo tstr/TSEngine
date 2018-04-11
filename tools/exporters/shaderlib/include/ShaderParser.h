@@ -40,7 +40,7 @@ namespace ts
 			String name;
 			std::vector<StructMember> members;
 
-			ShaderAnnotationSet Annotations;
+			ShaderAnnotationSet annotations;
 
 			ConstantsDeclaration() {}
 			ConstantsDeclaration(const String& name) : name(name) {}
@@ -69,7 +69,7 @@ namespace ts
 			std::vector<StructMember> parameters;
 			String name;
 
-			ShaderAnnotationSet Annotations;
+			ShaderAnnotationSet annotations;
 
 			FunctionDeclaration() : returnType(nullptr) {}
 			FunctionDeclaration(const String& name) : name(name) {}
@@ -126,7 +126,7 @@ namespace ts
 		FunctionDeclSet m_functions;
 
 		Register parseRegister(Scanner& scanner, const String& prefixes);
-		void parseAnnotations(Scanner& scanner, ShaderAnnotationSet& Annotations);
+		void parseAnnotations(Scanner& scanner, ShaderAnnotationSet& annotations);
 		void parseFunctionParameters(Scanner& scanner, std::vector<StructMember>& parameters);
 		void parseFunctionDeclaration(Scanner& scanner);
 		void parseStructMember(Scanner& scanner, StructMemberInfo& member);

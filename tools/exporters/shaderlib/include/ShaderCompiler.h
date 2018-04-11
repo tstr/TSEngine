@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "common.h"
+#include "ShaderCommon.h"
 
 #include <tscore/path.h>
 #include <tscore/system/memory.h>
