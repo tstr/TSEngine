@@ -3,17 +3,17 @@
 """
 
 from os.path import splitext, dirname, join
-from databuild import Exporter
+import databuild
 import shaderlib
 
-class Shader(Exporter):
+class Shader(databuild.Exporter):
     def exportable(filename):
         root, ext = splitext(filename)
         return ext in [".fx", ".hlsl"]
 
     def info(self, deps):
         root, ext = splitext(self.rel_source())
-        deps.outputs = [root + ".tsh"]
+        deps["outputs"] = [root + ".tsh"]
 
     def run(self):
         # Output dir of current source

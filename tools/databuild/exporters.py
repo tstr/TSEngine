@@ -31,18 +31,7 @@ class Exporter:
 
     # Utility methods
     def rel_source(self):
-        return os.path.relpath(self.source, self.context.datadir)
-
-
-class DependencyInfo:
-    """
-        Dependency info structure
-    """
-    def __init__(self):
-        self.inputs = []
-        self.outputs = []
-        self.deps = []
-        self.depfile = ""
+        return os.path.relpath(self.source, self.context.datdir)
 
 
 def load_exporters(paths):
