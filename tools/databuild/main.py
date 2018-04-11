@@ -18,6 +18,6 @@ def main(args):
     print("exporter-dir:", exp_dir)
 
     ctx = Context(os.getcwd(), exp_dir, data_dir)
-    ctx.process()
+    ctx.configure()
 
     print(args)

@@ -1,0 +1,2 @@
+# python script dependencies
+ninja==1.8.2

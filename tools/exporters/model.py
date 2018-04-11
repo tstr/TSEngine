@@ -17,7 +17,7 @@ class Model(Exporter):
 
     def info(self, deps):
         root, ext = splitext(self.rel_source())
-        deps.outputs = [root + ".tsm"]
+        deps["outputs"] = [root + ".tsm"]
 
     def run(self):
         # Output dir of current file

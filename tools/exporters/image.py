@@ -13,12 +13,12 @@ class Image(Exporter):
         return ext in [".tga", ".png", ".jpg", ".JPG"]
 
     def info(self, deps):
-        deps.outputs = [self.rel_source()]
+        deps["outputs"] = [self.rel_source()]
 
     def run(self):
         # Output dir of current source
         outdir = join(self.context.outdir, dirname(self.rel_source()))
-
+        print("copying image:", self.rel_source())
         makedirs(outdir, exist_ok=True)
         copy(src=self.source, dst=outdir)
 
