@@ -136,7 +136,7 @@ namespace ts
 		//Checks if a given handle has been allocated
 		bool exists(Handle_t h) const
 		{
-			return (m_generations[(Idx_t)getIdx(h)] == getGen(h));
+			return ((Idx_t)getIdx(h) < m_generations.size()) && (m_generations[(Idx_t)getIdx(h)] == getGen(h));
 		}
 
 		//Free's the given handle for reuse

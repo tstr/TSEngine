@@ -21,7 +21,6 @@ endif()
 # Cache options
 option(TS_BUILD_TESTS "build tests" ON)
 option(TS_BUILD_SAMPLES "build sample applications" ON)
-set(TS_ASSET_PATH "${PROJECT_SOURCE_DIR}/assets" CACHE PATH "Path to assets directory")
 
 # Display IDE folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
