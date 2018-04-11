@@ -4,60 +4,20 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <assimp/Importer.hpp>
+#include <pybind11/iostream.h>
+
+#include "Builder.h"
 
 namespace py = pybind11;
 
-class ModelBuilder
-{
-private:
-
-	//Assimp importer
-    Assimp::Importer m_aiImporter;
-
-	//Supported file extensions
-	std::unordered_set<std::string> m_extensions;
-
-public:
-
-    ModelBuilder()
-	{
-		std::string ext;
-		std::string extList;
-		m_aiImporter.GetExtensionList(extList);
-
-		auto it = extList.begin();
-
-		//Parse ; separated list
-		while (it != extList.end())
-		{
-			ext.clear();
-
-			assert(*it == '*'); it++;
-			assert(*it == '.'); it++;
-
-			while (it != extList.end() && *it != ';')
-			{
-				ext += *it;
-				it++;
-			}
-
-			if (it != extList.end() && *it == ';')
-				it++;
-
-			m_extensions.insert(ext);
-		}
-	}
-
-    const std::unordered_set<std::string>& getExtensions()
-    {
-		return m_extensions;
-    }
-};
-
 PYBIND11_MODULE(modellib, m)
 {
-	py::class_<ModelBuilder>(m, "ModelBuilder")
-		.def(py::init<>())
-		.def("supported_extensions", &ModelBuilder::getExtensions);
+	using Redirect = py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>;
+
+	py::class_<Model>(m, "ModelBuilder")
+		.def(py::init<>(), Redirect())
+		.def("imp", &Model::imp, Redirect())
+		.def("exp", &Model::exp, Redirect())
+		.def("supported_extensions", &Model::getExtensions)
+		.def("error_string", &Model::getErrorString);
 }
