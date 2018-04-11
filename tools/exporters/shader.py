@@ -19,5 +19,6 @@ class Shader(Exporter):
         # Output dir of current source
         outdir = join(self.context.bindir, dirname(self.rel_source()))
         # Compile shader source
+        print("compiling:", self.rel_source())
         if not shaderlib.compile([self.source], outdir):
             raise Exception("Unable to compile shader")

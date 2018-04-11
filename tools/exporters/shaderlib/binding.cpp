@@ -7,9 +7,9 @@
 #include <pybind11/stl.h>
 #include <pybind11/iostream.h>
 
-#include "src/ShaderCompiler.h"
-#include "src/ShaderParser.h"
-#include "src/Preprocessor.h"
+#include "ShaderCompiler.h"
+#include "ShaderParser.h"
+#include "Preprocessor.h"
 
 namespace py = pybind11;
 
@@ -85,9 +85,6 @@ bool compile(const std::vector<std::string>& shaderFileNames, const std::string&
 						cerr << "Unable to create shader object file \"" << objectPath.str() << "\"\n";
 						return false;
 					}
-
-					//Debug print
-					cout << shaderPath.str() << " -> " << objectPath.str() << endl;
 
 					//Compilation step
 					if (int err = compileEngine.compile(shaderSource, shaderObjectFile, opt))
