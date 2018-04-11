@@ -129,7 +129,6 @@ bool HLSLCompiler::compile(const std::string& code, MemoryBuffer& codebuffer, co
 	if (FAILED(hr))
 	{
 		cerr << ((const char*)errors->GetBufferPointer());
-
 		return false;
 	}
 

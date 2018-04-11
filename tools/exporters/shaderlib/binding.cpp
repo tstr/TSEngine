@@ -21,11 +21,6 @@ using namespace ts;
 */
 bool compile(const std::vector<std::string>& shaderFileNames, const std::string& outputDirName)
 {
-	py::scoped_ostream_redirect stream(
-        std::cout,                               // std::ostream&
-        py::module::import("sys").attr("stdout") // Python output
-    );
-
 	// existence of output directory does not neeed to be validated
 	// it can be created on the fly
 	Path outputDir = outputDirName;
@@ -115,5 +110,8 @@ bool compile(const std::vector<std::string>& shaderFileNames, const std::string&
 
 PYBIND11_MODULE(shaderlib, m)
 {
-    m.def("compile", &compile);
+    m.def("compile",
+		&compile,
+		py::call_guard<py::scoped_ostream_redirect, py::scoped_estream_redirect>()
+	);
 }

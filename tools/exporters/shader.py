@@ -17,7 +17,7 @@ class Shader(Exporter):
 
     def run(self):
         # Output dir of current source
-        outdir = join(self.context.bindir, dirname(self.rel_source()))
+        outdir = join(self.context.outdir, dirname(self.rel_source()))
         # Compile shader source
         print("compiling:", self.rel_source())
         if not shaderlib.compile([self.source], outdir):

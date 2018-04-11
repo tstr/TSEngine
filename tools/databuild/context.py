@@ -6,9 +6,9 @@ import os
 from .exporters import load_exporters, get_exporters, DependencyInfo
 
 class Context:
-    def __init__(self, bindir, expdir, datadir):
+    def __init__(self, outdir, expdir, datadir):
         # Attributes
-        self.bindir = bindir
+        self.outdir = outdir
         self.expdir = expdir
         self.datadir = datadir
 
