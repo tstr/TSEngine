@@ -3,10 +3,11 @@
 """
 
 import os
+import subprocess
 from .exporters import load_exporters, get_exporters
 
 from ninja.ninja_syntax import Writer
-from ninja import _program as call_ninja
+from ninja import _program as call_ninja, BIN_DIR as __NINJA_DIR__
 
 class Context:
     def __init__(self, outdir, expdir, datadir):
@@ -16,8 +17,7 @@ class Context:
         self.datdir = datadir
 
         # Load exporter classes
-        for exp in load_exporters([self.expdir]):
-            print(exp)
+        load_exporters([self.expdir])
 
     def configure(self):
         """
@@ -28,7 +28,9 @@ class Context:
         for dirpath, dirnames, filenames in os.walk(self.datdir):
             for file in filenames:
                 data_files.append(os.path.join(dirpath, file))
-
+        
+        launcher_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../dbuild.py"))
+        
         # Setup makefile
         with open(os.path.join(self.outdir, "build.ninja"), "w") as buildfile:
             n = Writer(buildfile)
@@ -36,10 +38,10 @@ class Context:
             n.variable("OUTDIR", self.outdir)
             n.variable("DATDIR", self.datdir)
             n.variable("EXPDIR", self.expdir)
-            #n.variable("DBUILD", )
+            n.variable("DBUILD", launcher_path)
 
             # Build rule
-            n.rule("dbuild", "$DBUILD --export $in")
+            n.rule("dbuild", "py $DBUILD --export $in $DATDIR")
 
             # For every data file
             for file in data_files:
@@ -51,11 +53,8 @@ class Context:
                     # Build statement
                     n.build(deps["outputs"], "dbuild", deps["inputs"])
 
-                    # Test build
-                    ex.run()
-
     def build(self):
-        call_ninja(name="ninja",args="")
+        call_ninja(name="ninja",args=[])
 
     def find_exporter(self, filepath):
         """
