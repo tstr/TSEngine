@@ -9,7 +9,7 @@ import shaderlib
 class Shader(databuild.Exporter):
     def exportable(filename):
         root, ext = splitext(filename)
-        return ext in [".fx", ".hlsl"]
+        return ext in {".fx", ".hlsl"}
 
     def info(self, deps):
         root, ext = splitext(self.rel_source())

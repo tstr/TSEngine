@@ -11,9 +11,9 @@ class Exporter:
     """
         Exporter base interface
     """
-    def __init__(self, filepath, context):
+    def __init__(self, source, context):
         self.context = context
-        self.source = filepath
+        self.source = source
 
     @staticmethod
     def exportable(filename):
@@ -52,3 +52,12 @@ def get_exporters():
         Returns list of available exporter classes
     """
     return Exporter.__subclasses__()
+
+def get_exporter(classname):
+    """
+        Return an exporter class with the given name
+    """
+    for exp in get_exporters():
+        if exp.__name__ == classname:
+            return exp
+    return None

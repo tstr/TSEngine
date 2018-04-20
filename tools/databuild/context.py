@@ -2,12 +2,13 @@
     Context module
 """
 
+import sys
 import os
 import subprocess
 from .exporters import load_exporters, get_exporters
 
 from ninja.ninja_syntax import Writer
-from ninja import _program as call_ninja, BIN_DIR as __NINJA_DIR__
+from ninja import _program as call_ninja
 
 class Context:
     def __init__(self, outdir, expdir, datadir):
@@ -39,9 +40,15 @@ class Context:
             n.variable("DATDIR", self.datdir)
             n.variable("EXPDIR", self.expdir)
             n.variable("DBUILD", launcher_path)
+            n.variable("PY", sys.executable)
+
+            # Write build rules
+            for cls in get_exporters():
+                name = cls.__name__
+                n.rule(name, "$PY $DBUILD --export %s $in $DATDIR" % name)
 
             # Build rule
-            n.rule("dbuild", "py $DBUILD --export $in $DATDIR")
+            #n.rule("dbuild", "$PY $DBUILD --export $in $DATDIR")
 
             # For every data file
             for file in data_files:
@@ -51,7 +58,7 @@ class Context:
                     deps = {"inputs":[file]}
                     ex.info(deps)
                     # Build statement
-                    n.build(deps["outputs"], "dbuild", deps["inputs"])
+                    n.build(deps["outputs"], type(ex).__name__, deps["inputs"])
 
     def build(self):
         call_ninja(name="ninja",args=[])
