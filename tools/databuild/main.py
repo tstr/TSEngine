@@ -1,6 +1,7 @@
 
 import os
 from .context import Context
+from .exporters import get_exporter
 
 """
     DataBuild command line entry point
@@ -15,13 +16,16 @@ def main(args):
 
     if args[1] == "--export":
 
-        file = args[2]
-        data_dir = args[3]
+        # Args
+        exporter_name = args[2]
+        file = args[3]
+        data_dir = args[4]
 
         ctx = Context(out_dir, exp_dir, data_dir)
-        exp = ctx.find_exporter(file)
-        exp.run()
-
+        
+        cls = get_exporter(exporter_name)
+        cls(file, ctx).run()
+        
     else:
         data_dir = args[1]
 

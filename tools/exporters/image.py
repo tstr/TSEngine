@@ -10,7 +10,7 @@ from databuild import Exporter
 class Image(Exporter):
     def exportable(filename):
         root, ext = splitext(filename)
-        return ext in [".tga", ".png", ".jpg", ".JPG"]
+        return ext in {".tga", ".png", ".jpg", ".JPG"}
 
     def info(self, deps):
         deps["outputs"] = [self.rel_source()]
