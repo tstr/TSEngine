@@ -3,8 +3,6 @@
 #	Tool for compiling shaders
 #
 
-include(PythonUtils)
-
 set(shaderc_inc
 	include/Preprocessor.h
 	include/ShaderParser.h

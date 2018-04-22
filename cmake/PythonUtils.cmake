@@ -13,14 +13,14 @@ endif()
 #
 #   Add pybind module
 #
-macro(add_pybind_module _target)
+function(add_pybind_module _target)
     add_library(${_target} SHARED ${ARGN})
     set_target_properties(${_target} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")
     set_target_properties(${_target} PROPERTIES SUFFIX "${PYTHON_MODULE_EXTENSION}")
     target_link_libraries(${_target} PRIVATE pybind11)	
 	target_link_libraries(${_target} PRIVATE ${PYTHON_LIBRARIES})
 	target_include_directories(${_target} PRIVATE "${PYTHON_INCLUDE_DIR}")
-endmacro()
+endfunction()
 
 
 # Determine file separator

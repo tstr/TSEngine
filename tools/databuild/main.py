@@ -35,10 +35,6 @@ def main(args):
 
         data_dir = params.build[0]
 
-        print("data-dir:    ", data_dir)
-        print("output-dir:  ", out_dir)
-        print("exporter-dir:", exp_dir)
-
         ctx = Context(out_dir, exp_dir, data_dir)
         ctx.configure()
         ctx.build()
