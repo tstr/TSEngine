@@ -2,12 +2,13 @@
 #   External dependency management
 #
 
+# Include guard
 if(DEFINED __EXTERNAL_INCLUDED)
     return()
 endif()
 set(__EXTERNAL_INCLUDED TRUE)
 
-# Workaround for not being able to alias imported targets
+# Workaround for not being able to alias imported targets easily
 macro(add_imported_alias _alias _target)
     add_library(${_alias} INTERFACE IMPORTED)
     foreach(_name INTERFACE_LINK_LIBRARIES INTERFACE_INCLUDE_DIRECTORIES INTERFACE_COMPILE_DEFINITIONS INTERFACE_COMPILE_OPTIONS)
@@ -16,10 +17,16 @@ macro(add_imported_alias _alias _target)
     endforeach()
 endmacro()
 
-option (TS_USE_CONAN "Use Conan to fetch dependencies" TRUE)
 
 find_package(PythonInterp REQUIRED)
-find_package(PythonLibs REQUIRED)
+#find_package(PythonLibs REQUIRED)
+find_package(PythonLibsNew REQUIRED)
+
+if (NOT PYTHONLIBS_FOUND)
+	message(FATAL_ERROR "Unable to find python libs")
+endif()
+
+option (TS_USE_CONAN "Use Conan to fetch dependencies" TRUE)
 
 if (TS_USE_CONAN)
 
@@ -54,11 +61,7 @@ if (TS_USE_CONAN)
         CONANFILE "conanfile.txt"
         BASIC_SETUP CMAKE_TARGETS NO_OUTPUT_DIRS
     )
-
-    # Pybind dependencies
-    target_include_directories(CONAN_PKG::pybind11 INTERFACE ${PYTHON_INCLUDE_DIR})
-    target_link_libraries(CONAN_PKG::pybind11 INTERFACE ${PYTHON_LIBRARY})
-
+	
     # Set aliases
     add_imported_alias(assimp CONAN_PKG::Assimp)
     add_imported_alias(pybind11 CONAN_PKG::pybind11)
