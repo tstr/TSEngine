@@ -6,13 +6,14 @@ import sys
 import os
 import subprocess
 import pickle
-from .exporters import load_exporters, get_exporters
+from .exporters import load_exporters, get_exporters, get_exporter
 
 try:
     from ninja.ninja_syntax import Writer
     from ninja import _program as call_ninja
 except ImportError as e:
     print(e)
+    raise
 
 class Context:
     def __init__(self, outdir, expdir, datadir):
@@ -88,13 +89,13 @@ class Context:
             n.variable("OUTDIR", self.outdir)
             n.variable("DATDIR", self.datdir)
             n.variable("EXPDIR", self.expdir)
-            n.variable("DBUILD", launcher_path)
             n.variable("PY", sys.executable)
+            n.variable("DBUILD", "$PY " + launcher_path)
 
             # Write build rules
             for cls in get_exporters():
                 name = cls.__name__
-                n.rule(name, "$PY $DBUILD --export %s $in $DATDIR" % name)
+                n.rule(name, cls.command())
 
             # For every data file
             for file in data_files:
@@ -119,3 +120,10 @@ class Context:
                 return exp(filepath, self)
 
         return None
+        
+    def export(self, exporter_name, filepath):
+        """
+            Export the given file
+        """
+        cls = get_exporter(exporter_name)
+        cls(filepath, self).run()

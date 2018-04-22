@@ -1,5 +1,5 @@
 """
-    Exporter module
+    Databuild API module
 """
 
 import sys
@@ -18,6 +18,10 @@ class Exporter:
     @staticmethod
     def exportable(filename):
         return False
+
+    @classmethod
+    def command(cls):
+        return "$DBUILD --export %s $in $DATDIR" % cls.__name__
 
     """
         Fetch dependency info
