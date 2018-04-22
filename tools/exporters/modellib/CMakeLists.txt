@@ -2,8 +2,6 @@
 #   Model Lib
 #
 
-include(PythonUtils)
-
 set(modellib_src
     src/Builder.h
     src/Builder.cpp

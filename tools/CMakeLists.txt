@@ -32,3 +32,17 @@ SET_TARGET_PROPERTIES(
 )
 
 ################################################################################################
+
+# Databuild tool install rules
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/dbuild.py" DESTINATION "tools")
+
+file(GLOB _python_modules "${CMAKE_CURRENT_SOURCE_DIR}/databuild/*.py")
+
+# Install python modules
+install(
+    FILES ${_python_modules}
+    DESTINATION "tools/databuild/"
+)
+
+
+################################################################################################
