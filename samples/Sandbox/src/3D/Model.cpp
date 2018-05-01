@@ -5,6 +5,8 @@
 
 #include "Model.h"
 
+#include <tsgraphics/schemas/Model.rcs.h>
+
 #include <fstream>
 #include <tscore/debug/log.h>
 #include <tscore/debug/assert.h>
@@ -40,7 +42,7 @@ inline Vector getVectorProperty(string value)
 	return v;
 }
 
-static void getAttributeList(vector<SVertexAttribute>& attribs, uint8 vertexFlags);
+void findAttribute(const char* semantic, EVertexAttributeType type, const unordered_map<string, uint32>& attribMap, vector<SVertexAttribute>& attribs);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -77,6 +79,7 @@ bool CModel::import(const Path& path, uint8 attribMask)
 
 	ifstream modelfile(m_filepath.str(), ios::binary);
 
+	/*
 	SModelHeader header;
 	modelfile.read(reinterpret_cast<char*>(&header), sizeof(SModelHeader));
 
@@ -93,7 +96,11 @@ bool CModel::import(const Path& path, uint8 attribMask)
 	modelfile.read(reinterpret_cast<char*>(&meshes[0]), sizeof(SModelMesh) * meshes.size());
 	modelfile.read(reinterpret_cast<char*>(&vertices[0]), sizeof(SModelVertex) * vertices.size());
 	modelfile.read(reinterpret_cast<char*>(&indices[0]), sizeof(ModelIndex) * indices.size());
-	
+	*/
+
+	rc::ResourceLoader loader(modelfile);
+	auto& modelReader = loader.deserialize<tsr::Model>();
+
 	if (modelfile.fail())
 	{
 		tswarn("could not read model data");
@@ -122,22 +129,20 @@ bool CModel::import(const Path& path, uint8 attribMask)
 	size_t idx = 0;
 
 	int32 basevertex = 0;
-	uint8 modelAttribMask = 0;
 
 	//Iterate over model meshes
-	for (SModelMesh& fmesh : meshes)
+	for (uint32 i = 0; i < modelReader.meshes().length(); i++)
 	{
+		const tsr::Mesh& fmesh = modelReader.meshes().at(i);
+
 		Selection select;
-
-		select.submesh.indexOffset = fmesh.indexOffset;
-		select.submesh.indexCount = fmesh.indexCount;
+		
+		select.submesh.indexOffset = fmesh.indexOffset();
+		select.submesh.indexCount = fmesh.indexCount();
 		select.submesh.vertexBase = basevertex;
-		basevertex += fmesh.numVertices;
+		basevertex += fmesh.vertexCount();
 
-		select.submesh.vertexAttributes = fmesh.vertexAttributeMask;
-		modelAttribMask |= fmesh.vertexAttributeMask;
-
-		const char* mname = fmesh.materialName.str();
+		const char* mname = fmesh.materialName().str();
 
 		if (!matfile.isSection(mname))
 		{
@@ -217,12 +222,24 @@ bool CModel::import(const Path& path, uint8 attribMask)
 	tsinfo("materials imported successfully");
 
 	SVertexMesh mesh;
-	mesh.indexData = vector<Index>(&indices[0], &indices[0] + indices.size());
-	mesh.vertexData = vector<byte>((const byte*)&vertices[0], (const byte*)&vertices[0] + (vertices.size() * sizeof(SModelVertex)));
+	mesh.indexData = vector<Index>(modelReader.indexData().data(), modelReader.indexData().data() + modelReader.indexData().length());
+	mesh.vertexData = vector<byte>(modelReader.vertexData().data(), modelReader.vertexData().data() + modelReader.vertexData().length());
 	mesh.vertexTopology = EVertexTopology::eTopologyTriangleList;
-	mesh.vertexStride = sizeof(SModelVertex);
+	mesh.vertexStride = modelReader.vertexStride();
 
-	getAttributeList(mesh.vertexAttributes, modelAttribMask & attribMask);
+	std::unordered_map<String, uint32> attributes;
+
+	for (uint32 i = 0; i < modelReader.attributeNames().length(); i++)
+	{
+		attributes[modelReader.attributeNames().at(i).stdStr()] = modelReader.attributeOffsets().at(i);
+	}
+
+	findAttribute("POSITION", EVertexAttributeType::eAttribFloat4, attributes, mesh.vertexAttributes);
+	findAttribute("TEXCOORD0", EVertexAttributeType::eAttribFloat2, attributes, mesh.vertexAttributes);
+	findAttribute("COLOUR0", EVertexAttributeType::eAttribFloat4, attributes, mesh.vertexAttributes);
+	findAttribute("NORMAL", EVertexAttributeType::eAttribFloat3, attributes, mesh.vertexAttributes);
+	findAttribute("TANGENT", EVertexAttributeType::eAttribFloat3, attributes, mesh.vertexAttributes);
+	findAttribute("BITANGENT", EVertexAttributeType::eAttribFloat3, attributes, mesh.vertexAttributes);
 
 	if (EMeshStatus status = m_graphics->getMeshManager()->createMesh(mesh, m_modelMesh))
 	{
@@ -232,81 +249,20 @@ bool CModel::import(const Path& path, uint8 attribMask)
 	return true;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define VECTOR_OFFSET(idx) (uint32)(idx * sizeof(Vector))
-
-void getAttributeList(vector<SVertexAttribute>& attribs, uint8 vertexFlags)
+void findAttribute(const char* semantic, EVertexAttributeType type, const unordered_map<string, uint32>& attribMap, vector<SVertexAttribute>& attribs)
 {
-	//Position attribute
-	if (vertexFlags & eModelVertexAttributePosition)
+	auto it = attribMap.find(semantic);
+	if (it != attribMap.end())
 	{
-		SVertexAttribute sid;
-		sid.bufferSlot = 0;
-		sid.byteOffset = VECTOR_OFFSET(0);
-		sid.channel = EVertexAttributeChannel::eChannelPerVertex;
-		sid.semanticName = "POSITION";
-		sid.type = EVertexAttributeType::eAttribFloat4;
-		attribs.push_back(sid);
-	}
+		if ((string)semantic == "TEXCOORD0") semantic = "TEXCOORD";
+		if ((string)semantic == "COLOUR0") semantic = "COLOUR";
 
-	//Texcoord attribute
-	if (vertexFlags & eModelVertexAttributeTexcoord)
-	{
 		SVertexAttribute sid;
 		sid.bufferSlot = 0;
-		sid.byteOffset = VECTOR_OFFSET(1);
+		sid.byteOffset = it->second;
 		sid.channel = EVertexAttributeChannel::eChannelPerVertex;
-		sid.semanticName = "TEXCOORD";
-		sid.type = EVertexAttributeType::eAttribFloat2;
-		attribs.push_back(sid);
-	}
-
-	//Colour attribute
-	if (vertexFlags & eModelVertexAttributeColour)
-	{
-		SVertexAttribute sid;
-		sid.bufferSlot = 0;
-		sid.byteOffset = VECTOR_OFFSET(2);
-		sid.channel = EVertexAttributeChannel::eChannelPerVertex;
-		sid.semanticName = "COLOUR";
-		sid.type = EVertexAttributeType::eAttribFloat4;
-		attribs.push_back(sid);
-	}
-
-	//Normal attribute
-	if (vertexFlags & eModelVertexAttributeNormal)
-	{
-		SVertexAttribute sid;
-		sid.bufferSlot = 0;
-		sid.byteOffset = VECTOR_OFFSET(3);
-		sid.channel = EVertexAttributeChannel::eChannelPerVertex;
-		sid.semanticName = "NORMAL";
-		sid.type = EVertexAttributeType::eAttribFloat3;
-		attribs.push_back(sid);
-	}
-
-	//Tangent attribute
-	if (vertexFlags & eModelVertexAttributeTangent)
-	{
-		SVertexAttribute sid;
-		sid.bufferSlot = 0;
-		sid.byteOffset = VECTOR_OFFSET(4);
-		sid.channel = EVertexAttributeChannel::eChannelPerVertex;
-		sid.semanticName = "TANGENT";
-		sid.type = EVertexAttributeType::eAttribFloat3;
-		attribs.push_back(sid);
-	}
-
-	//Bitangent attribute
-	if (vertexFlags & eModelVertexAttributeBitangent)
-	{
-		SVertexAttribute sid;
-		sid.bufferSlot = 0;
-		sid.byteOffset = VECTOR_OFFSET(5);
-		sid.channel = EVertexAttributeChannel::eChannelPerVertex;
-		sid.semanticName = "BITANGENT";
-		sid.type = EVertexAttributeType::eAttribFloat3;
+		sid.semanticName = semantic;
+		sid.type = type;
 		attribs.push_back(sid);
 	}
 }

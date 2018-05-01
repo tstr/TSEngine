@@ -4,10 +4,23 @@
 
 namespace tsr;
 
+resource Mesh
+{
+	uint32 indexOffset;
+	uint32 indexCount;
+	uint32 vertexCount;
+	int32 vertexBase;
+	string materialName;
+}
+
 resource Model
 {
+	string[] attributeNames;
+	uint32[] attributeOffsets;
+
 	uint32 vertexStride;
 	
 	byte[] vertexData;
 	uint32[] indexData;
+	Mesh[] meshes;
 }

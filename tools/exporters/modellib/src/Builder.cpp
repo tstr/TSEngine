@@ -9,6 +9,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 //Engine headers
 #include <tscore/path.h>
@@ -17,7 +18,6 @@
 #include <tscore/debug/assert.h>
 
 //Model format types and constants
-#include <tsgraphics/model/modeldefs.h>
 #include <tsgraphics/schemas/Model.rcs.h>
 
 //Assimp headers
@@ -119,98 +119,98 @@ bool Model::exp(const std::string& outputDir)
 
 bool Model::exportModel(std::ostream& outputstream)
 {
-	SModelHeader header;
-	header.numMeshes = m_scene->mNumMeshes;
+	tsr::ModelBuilder modelWriter;
+
+	vector<rc::Ref<tsr::Mesh>> meshes;
+	vector<float> vertices; //vertex buffer
+	vector<uint32> indices; //index buffer
+	unordered_map<string, uint32> attributes;
+	uint32 vertexStride = 0;
 	
-	vector<SModelMesh> meshes;
-	vector<SModelVertex> vertices;
-	vector<ModelIndex> indices;
-	
-	meshes.reserve(header.numMeshes);
-	
-	for (uint i = 0; i < header.numMeshes; i++)
+	meshes.reserve(m_scene->mNumMeshes);
+
+	//Foreach mesh
+	for (uint i = 0; i < m_scene->mNumMeshes; i++)
 	{
-		SModelMesh mesh;
-		
 		aiMesh* aimesh = m_scene->mMeshes[i];
 		
 		aiString materialName;
 		m_scene->mMaterials[aimesh->mMaterialIndex]->Get(AI_MATKEY_NAME, materialName);
-		
-		if (strlen(materialName.C_Str()) > MaxMaterialNameLength)
-		{
-			//warning material name too long
-		}
 
-		mesh.materialName.set(materialName.C_Str());
-		
-		//Vertex attribute mask
-		uint8 attribs = 0;
+		tsr::MeshBuilder mesh(modelWriter);
 		
 		for (uint j = 0; j < aimesh->mNumVertices; j++)
 		{
-			SModelVertex vertex;
+			uint32 attributeOffset = 0;
 
 			if (aimesh->HasPositions())
 			{
-				vertex.position.x() = aimesh->mVertices[j].x;
-				vertex.position.y() = aimesh->mVertices[j].y;
-				vertex.position.z() = aimesh->mVertices[j].z;
-				vertex.position.w() = 1.0f;
+				vertices.push_back(aimesh->mVertices[j].x);
+				vertices.push_back(aimesh->mVertices[j].y);
+				vertices.push_back(aimesh->mVertices[j].z);
+				vertices.push_back(1.0f);
 
-				attribs |= eModelVertexAttributePosition;
+				attributes["POSITION"] = attributeOffset;
+				attributeOffset += sizeof(float[4]);
 			}
 
 			if (aimesh->HasNormals())
 			{
-				vertex.normal.x() = aimesh->mNormals[j].x;
-				vertex.normal.y() = aimesh->mNormals[j].y;
-				vertex.normal.z() = aimesh->mNormals[j].z;
-				vertex.normal.normalize();
+				vertices.push_back(aimesh->mNormals[j].x);
+				vertices.push_back(aimesh->mNormals[j].y);
+				vertices.push_back(aimesh->mNormals[j].z);
+				vertices.push_back(0.0f);
 
-				attribs |= eModelVertexAttributeNormal;
+				attributes["NORMAL"] = attributeOffset;
+				attributeOffset += sizeof(float[4]);
 			}
 
-			if (aimesh->HasVertexColors(0))
+			for (uint32 c = 0; aimesh->HasVertexColors(c); c++)
 			{
-				vertex.colour.x() = aimesh->mColors[0][j].r;
-				vertex.colour.y() = aimesh->mColors[0][j].g;
-				vertex.colour.z() = aimesh->mColors[0][j].b;
-				vertex.colour.w() = aimesh->mColors[0][j].a;
+				vertices.push_back(aimesh->mColors[c][j].r);
+				vertices.push_back(aimesh->mColors[c][j].g);
+				vertices.push_back(aimesh->mColors[c][j].b);
+				vertices.push_back(aimesh->mColors[c][j].a);
 
-				attribs |= eModelVertexAttributeColour;
+				attributes[(string)"COLOUR" + to_string(c)] = attributeOffset;
+				attributeOffset += sizeof(float[4]);
 			}
 
-			if (aimesh->HasTextureCoords(0))
+			for (uint32 t = 0; aimesh->HasTextureCoords(t); t++)
 			{
-				vertex.texcoord.x() = aimesh->mTextureCoords[0][j].x;
-				vertex.texcoord.y() = aimesh->mTextureCoords[0][j].y;
+				vertices.push_back(aimesh->mTextureCoords[t][j].x);
+				vertices.push_back(aimesh->mTextureCoords[t][j].y);
+				vertices.push_back(aimesh->mTextureCoords[t][j].z);
+				vertices.push_back(0.0f);
 
-				attribs |= eModelVertexAttributeTexcoord;
+				attributes[(string)"TEXCOORD" + to_string(t)] = attributeOffset;
+				attributeOffset += sizeof(float[4]);
 			}
 
 			if (aimesh->HasTangentsAndBitangents())
 			{
-				vertex.tangent.x() = aimesh->mTangents[j].x;
-				vertex.tangent.y() = aimesh->mTangents[j].y;
-				vertex.tangent.z() = aimesh->mTangents[j].z;
-				vertex.tangent.normalize();
+				vertices.push_back(aimesh->mTangents[j].x);
+				vertices.push_back(aimesh->mTangents[j].y);
+				vertices.push_back(aimesh->mTangents[j].z);
+				vertices.push_back(0.0f);
 
-				attribs |= eModelVertexAttributeTangent;
+				attributes["TANGENT"] = attributeOffset;
+				attributeOffset += sizeof(float[4]);
 
-				vertex.bitangent.x() = aimesh->mBitangents[j].x;
-				vertex.bitangent.y() = aimesh->mBitangents[j].y;
-				vertex.bitangent.z() = aimesh->mBitangents[j].z;
-				vertex.bitangent.normalize();
+				vertices.push_back(aimesh->mBitangents[j].x);
+				vertices.push_back(aimesh->mBitangents[j].y);
+				vertices.push_back(aimesh->mBitangents[j].z);
+				vertices.push_back(0.0f);
 
-				attribs |= eModelVertexAttributeBitangent;
+				attributes["BITANGENT"] = attributeOffset;
+				attributeOffset += sizeof(float[4]);
 			}
-			
-			vertices.push_back(vertex);
+
+			vertexStride = attributeOffset;
 		}
 		
-		ModelIndex indexcount = 0;
-		ModelIndex indexoffset = (ModelIndex)indices.size();
+		uint32 indexcount = 0;
+		uint32 indexoffset = (uint32)indices.size();
 		
 		for (UINT c = 0; c < aimesh->mNumFaces; c++)
 		{
@@ -221,22 +221,36 @@ bool Model::exportModel(std::ostream& outputstream)
 			}
 		}
 		
-		mesh.indexOffset = indexoffset;
-		mesh.indexCount = indexcount;
-		mesh.numVertices = aimesh->mNumVertices;
-		mesh.vertexAttributeMask = attribs;
-		
-		meshes.push_back(mesh);
+		mesh.set_indexOffset(indexoffset);
+		mesh.set_indexCount(indexcount);
+		mesh.set_vertexCount(aimesh->mNumVertices);
+		mesh.set_vertexBase(0);
+		mesh.set_materialName(mesh.createString(materialName.C_Str()));
+
+		meshes.push_back(mesh.build());
 	}
-	
-	header.numVertices = (ModelIndex)vertices.size();
-	header.numIndices = (ModelIndex)indices.size();
-	
-	outputstream.write(reinterpret_cast<const char*>(&header), sizeof(SModelHeader));
-	outputstream.write(reinterpret_cast<const char*>(&meshes[0]), sizeof(SModelMesh) * meshes.size());
-	outputstream.write(reinterpret_cast<const char*>(&vertices[0]), sizeof(SModelVertex) * vertices.size());
-	outputstream.write(reinterpret_cast<const char*>(&indices[0]), sizeof(ModelIndex) * indices.size());
-	
+
+	modelWriter.set_indexData(modelWriter.createArray(indices));
+	modelWriter.set_vertexData((rc::Ref<rc::ArrayView<ts::byte>>)modelWriter.createArray(vertices));
+	modelWriter.set_meshes(modelWriter.createArrayOfRefs(meshes));
+
+	modelWriter.set_vertexStride(vertexStride);
+
+	vector<string> attributeNames;
+	vector<uint32> attributeOffsets;
+
+	for (const auto& entry : attributes)
+	{
+		attributeNames.push_back(entry.first);
+		attributeOffsets.push_back(entry.second);
+	}
+
+	modelWriter.set_attributeNames(modelWriter.createArrayOfStrings(attributeNames));
+	modelWriter.set_attributeOffsets(modelWriter.createArray(attributeOffsets));
+
+
+	modelWriter.build(outputstream);
+
 	return outputstream.good();
 }
 
