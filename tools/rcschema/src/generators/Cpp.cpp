@@ -256,14 +256,14 @@ void CPPGenerator::generateFieldSetter(ostream& headerFile, const Field& field)
 	{
 		//comment
 		headerFile << format("    // Reference: % %\n", field.type.name + ((field.isArray) ? "[]" : ""), field.name);
-		headerFile << format("    auto& set_%(::rc::Ref<%> p) { ::rc::Utils::storePointer(data(), field_%, p); return *this; }\n", field.name, translateFieldType(field), field.name);
+		headerFile << format("    auto& set_%(::rc::Ref<%> p) { ::rc::Utils::storePointer(rcptr(), field_%, p); return *this; }\n", field.name, translateFieldType(field), field.name);
 	}
 	//Otherwise if field is primitive
 	else
 	{
 		//comment
 		headerFile << format("    // Field: % %\n", field.type.name + ((field.isArray) ? "[]" : ""), field.name);
-		headerFile << format("    auto& set_%(% value) { ::rc::Utils::storeField(data(), field_%, value); return *this; }\n", field.name, translateFieldType(field), field.name);
+		headerFile << format("    auto& set_%(% value) { ::rc::Utils::storeField(rcptr(), field_%, value); return *this; }\n", field.name, translateFieldType(field), field.name);
 	}
 }
 
@@ -277,15 +277,15 @@ void CPPGenerator::generateFieldGetter(ostream& headerFile, const Field& field)
 	{
 		//comment
 		headerFile << format("    // Reference: % %\n", field.type.name + ((field.isArray) ? "[]" : ""), field.name);
-		headerFile << format("    const %& %() const { return *::rc::Utils::loadPointer<%>(data(), field_%); }\n", cppType, field.name, cppType, field.name);
-		headerFile << format("    bool has_%() const { return ::rc::Utils::loadField<::rc::OffsetType>(data(), field_%) != 0; }\n", field.name, field.name);
+		headerFile << format("    const %& %() const { return *::rc::Utils::loadPointer<%>(rcptr(), field_%); }\n", cppType, field.name, cppType, field.name);
+		headerFile << format("    bool has_%() const { return ::rc::Utils::loadField<::rc::OffsetType>(rcptr(), field_%) != 0; }\n", field.name, field.name);
 	}
 	//Otherwise if field is primitive
 	else
 	{
 		//comment
 		headerFile << format("    // Field: % %\n", field.type.name + ((field.isArray) ? "[]" : ""), field.name);
-		headerFile << format("    % %() const { return ::rc::Utils::loadField<%>(data(), field_%); }\n", cppType, field.name, cppType, field.name);
+		headerFile << format("    % %() const { return ::rc::Utils::loadField<%>(rcptr(), field_%); }\n", cppType, field.name, cppType, field.name);
 	}
 }
 

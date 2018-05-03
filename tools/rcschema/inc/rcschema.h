@@ -96,15 +96,15 @@ namespace rc
 			Offset can be negative
 		*/
 		template<typename Type>
-		static Type* pointer(uint8_t* ptr, int32_t offset = 0)
+		static Type* pointer(uint8_t* getPtr, int32_t offset = 0)
 		{
-			return reinterpret_cast<Type*>(ptr + offset);
+			return reinterpret_cast<Type*>(getPtr + offset);
 		}
 
 		template<typename Type>
-		static const Type* pointer(const uint8_t* ptr, int32_t offset = 0)
+		static const Type* pointer(const uint8_t* getPtr, int32_t offset = 0)
 		{
-			return reinterpret_cast<const Type*>(ptr + offset);
+			return reinterpret_cast<const Type*>(getPtr + offset);
 		}
 
 	public:
@@ -177,12 +177,12 @@ namespace rc
 		using ReturnType = Type&;
 		using ConstReturnType = const Type&;
 
-		inline ConstReturnType operator()(const uint8_t* data, OffsetType dataOffsetInBytes)
+		inline ConstReturnType operator()(const uint8_t* data, OffsetType dataOffsetInBytes = 0)
 		{
 			return Utils::loadField<Type>(data, dataOffsetInBytes);
 		}
 
-		inline ReturnType operator()(uint8_t* data, OffsetType dataOffsetInBytes)
+		inline ReturnType operator()(uint8_t* data, OffsetType dataOffsetInBytes = 0)
 		{
 			return Utils::loadField<Type>(data, dataOffsetInBytes);
 		}
@@ -232,11 +232,11 @@ namespace rc
 	protected:
 
 		//Size of data - in bytes
-		inline SizeType dataSize() const { return m_byteSize; }
+		inline SizeType rcsize() const { return m_byteSize; }
 
 		//Pointer to data
-		inline const uint8_t* data() const { return (const uint8_t*)(&m_byteSize + 1); }
-		inline uint8_t* data() { return (uint8_t*)(&m_byteSize + 1); }
+		inline const uint8_t* rcptr() const { return (const uint8_t*)(&m_byteSize + 1); }
+		inline uint8_t* rcptr() { return (uint8_t*)(&m_byteSize + 1); }
 
 	};
 
@@ -255,81 +255,27 @@ namespace rc
 	{
 	public:
 		
-		using ElementType         = typename IndirectLoad<Type>::ReturnType;
-		using ConstElementType    = typename IndirectLoad<Type>::ConstReturnType;
-		using ElementPointer      = typename std::add_pointer<ElementType>::type;
-		using ConstElementPointer = typename std::add_pointer<ConstElementType>::type;
-
-		/*
-			Array view iterator
-		*/
-		class Iterator : public std::iterator<
-			std::random_access_iterator_tag,
-			ElementType,
-			OffsetType,
-			ElementPointer,
-			ElementType
-		>
-		{
-		private:
-
-			const ArrayView<Type>* m_view;
-			OffsetType m_index;
-
-		public:
-
-			Iterator() :
-				m_view(nullptr),
-				m_index(0)
-			{}
-
-			Iterator(const ArrayView<Type>* view, OffsetType idx) :
-				m_view(view),
-				m_index(idx)
-			{}
-			
-			Iterator(const Iterator& it) :
-				m_view(it.m_view),
-				m_index(it.m_index)
-			{}
-
-			inline bool operator==(const Iterator& it) const { return (m_index == it.m_index); }
-			inline bool operator!=(const Iterator& it) const { return !(*this == it); }
-
-			inline Iterator& operator+=(const OffsetType& d) { m_index += d; return *this; }
-			inline Iterator& operator-=(const OffsetType& d) { m_index -= d; return *this; }
-			inline Iterator& operator++() { ++m_index; return *this; }
-			inline Iterator& operator--() { --m_index; return *this; }
-			inline Iterator operator++(int) { auto temp(*this); ++m_index; return temp; }
-			inline Iterator operator--(int) { auto temp(*this); --m_index; return temp; }
-			inline Iterator operator+(const OffsetType& d) { auto old = m_index; m_index += d; auto temp(*this); m_index = old; return temp; }
-			inline Iterator operator-(const OffsetType& d) { auto old = m_index; m_index -= d; auto temp(*this); m_index = old; return temp; }
-
-			inline OffsetType operator-(const Iterator& it) { return std::distance(it->m_index, this->m_index); }
-
-			inline ConstElementType operator*() const { return (ConstElementType)m_view->at(m_index); }
-			inline ElementType operator*() { return (ElementType)m_view->at(m_index); }
-
-			inline ElementPointer operator->() { return (ElementPointer)&(*this); }
-			inline ConstElementPointer operator->() const { return (ConstElementPointer)&(*this); }
-
-			inline operator bool() const { m_view != nullptr; }
-		};
-
-		//Iterators
-		inline Iterator begin() const { return Iterator(this, 0); }
-		inline Iterator end() const { return Iterator(this, length()); }
+		using ElementType       = typename IndirectLoad<Type>::ReturnType;
+		using ConstElementType  = typename IndirectLoad<Type>::ConstReturnType;
 
 		//Array length
-		inline SizeType length() const { return ResourceView::dataSize() / sizeof(Type); }
+		inline SizeType length() const { return ResourceView::rcsize() / sizeof(Type); }
+		inline SizeType size() const { return length(); }
 
 		//Pointer to array data
-		inline const Type* data() const { return reinterpret_cast<const Type*>(ResourceView::data()); }
-		inline Type* data() { return reinterpret_cast<Type*>(ResourceView::data()); }
+		inline Type* data() { return reinterpret_cast<Type*>(ResourceView::rcptr()); }
+		inline const Type* data() const { return reinterpret_cast<const Type*>(ResourceView::rcptr()); }
 
 		//Get array element
-		inline ElementType at(OffsetType index) { return IndirectLoad<Type>()((uint8_t*)data(), index * sizeof(Type)); }
-		inline ConstElementType at(OffsetType index) const { return IndirectLoad<Type>()((const uint8_t*)data(), index * sizeof(Type)); }
+		inline ConstElementType at(OffsetType index) { return IndirectLoad<Type>()((uint8_t*)rcptr(), index * sizeof(Type)); }
+		inline ConstElementType at(OffsetType index) const { return IndirectLoad<Type>()((const uint8_t*)rcptr(), index * sizeof(Type)); }
+
+		inline ConstElementType operator[](OffsetType index) { return at(index); }
+		inline ConstElementType operator[](OffsetType index) const { return at(index); }
+
+		//todo: use proper iterators to handle indirections
+		template<typename = std::enable_if<std::is_same<Type, std::remove_reference<ElementType>::type>::value>::type>
+		std::vector<Type> toVector() const { return std::vector<Type>(data(), data() + length()); }
 	};
 
 	class StringView : public ArrayView<char>
@@ -518,8 +464,8 @@ namespace rc
 		/*
 			Get pointers to data portion of the resource (excluding header)
 		*/
-		inline const uint8_t* data() const { return m_stream.pointer() + baseOffset(); }
-		inline uint8_t* data() { return m_stream.pointer() + baseOffset(); }
+		inline const uint8_t* rcptr() const { return m_stream.pointer() + baseOffset(); }
+		inline uint8_t* rcptr() { return m_stream.pointer() + baseOffset(); }
 
 	public:
 
@@ -611,7 +557,7 @@ namespace rc
 				cur -= baseOffset();
 
 				//Write pointer
-				Utils::storePointer(this->data(), cur, (OffsetType)data[i]);
+				Utils::storePointer(this->rcptr(), cur, (OffsetType)data[i]);
 			}
 			
 			//Return array offset

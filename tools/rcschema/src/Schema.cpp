@@ -4,6 +4,7 @@
 
 #include "Schema.h"
 
+#include <unordered_set>
 #include <algorithm>
 
 using namespace ts;
@@ -44,25 +45,31 @@ String getBaseTypeName(const String& typeName)
 
 bool FieldSet::add(const String& name, const String& type, bool isArray)
 {
-	//If a field with this name does not already exist
-	if (find(begin(), end(), name) == end())
-	{
-		TypeInfo info;
+    static const unordered_set<String> reservedNames({"rcptr", "rcsize"});
+    
+    //Check if field name is not reserved
+    if (reservedNames.find(name) == reservedNames.end())
+    {
+        //If a field with this name does not already exist
+        if (find(begin(), end(), name) == end())
+        {
+            TypeInfo info;
 
-		//Lookup type information
-		if (m_schema->getTypeInfo(type, info))
-		{
-			Field field;
-			field.name = name;
-			field.type = info;
-			field.isArray = isArray;
-			
-			//Save field entry
-			Base::push_back(field);
+            //Lookup type information
+            if (m_schema->getTypeInfo(type, info))
+            {
+                Field field;
+                field.name = name;
+                field.type = info;
+                field.isArray = isArray;
+                
+                //Save field entry
+                Base::push_back(field);
 
-			return true;
-		}
-	}
+                return true;
+            }
+        }
+    }
 
 	return false;
 }
