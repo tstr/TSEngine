@@ -42,10 +42,4 @@ add_pybind_module(shaderlib ${shaderc_inc} ${shaderc_src})
 target_link_libraries(shaderlib PUBLIC tsgraphics)
 target_include_directories(shaderlib PUBLIC "include")
 
-add_dependencies(DATA_BUILD shaderlib)
-
-set_target_properties(shaderlib PROPERTIES FOLDER tools/extensions)
-
-assign_source_groups(${shaderc_inc} ${shaderc_src})
-
 #####################################################################################################################

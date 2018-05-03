@@ -54,7 +54,7 @@ class Context:
                     # No changes
                     return None
 
-        except (FileNotFoundError, UnpicklingError):
+        except (FileNotFoundError, pickle.UnpicklingError):
             # If there is an issue loading the index
             # Skip to update phase
             pass

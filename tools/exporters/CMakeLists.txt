@@ -9,6 +9,12 @@ function(add_pybind_module _target)
 
     _add_pybind_module(${_target} ${ARGN})
     
+    assign_source_groups(${texlib_src})
+    
+    add_dependencies(DATA_BUILD ${_target})
+
+    set_target_properties(${_target} PROPERTIES FOLDER "tools/extensions")
+    
     install(TARGETS ${_target}
         RUNTIME DESTINATION "tools/exporters"
         LIBRARY DESTINATION "lib"
@@ -20,7 +26,7 @@ endfunction()
 
 add_subdirectory(shaderlib)
 add_subdirectory(modellib)
-
+add_subdirectory(texturelib)
 
 FILE(GLOB _python_modules "${CMAKE_CURRENT_SOURCE_DIR}/*.py")
 

@@ -56,7 +56,7 @@ CModel::CModel(GraphicsContext* graphics) :
 //Import function
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool CModel::import(const Path& path, uint8 attribMask)
+bool CModel::import(const Path& path)
 {
 	tsassert(m_graphics);
 
@@ -78,25 +78,6 @@ bool CModel::import(const Path& path, uint8 attribMask)
 	t.start();
 
 	ifstream modelfile(m_filepath.str(), ios::binary);
-
-	/*
-	SModelHeader header;
-	modelfile.read(reinterpret_cast<char*>(&header), sizeof(SModelHeader));
-
-	if (modelfile.fail())
-	{
-		tswarn("could not read model header");
-		return false;
-	}
-
-	vector<SModelMesh> meshes(header.numMeshes);
-	vector<SModelVertex> vertices(header.numVertices);
-	vector<ModelIndex> indices(header.numIndices);
-
-	modelfile.read(reinterpret_cast<char*>(&meshes[0]), sizeof(SModelMesh) * meshes.size());
-	modelfile.read(reinterpret_cast<char*>(&vertices[0]), sizeof(SModelVertex) * vertices.size());
-	modelfile.read(reinterpret_cast<char*>(&indices[0]), sizeof(ModelIndex) * indices.size());
-	*/
 
 	rc::ResourceLoader loader(modelfile);
 	auto& modelReader = loader.deserialize<tsr::Model>();
@@ -133,7 +114,7 @@ bool CModel::import(const Path& path, uint8 attribMask)
 	//Iterate over model meshes
 	for (uint32 i = 0; i < modelReader.meshes().length(); i++)
 	{
-		const tsr::Mesh& fmesh = modelReader.meshes().at(i);
+		const tsr::Mesh& fmesh = modelReader.meshes()[i];
 
 		Selection select;
 		
@@ -222,8 +203,8 @@ bool CModel::import(const Path& path, uint8 attribMask)
 	tsinfo("materials imported successfully");
 
 	SVertexMesh mesh;
-	mesh.indexData = vector<Index>(modelReader.indexData().data(), modelReader.indexData().data() + modelReader.indexData().length());
-	mesh.vertexData = vector<byte>(modelReader.vertexData().data(), modelReader.vertexData().data() + modelReader.vertexData().length());
+	mesh.indexData = modelReader.indexData().toVector();
+	mesh.vertexData = modelReader.vertexData().toVector();
 	mesh.vertexTopology = EVertexTopology::eTopologyTriangleList;
 	mesh.vertexStride = modelReader.vertexStride();
 
@@ -231,14 +212,19 @@ bool CModel::import(const Path& path, uint8 attribMask)
 
 	for (uint32 i = 0; i < modelReader.attributeNames().length(); i++)
 	{
-		attributes[modelReader.attributeNames().at(i).stdStr()] = modelReader.attributeOffsets().at(i);
+		attributes[modelReader.attributeNames()[i].stdStr()] = modelReader.attributeOffsets()[i];
 	}
 
-	findAttribute("POSITION", EVertexAttributeType::eAttribFloat4, attributes, mesh.vertexAttributes);
+	for (auto x : { "POSITION","TEXCOORD0","COLOUR0" })
+	{
+
+	}
+
+	findAttribute("POSITION",  EVertexAttributeType::eAttribFloat4, attributes, mesh.vertexAttributes);
 	findAttribute("TEXCOORD0", EVertexAttributeType::eAttribFloat2, attributes, mesh.vertexAttributes);
-	findAttribute("COLOUR0", EVertexAttributeType::eAttribFloat4, attributes, mesh.vertexAttributes);
-	findAttribute("NORMAL", EVertexAttributeType::eAttribFloat3, attributes, mesh.vertexAttributes);
-	findAttribute("TANGENT", EVertexAttributeType::eAttribFloat3, attributes, mesh.vertexAttributes);
+	findAttribute("COLOUR0",   EVertexAttributeType::eAttribFloat4, attributes, mesh.vertexAttributes);
+	findAttribute("NORMAL",    EVertexAttributeType::eAttribFloat3, attributes, mesh.vertexAttributes);
+	findAttribute("TANGENT",   EVertexAttributeType::eAttribFloat3, attributes, mesh.vertexAttributes);
 	findAttribute("BITANGENT", EVertexAttributeType::eAttribFloat3, attributes, mesh.vertexAttributes);
 
 	if (EMeshStatus status = m_graphics->getMeshManager()->createMesh(mesh, m_modelMesh))

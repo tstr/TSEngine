@@ -106,7 +106,7 @@ int Sandbox::loadModel(Entity entity, const String& modelfile)
 	p.addDirectories(modelfile);
 	CModel model(m_g3D.getContext());
 
-	if (!model.import(p, eModelVertexAttributePosition | eModelVertexAttributeTexcoord | eModelVertexAttributeNormal))
+	if (!model.import(p))
 	{
 		tserror("unable to import model \"%\"", p.str());
 		return -1;

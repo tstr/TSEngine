@@ -687,12 +687,19 @@ namespace rc
 		bool m_success;
 
 	public:
+
+		ResourceLoader() {}
+
+		ResourceLoader(std::istream& in) :
+			m_success(in.good())
+		{
+			load(in);
+		}
 		
 		/*
 			Read in binary data from stream
 		*/
-		ResourceLoader(std::istream& in) :
-			m_success(in.good())
+		void load(std::istream& in)
 		{
 			//Remember read ptr
 			size_t pos = in.tellg();

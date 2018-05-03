@@ -9,6 +9,8 @@
 
 #include <vector>
 
+#include <rcschema.h>
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace ts
@@ -31,11 +33,8 @@ namespace ts
 	{
 	private:
 
-		uintptr m_token = 0;
-		uint32 m_state = 0;
+		rc::ResourceLoader m_rcloader;
 
-		std::vector<uint32> m_buffer;
-		
 	public:
 
 		CTextureImporter();

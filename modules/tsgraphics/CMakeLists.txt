@@ -19,12 +19,10 @@ set(tsgraphics_inc
 	inc/tsgraphics/MeshManager.h
 	inc/tsgraphics/BufferPool.h
 	inc/tsgraphics/CommandQueue.h
+	inc/tsgraphics/Colour.h
 
 	inc/tsgraphics/api/RenderApi.h
 	inc/tsgraphics/api/RenderDef.h
-
-	inc/tsgraphics/Colour.h
-	inc/tsgraphics/model/modeldefs.h
 )
 
 SET(tsgraphics_api_d3d11_src
@@ -103,6 +101,7 @@ include(ResourceSchemaTool)
 set(schema_files
 	inc/tsgraphics/schemas/Model.schema
 	inc/tsgraphics/schemas/Shader.schema
+    inc/tsgraphics/schemas/Texture.schema
 )
 
 target_cpp_rschemas(TARGET tsgraphics HEADER_VAR schemas_hdrs SCHEMAS ${schema_files} APPENDPATH)

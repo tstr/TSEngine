@@ -6,7 +6,6 @@
 
 #include <tscore/path.h>
 #include <tscore/ptr.h>
-#include <tsgraphics/model/modeldefs.h>
 #include <tsgraphics/GraphicsContext.h>
 
 namespace ts
@@ -63,7 +62,7 @@ namespace ts
 		CModel(const CModel&) = delete;
 		CModel(CModel&&) = default;
 
-		bool import(const Path& path, uint8 attribMask = 0xff);
+		bool import(const Path& path);
 
 		SelectionIterator beginSection() const { return m_selections.begin(); }
 		SelectionIterator endSection() const { return m_selections.end(); }

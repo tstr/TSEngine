@@ -6,12 +6,11 @@
 
 #include <tscore/abi.h>
 
-#include <algorithm>
-
-#include "types.h"
 #include <sstream>
 #include <vector>
 #include <algorithm>
+
+#include "types.h"
 
 #define tocstr(x) std::to_string((x)).c_str()
 

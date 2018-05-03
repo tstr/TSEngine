@@ -1,0 +1,21 @@
+
+namespace tsr;
+
+resource Texture
+{
+	uint32 signature;
+
+    uint32 type;
+    uint32 format;
+    
+	uint32 width;
+	uint32 height;
+	uint32 length;
+
+	uint32 mips;
+
+	uint32 byteWidth;
+	uint32 byteDepth;
+	
+	byte[] data;
+}
