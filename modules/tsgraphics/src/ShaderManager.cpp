@@ -194,7 +194,7 @@ EShaderManagerStatus CShaderManager::Manager::loadProgramStage(HShader& hShader,
 EShaderManagerStatus CShaderManager::Manager::loadProgram(const string& shaderName, ShaderId& id)
 {
 	Path shaderFile = shaderPath;
-	shaderFile.addDirectories(shaderName + ".tsh");
+	shaderFile.addDirectories(shaderName + ".shader");
 
 	auto it = programMap.find(shaderName);
 

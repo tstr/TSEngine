@@ -66,7 +66,7 @@ int Sandbox::onInit()
 	m_entityManager.create(cube);
 
 	{
-		if (int err = loadModel(sponza, "sponza/sponza.tsm"))
+		if (int err = loadModel(sponza, "sponza/sponza.model"))
 			return err;
 
 		//Set transforms
@@ -77,7 +77,7 @@ int Sandbox::onInit()
 	}
 
 	{
-		if (int err = loadModel(cube, "cube.tsm"))
+		if (int err = loadModel(cube, "cube.model"))
 			return err;
 
 		//Set transforms

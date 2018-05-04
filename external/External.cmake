@@ -68,6 +68,7 @@ if (TS_USE_CONAN)
 
 else()
 
+    find_package(pybind11 REQUIRED)
     find_package(assimp REQUIRED)
 
 endif()

@@ -75,11 +75,6 @@ SET(tsgraphics_src
 	src/VertexBuilder.cpp
 	src/BufferPool.cpp
 	src/GraphicsRenderPass.cpp
-	
-	src/platform/Nvoptimus.cpp
-	
-	src/model/Reader.h
-	src/model/Reader.cpp
 )
 
 add_engine_module(

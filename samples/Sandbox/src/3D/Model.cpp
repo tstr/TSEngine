@@ -98,7 +98,7 @@ bool CModel::import(const Path& path)
 
 	string materialpathname(m_filepath.str());
 	materialpathname.erase(materialpathname.find_last_of('.'), string::npos);
-	materialpathname += ".tmat";
+	materialpathname += ".mat";
 	Path materialpath(materialpathname);
 	Path materialroot(materialpath.getParent());
 

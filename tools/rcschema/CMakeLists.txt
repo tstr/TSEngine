@@ -97,6 +97,8 @@ TARGET_LINK_LIBRARIES(
 	rcschemaLib
 )
 
+ADD_DEPENDENCIES(TestRCSchema rcschema)
+
 # Add test suite
 ADD_TEST(
 	NAME TestRCSchema

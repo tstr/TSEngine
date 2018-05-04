@@ -15,9 +15,11 @@ class Texture(db.Exporter):
         return ext.lower() in {".tga", ".png", ".jpg" }
 
     def info(self, deps):
-        deps["outputs"] = [self.rel_source()]
+        root, ext = path.splitext(self.rel_source())
+        deps["outputs"] = [root + ".texture"]
 
     def run(self):
         print("converting:", self.rel_source())
         makedirs(path.dirname(self.rel_source()), exist_ok=True)
-        tex.convert2D(self.source, self.rel_source())
+        root, ext = path.splitext(self.rel_source())
+        tex.convert2D(self.source, root + ".texture")

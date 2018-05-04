@@ -101,8 +101,8 @@ bool Model::exp(const std::string& outputDir)
 	string filename = targetpath.getDirectoryTop().str();
 	filename.erase(filename.find_last_of('.'), string::npos);
 
-	modelfilepath.addDirectories(filename + ".tsm");
-	matrlfilepath.addDirectories(filename + ".tmat");
+	modelfilepath.addDirectories(filename + ".model");
+	matrlfilepath.addDirectories(filename + ".mat");
 
 	//Open model file stream
     fstream modelfile(createFile(modelfilepath, ios::binary | ios::out));
@@ -259,6 +259,21 @@ inline void writeColourToStream(ostream& stream, const aiColor3D& colour)
 	stream << colour.r << ", " << colour.g << ", " << colour.b;
 }
 
+bool formatTexPath(const aiString& texName, Path& texPath)
+{
+	if (texName.length == 0)
+		return false;
+
+	string name = texName.C_Str();
+	name = name.substr(0, name.find_last_of('.')).append(".texture");
+
+	std::cout << name << std::endl;
+
+	texPath.composePath(name);
+
+	return true;
+}
+
 bool Model::exportMaterials(std::ostream& outputstream)
 {
 	outputstream << "#\n";
@@ -312,32 +327,27 @@ bool Model::exportMaterials(std::ostream& outputstream)
 
 			tex.Clear();
 			aimaterial->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &tex);
-			texpath.composePath(tex.C_Str());
-			if ((string)texpath.str() != "")
+			if (formatTexPath(tex, texpath))
 				outputstream << "diffuseMap = " << texpath.str() << endl;
 
 			tex.Clear();
 			aimaterial->GetTexture(aiTextureType::aiTextureType_SPECULAR, 0, &tex);
-			texpath.composePath(tex.C_Str());
-			if ((string)texpath.str() != "")
+			if (formatTexPath(tex, texpath))
 				outputstream << "specularMap = " << texpath.str() << endl;
 
 			tex.Clear();
 			aimaterial->GetTexture(aiTextureType::aiTextureType_AMBIENT, 0, &tex);
-			texpath.composePath(tex.C_Str());
-			if ((string)texpath.str() != "")
+			if (formatTexPath(tex, texpath))
 				outputstream << "ambientMap = " << texpath.str() << endl;
 
 			tex.Clear();
 			aimaterial->GetTexture(aiTextureType::aiTextureType_DISPLACEMENT, 0, &tex);
-			texpath.composePath(tex.C_Str());
-			if ((string)texpath.str() != "")
+			if (formatTexPath(tex, texpath))
 				outputstream << "displacementMap = " << texpath.str() << endl;
 
 			tex.Clear();
 			aimaterial->GetTexture(aiTextureType::aiTextureType_NORMALS, 0, &tex);
-			texpath.composePath(tex.C_Str());
-			if ((string)texpath.str() != "")
+			if (formatTexPath(tex, texpath))
 				outputstream << "normalMap = " << texpath.str() << endl;
 
 			outputstream << endl;

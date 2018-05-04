@@ -65,7 +65,7 @@ bool compile(const std::vector<std::string>& shaderFileNames, const std::string&
 					//Resolve object filename
 					string objectFileName = shaderPath.str();
 					objectFileName = objectFileName.substr(0, objectFileName.find_last_of('.'));
-					objectFileName += ".tsh";
+					objectFileName += ".shader";
 					objectFileName = Path(objectFileName).getDirectoryTop().str();
 
 					//Resolve path
