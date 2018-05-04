@@ -125,6 +125,8 @@ EPreprocessorStatus CPreprocessor::process(const Path& filepath, ostream& outstr
 
 				//Load and preprocess the include file
 				auto status = (EPreprocessorStatus)this->process(includeFilePath, outstream);
+				//Add dependency
+				m_includeDependencies.insert(includeFilePath);
 
 				if (status)
 				{

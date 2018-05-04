@@ -10,6 +10,7 @@ set(shaderc_inc
 	include/ShaderAnnotation.h
 	include/ShaderCommon.h
 	include/ShaderCompiler.h
+    include/ShaderSource.h
 )
 
 SET (shaderc_src
@@ -32,6 +33,7 @@ SET (shaderc_src
 	src/ShaderCompiler.cpp
     src/ShaderParser.cpp
 	src/ShaderType.cpp
+    src/ShaderSource.cpp
 	
 	#python bindings
 	binding.cpp

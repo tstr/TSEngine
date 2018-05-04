@@ -86,8 +86,9 @@ namespace ts
 			parse(stream);
 		}
 
-		bool good() const { return m_state; }
-		bool fail() const { return m_state; }
+		bool parse(std::istream& stream);
+
+		ShaderParser() {}
 
 		using ConstantDeclSet = std::set<ConstantsDeclaration>;
 		using FunctionDeclSet = std::set<FunctionDeclaration>;
@@ -116,9 +117,6 @@ namespace ts
 
 	private:
 
-		//Success state
-		bool m_state;
-
 		std::unique_ptr<TypeContext> m_types;
 
 		ConstantDeclSet m_constants;
@@ -133,7 +131,6 @@ namespace ts
 		void parseStruct(Scanner& scanner);
 		void parseResourceDeclaration(Scanner& scanner);
 		void parseConstantsDeclaration(Scanner& scanner);
-		bool parse(std::istream& stream);
 
 		bool isBasicType(const String& identifier) const;
 		bool isStructType(const String& identifier) const;

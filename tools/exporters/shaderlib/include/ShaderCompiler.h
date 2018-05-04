@@ -43,6 +43,8 @@ namespace ts
 		OPAQUE_PTR(ShaderCompiler, pCompiler)
 			
 		int compile(std::istream& source, std::ostream& output, const ShaderCompilerOptions& options);
+
+		const char* lastError() const;
 	};
 }
 

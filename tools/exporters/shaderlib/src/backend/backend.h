@@ -22,6 +22,6 @@ namespace ts
 	public:
 
 		virtual EShaderBackend getId() const = 0;
-		virtual bool compile(const std::string& code, ts::MemoryBuffer& codebuffer, const char* entrypoint, EShaderStage stage) = 0;
+		virtual bool compile(const std::string& code, ts::MemoryBuffer& codebuffer, const char* entrypoint, EShaderStage stage, std::string& errors) = 0;
 	};
 }

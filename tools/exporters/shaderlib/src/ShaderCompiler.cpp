@@ -5,21 +5,12 @@
 */
 
 #include "ShaderCompiler.h"
-#include "Preprocessor.h"
-#include <tscore/pathutil.h>
-
-//Hash function
-#include "crypto/sha256.h"
 
 //Shader backends
 #include "backend/hlsl.h"
 
 //Shader resource
 #include <tsgraphics/schemas/Shader.rcs.h>
-
-#include <iostream>
-#include <sstream>
-#include <fstream>
 
 using namespace std;
 using namespace ts;
@@ -39,19 +30,10 @@ struct ShaderCompiler::Impl
 	//Compiler backends
 	HLSLCompiler m_hlsl;
 
+	std::string m_errorString;
+
 	bool processStage(tsr::ShaderStageBuilder& stageRsc, const String& source, const String& entryPoint, EShaderStage stage)
 	{
-		//Create hash of preprocessed file
-		/*{
-			tsr::ShaderHash hash;
-
-			SHA256_CTX ctx;
-			sha256_init(&ctx);
-			sha256_update(&ctx, (const BYTE*)shader.entryPoint.c_str(), shader.entryPoint.size());
-			sha256_update(&ctx, (const BYTE*)srcStream.str().c_str(), srcStream.str().size());
-			sha256_final(&ctx, (BYTE*)&hash);
-		}*/
-
 		switch (stage)
 		{
 		case EShaderStage::eShaderStageVertex:
@@ -69,19 +51,18 @@ struct ShaderCompiler::Impl
 		case EShaderStage::eShaderStagePixel:
 			stageRsc.set_signature(formatSignature('S','P','I','X'));
 			break;
-		default: { cerr << "ERROR: unknown stage\n"; }
+		default: { m_errorString = "ERROR: unknown stage"; return false; }
 		}
 
 		MemoryBuffer bytecode;
 
 		//Compile with hlsl backend
-		if (m_hlsl.compile(source, bytecode, entryPoint.c_str(), stage))
+		if (m_hlsl.compile(source, bytecode, entryPoint.c_str(), stage, m_errorString))
 		{
 			stageRsc.set_code_hlslSM5(stageRsc.createArray<byte>((const byte*)bytecode.pointer(), bytecode.size()));
 		}
 		else
 		{
-			cerr << "ERROR: Unable to compile HLSL stage\n";
 			return false;
 		}
 
@@ -107,12 +88,12 @@ int ShaderCompiler::compile(istream& source, ostream& output, const ShaderCompil
 	uint32 status = 0;
 
 	tsr::ShaderBuilder shaderRsc;
-	
+
 	//TSSH
 	shaderRsc.set_signature(formatSignature('T', 'S', 'S', 'H'));
 
 	string sourceData = string(istreambuf_iterator<char>(source), istreambuf_iterator<char>());
-	
+
 	//Vertex
 	if (!options.vsEntry.empty())
 	{
@@ -125,7 +106,7 @@ int ShaderCompiler::compile(istream& source, ostream& output, const ShaderCompil
 		else
 			status = 1;
 	}
-	
+
 	//Tesselator Control
 	if (!options.tcsEntry.empty())
 	{
@@ -186,6 +167,11 @@ int ShaderCompiler::compile(istream& source, ostream& output, const ShaderCompil
 	}
 
 	return status;
+}
+
+const char* ShaderCompiler::lastError() const
+{
+	return pCompiler->m_errorString.c_str();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

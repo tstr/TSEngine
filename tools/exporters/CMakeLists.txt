@@ -9,7 +9,7 @@ function(add_pybind_module _target)
 
     _add_pybind_module(${_target} ${ARGN})
     
-    assign_source_groups(${texlib_src})
+    assign_source_groups(${ARGN})
     
     add_dependencies(DATA_BUILD ${_target})
 

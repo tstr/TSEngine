@@ -64,7 +64,7 @@ HLSLCompiler::~HLSLCompiler()
 		FreeLibrary((HMODULE)m_module);
 }
 
-bool HLSLCompiler::compile(const std::string& code, MemoryBuffer& codebuffer, const char* entrypoint, EShaderStage stage)
+bool HLSLCompiler::compile(const std::string& code, MemoryBuffer& codebuffer, const char* entrypoint, EShaderStage stage, std::string& errorbuffer)
 {
 	auto fn_compile = LOAD_FUNC((HMODULE)m_module, D3DCompile);
 
@@ -133,6 +133,7 @@ bool HLSLCompiler::compile(const std::string& code, MemoryBuffer& codebuffer, co
 	}
 
 	codebuffer = MemoryBuffer(bytecode->GetBufferPointer(), bytecode->GetBufferSize());
+	errorbuffer = std::string((const char*)errors->GetBufferPointer(), (const char*)errors->GetBufferPointer() + errors->GetBufferSize());
 
 	return true;
 }

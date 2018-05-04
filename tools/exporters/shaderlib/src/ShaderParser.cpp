@@ -6,8 +6,6 @@
 
 #include "util/Scanner.h"
 
-#include <iostream>
-
 using namespace ts;
 using namespace std;
 
@@ -186,8 +184,7 @@ void ShaderParser::parseFunctionParameters(Scanner& scan, std::vector<StructMemb
 		}
 		else
 		{
-			cerr << "Invalid type name \"" << scan.current().text << "\"\n";
-			throw ParserException("Invalid type");
+			throw ParserException(format("Invalid type name \"%\"", scan.current().text));
 		}
 
 		//Parameter name
@@ -225,8 +222,7 @@ void ShaderParser::parseFunctionDeclaration(Scanner& scan)
 	//Verify return type exists
 	if (func.returnType == nullptr)
 	{
-		cerr << "Invalid type name \"" << scan.current().text << "\"\n";
-		throw ParserException("Parser exception");
+		throw ParserException(format("Invalid type name \"%\"", scan.current().text));
 	}
 
 	func.name = scan.tryNext(TOKEN_IDENTIFIER);
@@ -313,8 +309,7 @@ void ShaderParser::parseConstantsDeclaration(Scanner& scan)
 
 				if (constant.type() == nullptr)
 				{
-					cerr << "Invalid type name \"" << member.typeName << "\"\n";
-					throw ParserException("Parser exception");
+					throw ParserException(format("Invalid type name \"%\"", member.typeName));
 				}
 
 				constants.members.push_back(constant);
@@ -393,8 +388,7 @@ void ShaderParser::parseStruct(Scanner& scan)
 
 		if (!m_types->defineType(structName, members))
 		{
-			cerr << "Invalid type name \"" << structName << "\"\n";
-			throw ParserException("Parser exception");
+			throw ParserException(format("Invalid type name \"%\"", structName));
 		}
 	}
 }
@@ -403,7 +397,6 @@ void ShaderParser::parseStruct(Scanner& scan)
 bool ShaderParser::parse(istream& stream)
 {
 	//Reset state
-	m_state = true;
 	m_types.reset(new TypeContext());
 	m_functions.clear();
 	m_resources.clear();
@@ -411,56 +404,45 @@ bool ShaderParser::parse(istream& stream)
 
 	Scanner scan(stream);
 
-	try
+	while (scan.hasNext())
 	{
-		while (scan.hasNext())
+		Token tok = scan.peek();
+
+		switch (tok.code)
 		{
-			Token tok = scan.peek();
-
-			switch (tok.code)
+		case TOKEN_STRUCT:
+		{
+			parseStruct(scan);
+			break;
+		}
+		case TOKEN_CBUFFER:
+		{
+			parseConstantsDeclaration(scan);
+			break;
+		}
+		case TOKEN_IDENTIFIER:
+		{
+			if (isResourceType(tok.text))
 			{
-			case TOKEN_STRUCT:
-			{
-				parseStruct(scan);
-				break;
+				parseResourceDeclaration(scan);
 			}
-			case TOKEN_CBUFFER:
+			else if ((tok.text == "void") || isType(tok.text))
 			{
-				parseConstantsDeclaration(scan);
-				break;
+				parseFunctionDeclaration(scan);
 			}
-			case TOKEN_IDENTIFIER:
-			{
-				if (isResourceType(tok.text))
-				{
-					parseResourceDeclaration(scan);
-				}
-				else if ((tok.text == "void") || isType(tok.text))
-				{
-					parseFunctionDeclaration(scan);
-				}
-				else
-				{
-					//Skip token
-					scan.next();
-				}
-
-				break;
-			}
-			default:
+			else
 			{
 				//Skip token
 				scan.next();
 			}
-			}
+
+			break;
+		}
+		default:
+		{
+			//Skip token
+			scan.next();
+		}
 		}
 	}
-	catch (ParserException& e)
-	{
-		//Log error
-		cerr << e.what() << endl;
-		m_state = false;
-	}
-
-	return m_state;
 }

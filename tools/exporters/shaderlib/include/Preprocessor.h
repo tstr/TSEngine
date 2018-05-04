@@ -23,6 +23,7 @@
 #include <tscore/path.h>
 #include <tscore/pathutil.h>
 
+#include <unordered_set>
 #include <unordered_map>
 #include <vector>
 #include <stack>
@@ -57,6 +58,7 @@ namespace ts
 		std::unordered_map<PreprocessorString, PreprocessorString> m_macroTable;	//Table of macros name/value pairs
 		std::vector<Path> m_includeDirs;											//List of include file directories to search through
 		std::stack<bool> m_macroStateStack;											//Stack for tracking the states of nested conditional statements
+		std::unordered_set<Path> m_includeDependencies;
 		bool m_stripComments = true;
 
 		String evaluateText(const String& text);
@@ -122,6 +124,11 @@ namespace ts
 		{
 			m_stripComments = enable;
 		}
+
+		/*
+			Get dependent include files
+		*/
+		const std::unordered_set<Path>& getIncludeDependencies() const { return m_includeDependencies; }
 		
 		EPreprocessorStatus process(const Path& filepath, std::ostream& out);
 	};
