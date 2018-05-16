@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include <tsengine/Env.h>
-#include <tsengine/Input.h>
+#include <tsengine.h>
 
 #include "3D/Graphics3D.h"
 #include "Scene.h"
@@ -36,10 +35,8 @@ namespace ts
 
 	public:
 
-		Sandbox(EngineEnv& env);
+		Sandbox(int argc, char** argv);
 		~Sandbox();
-
-		using Application::getEnv;
 
 		EntityManager* getEntities() { return &m_entityManager; }
 

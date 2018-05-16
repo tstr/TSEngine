@@ -2,7 +2,7 @@
 	System information source
 */
 
-#include <tsengine/Env.h>
+#include <tsengine/App.h>
 
 #include <windows.h>
 #include <Psapi.h>
@@ -18,7 +18,7 @@ static ECpuVendorID getCPUvendorID();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Path EngineEnv::getCurrentDir() const
+Path Application::getCurrentDir() const
 {
 	char path[MAX_PATH];
 	GetCurrentDirectoryA(MAX_PATH, path);
@@ -26,7 +26,7 @@ Path EngineEnv::getCurrentDir() const
 	return Path(path);
 }
 
-Path EngineEnv::getBinaryDir() const
+Path Application::getBinaryDir() const
 {
 	char path[MAX_PATH];
 	GetModuleFileNameA(nullptr, path, MAX_PATH);
@@ -36,7 +36,7 @@ Path EngineEnv::getBinaryDir() const
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void EngineEnv::getSystemInfo(SSystemInfo& info)
+void Application::getSystemInfo(SSystemInfo& info)
 {
 	//Get computer username
 	char username[64];
@@ -71,7 +71,7 @@ void EngineEnv::getSystemInfo(SSystemInfo& info)
 
 }
 
-void EngineEnv::getSystemDisplayInfo(SDisplayInfo& info)
+void Application::getSystemDisplayInfo(SDisplayInfo& info)
 {
 	info.width = GetSystemMetrics(SM_CXSCREEN);
 	info.height = GetSystemMetrics(SM_CYSCREEN);
@@ -79,7 +79,7 @@ void EngineEnv::getSystemDisplayInfo(SDisplayInfo& info)
 	info.colourDepth = GetDeviceCaps(GetDC(0), BITSPIXEL);
 }
 
-void EngineEnv::getSystemMemoryInfo(SSystemMemoryInfo& info)
+void Application::getSystemMemoryInfo(SSystemMemoryInfo& info)
 {
 	MEMORYSTATUSEX status;
 	status.dwLength = sizeof(status);

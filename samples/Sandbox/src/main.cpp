@@ -8,7 +8,6 @@ using namespace ts;
 
 int main(int argc, char** argv)
 {
-	EngineEnv env(argc, argv);
-
-	return env.start(Sandbox(env));
+	Sandbox app(argc, argv);
+	return app.start();
 }

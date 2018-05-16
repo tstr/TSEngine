@@ -8,9 +8,10 @@
 
 SET(tsengine_inc
 	
+    inc/tsengine.h
 	inc/tsengine/abi.h
 	
-	inc/tsengine/Env.h
+	inc/tsengine/App.h
 	inc/tsengine/EnvInfo.h
 	inc/tsengine/VarTable.h
 
@@ -34,10 +35,10 @@ SET(tsengine_src
 	src/IniReader.cpp
 	src/IniReader.h
 	
-	src/Env.cpp
-	src/EnvError.cpp
+	src/App.cpp
+	src/AppError.cpp
+	src/AppConfig.cpp
 	src/EnvInfo.cpp
-	src/EnvConfig.cpp
 )
 
 add_engine_module(

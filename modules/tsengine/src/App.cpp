@@ -2,7 +2,7 @@
 	Engine environment source
 */
 
-#include <tsengine/env.h>
+#include <tsengine/App.h>
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 #include <tscore/system/thread.h>
@@ -31,7 +31,7 @@ class EngineWindow : public Window
 {
 private:
 
-	EngineEnv& m_env;
+	Application& m_app;
 	atomic<int> m_exitCode;
 
 	/*
@@ -40,13 +40,13 @@ private:
 
 	void onResize() override
 	{
-		if (auto gfx = m_env.getGraphics())
+		if (auto gfx = m_app.graphics())
 			gfx->refreshDisplay();
 	}
 
 	void onActivate() override
 	{
-		if (auto gfx = m_env.getGraphics())
+		if (auto gfx = m_app.graphics())
 			gfx->refreshDisplay();
 	}
 
@@ -57,13 +57,13 @@ private:
 
 	void onEvent(const PlatformEventArgs& arg) override
 	{
-		m_env.getInput()->onEvent(arg);
+		m_app.input()->onEvent(arg);
 	}
 
 public:
 
-	EngineWindow(EngineEnv& env, const WindowInfo& desc) :
-		m_env(env),
+	EngineWindow(Application& app, const WindowInfo& desc) :
+		m_app(app),
 		m_exitCode(0),
 		Window(desc)
 	{
@@ -73,7 +73,7 @@ public:
 	{
 	}
 
-	EngineEnv& getSystem() { return m_env; }
+	Application& getSystem() { return m_app; }
 
 	int getExitCode() const
 	{
@@ -90,7 +90,7 @@ public:
 // Engine initialization
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-EngineEnv::EngineEnv(int argc, char** argv)
+Application::Application(int argc, char** argv)
 {
 	/////////////////////////////////////////////////////////////////////////
 	// Initialize error handlers
@@ -187,7 +187,7 @@ EngineEnv::EngineEnv(int argc, char** argv)
 	/////////////////////////////////////////////////////////////////////////
 }
 
-EngineEnv::~EngineEnv()
+Application::~Application()
 {
 	//Shutdown
 	m_inputSystem.reset();
@@ -199,9 +199,9 @@ EngineEnv::~EngineEnv()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int EngineEnv::start(Application& app)
+int Application::start()
 {
-	if (int err = app.onInit())
+	if (int err = this->onInit())
 	{
 		tserror("Failed to load application class (%)", err);
 
@@ -225,7 +225,7 @@ int EngineEnv::start(Application& app)
 			m_graphicsSystem->begin();
 			
 			//Update application
-			app.onUpdate(dt);
+			this->onUpdate(dt);
 
 			m_graphicsSystem->end();
 
@@ -234,13 +234,13 @@ int EngineEnv::start(Application& app)
 		}
 	}
 
-	app.onExit();
+	this->onExit();
 
 	//Exit code is stored in the window
 	return ((EngineWindow*)m_window.get())->getExitCode();
 }
 
-void EngineEnv::exit(int code)
+void Application::exit(int code)
 {
 	//Set environment exit code
 	auto win = (EngineWindow*)m_window.get();

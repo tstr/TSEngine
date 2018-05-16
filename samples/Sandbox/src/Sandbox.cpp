@@ -12,10 +12,10 @@ using namespace ts;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor/destructor
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-Sandbox::Sandbox(EngineEnv& env) :
-	Application(env),
-	m_g3D(getEnv().getGraphics(), &m_scene),
-	m_scene(&m_entityManager, getEnv().getInput())
+Sandbox::Sandbox(int argc, char** argv) :
+	Application(argc, argv),
+	m_g3D(graphics(), &m_scene),
+	m_scene(&m_entityManager, input())
 {}
 
 Sandbox::~Sandbox() {}
@@ -25,19 +25,12 @@ Sandbox::~Sandbox() {}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 int Sandbox::onInit()
 {
-	getEnv().getInput()->addListener(this);
+	input()->addListener(this);
 
 	SSystemInfo sysInfo;
-	EngineEnv::getSystemInfo(sysInfo);
+	Application::getSystemInfo(sysInfo);
 	tsinfo("OS:   %", sysInfo.osName);
 	tsinfo("User: %", sysInfo.userName);
-
-	//Print variables
-	VarTable::List varList = getEnv().getVars()->toList();
-	for (auto entry : varList)
-	{
-		tsinfo("% = %", entry.name, entry.value);
-	}
 
 	getScene()->getCamera()->setPosition(Vector(0, 1.0f, -4.0f));
 	getScene()->getCamera()->setSpeed(15.0f);
@@ -93,7 +86,7 @@ int Sandbox::onInit()
 
 void Sandbox::onExit()
 {
-	getEnv().getInput()->removeListener(this);
+	input()->removeListener(this);
 
 	tsinfo("exit");
 }
@@ -161,7 +154,7 @@ int Sandbox::loadModel(Entity entity, const String& modelfile)
 void Sandbox::onUpdate(double deltatime)
 {
 	GraphicsDisplayOptions displayOpt;
-	getEnv().getGraphics()->getDisplayOptions(displayOpt);
+	graphics()->getDisplayOptions(displayOpt);
 	
 	getScene()->getCamera()->setAspectRatio((float)displayOpt.width / displayOpt.height);
 	getScene()->getCamera()->update(deltatime);
@@ -183,13 +176,13 @@ void Sandbox::onKeyDown(EKeyCode code)
 {
 	if (code == eKeyEsc)
 	{
-		getEnv().exit(0);
+		exit(0);
 	}
 	else if (code == eKeyF1)
 	{
 		GraphicsDisplayOptions opt;
-		getEnv().getGraphics()->getDisplayOptions(opt);
-		getEnv().getGraphics()->setDisplayMode((opt.mode == eDisplayBorderless) ? eDisplayWindowed : eDisplayBorderless);
+		graphics()->getDisplayOptions(opt);
+		graphics()->setDisplayMode((opt.mode == eDisplayBorderless) ? eDisplayWindowed : eDisplayBorderless);
 	}
 }
 
