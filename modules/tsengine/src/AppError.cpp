@@ -2,7 +2,7 @@
 	Exception handling and memory leak handling functions - these functions are only meant to be called on startup and in no other place
 */
 
-#include <TsEngine/Env.h>
+#include <TsEngine/App.h>
 
 #define _CRTDBG_MAP_ALLOC
 
@@ -21,7 +21,7 @@ static LONG WINAPI exception_filter(EXCEPTION_POINTERS *info);
 
 using namespace ts;
 
-void EngineEnv::initErrorHandler()
+void Application::initErrorHandler()
 {
 	SetUnhandledExceptionFilter(exception_filter);
 	

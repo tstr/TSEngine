@@ -4,7 +4,7 @@
 	Loads an INI config file and stores all entries in the Variable Table
 */
 
-#include <tsengine/Env.h>
+#include <tsengine/App.h>
 #include <tscore/debug/log.h>
 
 #include "IniReader.h"
@@ -14,7 +14,7 @@ using namespace std;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void EngineEnv::initConfig(const Path& cfgpath)
+void Application::initConfig(const Path& cfgpath)
 {
 	m_vars.reset(new VarTable());
 	
