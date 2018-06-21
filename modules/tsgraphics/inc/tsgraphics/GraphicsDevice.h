@@ -39,7 +39,7 @@ namespace ts
 		virtual ResourceHandle createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle = (ResourceHandle)0) = 0;
         virtual ResourceSetHandle createResourceSet(const ResourceSetInfo& info, ResourceSetHandle recycle = (ResourceSetHandle)0) = 0;
 		virtual ShaderHandle createShader(const ShaderCreateInfo& info) = 0;
-        virtual StateHandle createState(ShaderHandle program, const StateCreateInfo& info);
+        virtual StateHandle createState(ShaderHandle program, const StateCreateInfo& info) = 0;
 		virtual TargetHandle createTarget(const TargetCreateInfo& info, TargetHandle recycle = (TargetHandle)0) = 0;
 		
 		virtual void destroy(ResourceHandle rsc) = 0;
@@ -71,10 +71,5 @@ namespace ts
 		
 		virtual void finish() = 0;
     };
-    
-    
-    
-    
-    
 }
 

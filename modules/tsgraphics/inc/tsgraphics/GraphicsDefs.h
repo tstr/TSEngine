@@ -160,8 +160,6 @@ namespace ts
 
 	struct ImageSampler
 	{
-		uint32 slot;
-
 		ImageAddressMode addressU;
 		ImageAddressMode addressV;
 		ImageAddressMode addressW;
