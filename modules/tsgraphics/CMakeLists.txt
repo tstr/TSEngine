@@ -15,9 +15,9 @@ set(tsgraphics_inc
 	inc/tsgraphics/CommandQueue.h
 	inc/tsgraphics/FrameGraph.h
     
+	inc/tsgraphics/Defs.h
+	inc/tsgraphics/Device.h
 	inc/tsgraphics/Graphics.h
-	inc/tsgraphics/GraphicsDefs.h
-	inc/tsgraphics/GraphicsDevice.h
 )
 
 SET(tsgraphics_api_d3d11_src
@@ -55,21 +55,13 @@ SET(tsgraphics_src
 	
 	${tsgraphics_api_d3d11_src}
 	
-	src/GraphicsCore.cpp
-	src/GraphicsSystem.cpp
-	src/GraphicsContext.cpp
+	src/Graphics.cpp
 
 	src/CommandQueue.cpp
 	src/CommandDispatchers.cpp
 	
-	src/ShaderManager.cpp
-	src/TextureManager.cpp
-	src/TextureImporter.h
-	src/TextureImporter.cpp
-	src/MeshManager.cpp
-	src/VertexBuilder.cpp
-	src/BufferPool.cpp
-	src/GraphicsRenderPass.cpp
+	src/ImageLoader.h
+	src/ImageLoader.cpp
 )
 
 add_engine_module(

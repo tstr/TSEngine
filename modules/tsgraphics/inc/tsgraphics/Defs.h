@@ -10,6 +10,9 @@
 
 namespace ts
 {
+	struct RenderDevice;
+	struct RenderContext;
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//	Resource proxies
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -19,6 +22,7 @@ namespace ts
 	enum class ShaderHandle : uintptr;
 	enum class StateHandle : uintptr;
 	enum class TargetHandle : uintptr;
+	enum class CommandHandle : uintptr;
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//	Device structs
@@ -102,11 +106,11 @@ namespace ts
 
 	enum class ImageType : uint8
 	{
-		_1D   = 1,
-		_2D   = 2,
-		_3D   = 3,
-		CUBE = 4,
-		ARRAY_2D = 5,
+		_1D        = 1,
+		_2D        = 2,
+		_3D        = 3,
+		CUBE       = 4,
+		ARRAY_2D   = 5,
 		ARRAY_CUBE = 6 
 	};
 
@@ -131,7 +135,7 @@ namespace ts
 
 		uint32 width = 0;
 		uint32 height = 0;
-		uint32 depth = 0; //or array length
+		uint32 length = 0; //or array length
 
 		bool useMips = false;
 		uint32 msCount = 1;
@@ -231,27 +235,6 @@ namespace ts
 	};
 
 	/*
-		Shader info structure
-	*/
-	struct ShaderCreateInfo
-	{
-		const void* vsByteCode;		//vertex shader
-		const void* psByteCode;		//pixel shader
-		const void* tesByteCode;	//tessellation evaluation shader
-		const void* tcsByteCode;	//tessellation control shader
-		const void* gsByteCode;		//geometry shader
-
-		size_t vsSize;
-		size_t psSize;
-		size_t tesSize;
-		size_t tcsSize;
-		size_t gsSize;
-
-		const void* cosByteCode;	//compute shader
-		size_t cosSize;
-	};
-
-	/*
 		Pipeline state info structure
 	*/
 	struct StateCreateInfo
@@ -284,6 +267,41 @@ namespace ts
 		VertexTopology topology;
 	};
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //  Shaders
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+	enum class ShaderStage
+	{
+		VERTEX,
+        GEOMETRY,
+        TESSCTRL,
+        TESSEVAL,
+        PIXEL,
+        COMPUTE
+	};
+
+	/*
+		Shader info structure
+	*/
+	struct ShaderCreateInfo
+	{
+		const void* vsByteCode;		//vertex shader
+		const void* psByteCode;		//pixel shader
+		const void* tesByteCode;	//tessellation evaluation shader
+		const void* tcsByteCode;	//tessellation control shader
+		const void* gsByteCode;		//geometry shader
+
+		size_t vsSize;
+		size_t psSize;
+		size_t tesSize;
+		size_t tcsSize;
+		size_t gsSize;
+
+		const void* cosByteCode;	//compute shader
+		size_t cosSize;
+	};
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //  Resources
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

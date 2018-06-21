@@ -14,7 +14,8 @@
 #include <tscore/types.h>
 #include <tscore/ptr.h>
 #include <tscore/delegate.h>
-#include <tsgraphics/GraphicsCore.h>
+
+#include "Device.h"
 
 namespace ts
 {
@@ -22,7 +23,7 @@ namespace ts
 	struct CommandBatch;
 
 	typedef const void* CommandPtr;
-	typedef Delegate<void(IRenderContext*, CommandPtr)> CommandDelegate;
+	typedef Delegate<void(RenderContext*, CommandPtr)> CommandDelegate;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/*
@@ -124,7 +125,7 @@ namespace ts
 		//Sort queued command batches based on their keys
 		TSGRAPHICS_API void sort();
 		//Execute queued command batches on a given context
-		TSGRAPHICS_API void flush(IRenderContext* context);
+		TSGRAPHICS_API void flush(RenderContext* context);
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,71 +137,64 @@ namespace ts
 	//Executes a draw call on a given context
 	struct CommandDraw
 	{
-		HTarget drawTarget;
-		HDrawCmd drawCmd;
-		SViewport drawView;
-		SViewport drawScissor;
+		CommandHandle hCmd;
 
-		CommandDraw(HTarget target, HDrawCmd cmd, SViewport view, SViewport scissor) :
-			drawTarget(target),
-			drawCmd(cmd),
-			drawView(view),
-			drawScissor(scissor)
-		{}
+		CommandDraw() {}
+		CommandDraw(CommandHandle c) : hCmd(c) {}
 
-		TSGRAPHICS_API void dispatch(IRenderContext* context, CommandPtr extra);
+		TSGRAPHICS_API void dispatch(RenderContext* context, CommandPtr extra);
 	};
 
 	//Updates a buffer resource on a given context
 	struct CommandBufferUpdate
 	{
-		HBuffer hBuf;
+		ResourceHandle hBuf;
 
 		CommandBufferUpdate() {}
-		CommandBufferUpdate(HBuffer b) : hBuf(b) {}
+		CommandBufferUpdate(ResourceHandle b) : hBuf(b) {}
 
-		TSGRAPHICS_API void dispatch(IRenderContext* context, CommandPtr extra);
+		TSGRAPHICS_API void dispatch(RenderContext* context, CommandPtr extra);
 	};
 
 	//Updates a texture resource on a given context
 	struct CommandTextureUpdate
 	{
-		HTexture hTex;
-		uint32 texIdx;
+		ResourceHandle hImg;
+		uint32 index;
 
 		CommandTextureUpdate() {}
-		CommandTextureUpdate(HTexture t, uint32 idx) : hTex(t), texIdx(idx) {}
+		CommandTextureUpdate(ResourceHandle t, uint32 idx) : hImg(t), index(idx) {}
 
-		TSGRAPHICS_API void dispatch(IRenderContext* context, CommandPtr extra);
+		TSGRAPHICS_API void dispatch(RenderContext* context, CommandPtr extra);
 	};
 
 	//Clears a target on a given context
 	struct CommandTargetClear
 	{
-		HTarget hTarget;
+		TargetHandle hTarget;
 		Vector colour;
 		float depth;
 
 		CommandTargetClear() {}
-		CommandTargetClear(HTarget target, const Vector& colour, float depth) :
+		CommandTargetClear(TargetHandle target, const Vector& colour, float depth) :
 			hTarget(target),
 			colour(colour),
 			depth(depth)
 		{}
 
-		TSGRAPHICS_API void dispatch(IRenderContext* context, CommandPtr extra);
+		TSGRAPHICS_API void dispatch(RenderContext* context, CommandPtr extra);
 	};
 
 	//Resolves a multisampled texture on a given context
 	struct CommandTextureResolve
 	{
-		HTexture hDst;
-		HTexture hSrc;
+		ResourceHandle hDst;
+		ResourceHandle hSrc;
 
 		CommandTextureResolve() {}
-		CommandTextureResolve(HTexture src, HTexture dest) : hDst(dest), hSrc(src) {}
+		CommandTextureResolve(ResourceHandle src, ResourceHandle dest) : hDst(dest), hSrc(src) {}
 
-		TSGRAPHICS_API void dispatch(IRenderContext* context, CommandPtr extra);
+		TSGRAPHICS_API void dispatch(RenderContext* context, CommandPtr extra);
 	};
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////

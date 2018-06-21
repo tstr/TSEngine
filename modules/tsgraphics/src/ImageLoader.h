@@ -1,11 +1,11 @@
 /*
-	Texture Importer header
+	Image loader header
 */
 
 #pragma once
 
 #include <tscore/path.h>
-#include <tsgraphics/api/RenderDef.h>
+#include <tsgraphics/Defs.h>
 
 #include <vector>
 
@@ -15,21 +15,21 @@
 
 namespace ts
 {
-	struct STextureLoadInfo
+	struct ImageLoadInfo
 	{
-		STextureResourceDesc desc;
+		ImageResourceInfo desc;
 		uint32 byteWidth = 0;
 		uint32 byteDepth = 0;
 		const void* data = nullptr;
 	};
 
 	/*
-		Texture importer class:
+		Image loader class:
 
-		Loads texture information from a file.
+		Loads image information from a file.
 		Is singlethreaded.
 	*/
-	class CTextureImporter
+	class ImageLoader
 	{
 	private:
 
@@ -37,13 +37,13 @@ namespace ts
 
 	public:
 
-		CTextureImporter();
-		~CTextureImporter();
+		ImageLoader();
+		~ImageLoader();
 
 		//Load a texture from a given file
-		int load(const Path& file, STextureLoadInfo& info);
+		int load(const Path& file, ImageLoadInfo& info);
 		//Unload a texture
-		void unload(STextureLoadInfo& info);
+		void unload(ImageLoadInfo& info);
 	};
 }
 

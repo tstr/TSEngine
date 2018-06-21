@@ -75,6 +75,8 @@ namespace ts
 		struct System;
 		OpaquePtr<System> pSystem;
 
+		RenderDevice::Ptr pDevice;
+
 	public:
 
 		OPAQUE_PTR(GraphicsSystem, pSystem)
@@ -83,8 +85,7 @@ namespace ts
 		TSGRAPHICS_API GraphicsSystem(const GraphicsConfig&);
 		TSGRAPHICS_API ~GraphicsSystem();
 
-		//Get list of available adapters
-		TSGRAPHICS_API void getAdapterList(std::vector<SRenderAdapterDesc>& adapters);
+		RenderDevice* device() const { return pDevice.get(); }
 
 		/*
 			Get/set graphics system properties
@@ -98,7 +99,6 @@ namespace ts
 
 		TSGRAPHICS_API void getDisplayOptions(GraphicsDisplayOptions& opt);
 
-		TSGRAPHICS_API HTarget getDisplayTarget() const;
 		TSGRAPHICS_API Path getRootPath() const;
 
 		/*

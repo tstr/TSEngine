@@ -8,7 +8,7 @@
 #include <tscore/alloc/Linear.h>
 #include <tscore/debug/assert.h>
 
-#include <tsgraphics/api/RenderApi.h>
+#include <tsgraphics/Device.h>
 
 #include <algorithm>
 
@@ -198,7 +198,7 @@ void CommandQueue::submitBatch(SortKey key, CommandBatch* batch)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 //Execute the dispatcher of a given command
-static void executeCommand(IRenderContext* context, Command* cmd)
+static void executeCommand(RenderContext* context, Command* cmd)
 {
 	if (cmd != nullptr)
 	{
@@ -214,7 +214,7 @@ static void executeCommand(IRenderContext* context, Command* cmd)
 }
 
 //Execute queued command batches
-void CommandQueue::flush(IRenderContext* context)
+void CommandQueue::flush(RenderContext* context)
 {
 	tsassert(pQueue);
 
