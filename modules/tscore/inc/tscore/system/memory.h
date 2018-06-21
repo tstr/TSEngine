@@ -50,8 +50,8 @@ namespace ts
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template<typename t>
-	using UPtr = std::unique_ptr<t>;
+	template<typename t, typename d = std::default_delete<t>>
+	using UPtr = std::unique_ptr<t, d>;
 
 	template<typename t>
 	using SPtr = std::shared_ptr<t>;
