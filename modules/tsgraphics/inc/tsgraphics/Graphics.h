@@ -12,7 +12,6 @@
 #include <tscore/system/memory.h>
 #include <tscore/path.h>
 
-#include "GraphicsCore.h"
 #include "CommandQueue.h"
 #include "Surface.h"
 
@@ -20,6 +19,12 @@
 
 namespace ts
 {
+	enum EGraphicsAPIID
+	{
+		eGraphicsAPI_Null  = 0,
+		eGraphicsAPI_D3D11 = 1
+	};
+	
 	enum EDisplayMode
 	{
 		eDisplayWindowed,
@@ -63,7 +68,7 @@ namespace ts
 	/*
 		Main Graphics Subsystem class
 	*/
-	class GraphicsSystem : public GraphicsCore
+	class GraphicsSystem
 	{
 	private:
 		

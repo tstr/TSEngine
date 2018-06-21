@@ -10,19 +10,14 @@ set(tsgraphics_inc
 
 	inc/tsgraphics/abi.h
 	
-	inc/tsgraphics/Surface.h
-	inc/tsgraphics/GraphicsSystem.h
-	inc/tsgraphics/GraphicsCore.h
-	inc/tsgraphics/GraphicsContext.h
-	inc/tsgraphics/TextureManager.h
-	inc/tsgraphics/ShaderManager.h
-	inc/tsgraphics/MeshManager.h
-	inc/tsgraphics/BufferPool.h
-	inc/tsgraphics/CommandQueue.h
 	inc/tsgraphics/Colour.h
-
-	inc/tsgraphics/api/RenderApi.h
-	inc/tsgraphics/api/RenderDef.h
+	inc/tsgraphics/Surface.h
+	inc/tsgraphics/CommandQueue.h
+	inc/tsgraphics/FrameGraph.h
+    
+	inc/tsgraphics/Graphics.h
+	inc/tsgraphics/GraphicsDefs.h
+	inc/tsgraphics/GraphicsDevice.h
 )
 
 SET(tsgraphics_api_d3d11_src
