@@ -3,7 +3,7 @@
 */
 
 #include <tsgraphics/CommandQueue.h>
-#include <tsgraphics/api/RenderApi.h>
+#include <tsgraphics/Device.h>
 
 using namespace std;
 using namespace ts;
@@ -12,29 +12,29 @@ using namespace ts;
 // Command dispatcher implementations
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CommandDraw::dispatch(IRenderContext* context, CommandPtr data)
+void CommandDraw::dispatch(RenderContext* context, CommandPtr data)
 {
-	context->draw(drawTarget, drawView, drawScissor, drawCmd);
+	context->submit(hCmd);
 }
 
-void CommandBufferUpdate::dispatch(IRenderContext* context, CommandPtr data)
+void CommandBufferUpdate::dispatch(RenderContext* context, CommandPtr data)
 {
-	context->bufferUpdate(this->hBuf, data);
+	context->resourceUpdate(this->hBuf, data);
 }
 
-void CommandTextureUpdate::dispatch(IRenderContext* context, CommandPtr data)
+void CommandTextureUpdate::dispatch(RenderContext* context, CommandPtr data)
 {
-	context->textureUpdate(this->hTex, this->texIdx, data);
+	context->resourceUpdate(this->hImg, data, this->index);
 }
 
-void CommandTextureResolve::dispatch(IRenderContext* context, CommandPtr extra)
+void CommandTextureResolve::dispatch(RenderContext* context, CommandPtr extra)
 {
-	context->textureResolve(hSrc, hDst);
+	context->imageResolve(hSrc, hDst);
 }
 
-void CommandTargetClear::dispatch(IRenderContext* context, CommandPtr extra)
+void CommandTargetClear::dispatch(RenderContext* context, CommandPtr extra)
 {
-	context->clearRenderTarget(hTarget, colour);
+	context->clearColourTarget(hTarget, RGBA(colour));
 	context->clearDepthTarget(hTarget, depth);
 }
 

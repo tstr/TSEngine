@@ -5,13 +5,13 @@
 */
 
 #include <tscore/debug/log.h>
+#include <tscore/debug/assert.h>
 
 #include <mutex>
 #include <atomic>
 
-#include <tsgraphics/GraphicsSystem.h>
-#include <tsgraphics/GraphicsContext.h>
-#include <tsgraphics/api/RenderApi.h>
+#include <tsgraphics/Graphics.h>
+#include <tsgraphics/Device.h>
 
 using namespace std;
 using namespace ts;
@@ -27,7 +27,7 @@ struct GraphicsSystem::System : public GraphicsConfig
 	GraphicsSystem* system;
 
 	//Primary rendering context
-	IRenderContext* context;
+	RenderContext* context;
 
 	Lock displayLock;
 	atomic<bool> displayNeedRebuild;
@@ -43,7 +43,6 @@ struct GraphicsSystem::System : public GraphicsConfig
 
 	~System() {}
 
-
 	void tryRebuildDisplay();
 	void doRebuildDisplay();
 };
@@ -54,20 +53,19 @@ GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
 	pSystem(new System(this, cfg))
 {
 	//Configure low level render api
-	SRenderApiConfig apicfg;
-	apicfg.adapterIndex = 0; //hard code the adapter for now
-	apicfg.display.resolutionH = cfg.display.height;
-	apicfg.display.resolutionW = cfg.display.width;
-	apicfg.display.fullscreen = (cfg.display.mode == EDisplayMode::eDisplayFullscreen);
-	apicfg.display.multisampleLevel = cfg.display.multisampleLevel;
-	apicfg.windowHandle = pSystem->surface->getHandle();
+	GraphicsDeviceConfig devcfg;
+	devcfg.adapterIndex = 0; //hard code the adapter for now
+	devcfg.display.resolutionH = cfg.display.height;
+	devcfg.display.resolutionW = cfg.display.width;
+	devcfg.display.fullscreen = (cfg.display.mode == EDisplayMode::eDisplayFullscreen);
+	devcfg.display.multisampleLevel = cfg.display.multisampleLevel;
+	devcfg.windowHandle = pSystem->surface->getHandle();
 
 #ifdef _DEBUG
 	apicfg.flags |= ERenderApiFlags::eFlagDebug;
 #endif
 
-	//Initialize low level render API
-	this->init(cfg.apiid, apicfg);
+	pDevice = RenderDevice::create(devcfg);
 
 	//If desired display mode is borderless, ISurface::enableBorderless() must be called manually
 	if (cfg.display.mode == eDisplayBorderless)
@@ -83,40 +81,13 @@ GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
 	}
 
 	//Create main render context
-	getApi()->createContext(&pSystem->context);
+	pSystem->context = pDevice->getContext();
 }
 
 GraphicsSystem::~GraphicsSystem()
 {
-	if (pSystem)
-	{
-		getApi()->destroyContext(pSystem->context);
-		pSystem->context = nullptr;
-
-		//Release all resources before deinitialization (causes memory leak otherwise)
-		pSystem.reset();
-
-		//Deinitialize low level render api
-		this->deinit();
-	}
-}
-
-//Enumerate list of available render adapters on this machine
-void GraphicsSystem::getAdapterList(std::vector<SRenderAdapterDesc>& adapters)
-{
-	IAdapterFactory* adapterfactory = nullptr;
-	abi::createAdapterFactory(&adapterfactory);
-
-	adapters.clear();
-
-	for (uint32 i = 0; i < adapterfactory->getAdapterCount(); i++)
-	{
-		SRenderAdapterDesc desc;
-		adapterfactory->enumAdapter(i, desc);
-		adapters.push_back(desc);
-	}
-
-	abi::destroyAdapterFactory(adapterfactory);
+	//Release all resources before deinitialization (causes memory leak otherwise)
+	pSystem.reset();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -193,8 +164,8 @@ void GraphicsSystem::System::tryRebuildDisplay()
 
 void GraphicsSystem::System::doRebuildDisplay()
 {
-	SDisplayConfig config;
-	system->getApi()->getDisplayConfiguration(config);
+	DisplayConfig config;
+	system->device()->getDisplayConfiguration(config);
 
 	/*
 		Change Multisample level
@@ -202,7 +173,7 @@ void GraphicsSystem::System::doRebuildDisplay()
 	if (config.multisampleLevel != display.multisampleLevel)
 	{
 		config.multisampleLevel = display.multisampleLevel;
-		system->getApi()->setDisplayConfiguration(config);
+		system->device()->setDisplayConfiguration(config);
 	}
 
 	/*
@@ -239,7 +210,7 @@ void GraphicsSystem::System::doRebuildDisplay()
 					{
 						//Enter fullscreen
 						config.fullscreen = true;
-						system->getApi()->setDisplayConfiguration(config);
+						system->device()->setDisplayConfiguration(config);
 					}
 
 					curMode = mode;
@@ -261,7 +232,7 @@ void GraphicsSystem::System::doRebuildDisplay()
 
 					//Exit fullscreen
 					config.fullscreen = false;
-					system->getApi()->setDisplayConfiguration(config);
+					system->device()->setDisplayConfiguration(config);
 					break;
 				}
 			}
@@ -290,7 +261,7 @@ void GraphicsSystem::System::doRebuildDisplay()
 		config.multisampleLevel = 0;
 		config.fullscreen = display.mode == eDisplayFullscreen;
 
-		system->getApi()->setDisplayConfiguration(config);
+		system->device()->setDisplayConfiguration(config);
 	}
 }
 
@@ -312,13 +283,6 @@ Path GraphicsSystem::getRootPath() const
 	return pSystem->rootpath;
 }
 
-HTarget GraphicsSystem::getDisplayTarget() const
-{
-	HTarget target;
-	getApi()->getDisplayTarget(target);
-	return target;
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 void GraphicsSystem::begin()
@@ -329,15 +293,7 @@ void GraphicsSystem::begin()
 	pSystem->tryRebuildDisplay();
 
 	//Main context
-	IRenderContext* rc = pSystem->context;
-
-	getApi()->drawBegin();
-
-	HTarget display = HTARGET_NULL;
-	getApi()->getDisplayTarget(display);
-
-	rc->clearRenderTarget(display, (const Vector&)colours::Azure);
-	rc->clearDepthTarget(display, 1.0f);
+	RenderContext* rc = pSystem->context;
 }
 
 void GraphicsSystem::end()
@@ -345,11 +301,10 @@ void GraphicsSystem::end()
 	tsassert(pSystem);
 
 	//Main context
-	IRenderContext* rc = pSystem->context;
+	RenderContext* rc = pSystem->context;
 
 	rc->finish();
-
-	getApi()->drawEnd(&rc, 1);
+	device()->execute(rc);
 }
 
 void GraphicsSystem::execute(CommandQueue* queue)
