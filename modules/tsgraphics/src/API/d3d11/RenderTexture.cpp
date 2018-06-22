@@ -14,13 +14,13 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ERenderStatus D3D11Render::createResourceTexture(
+ERenderStatus D3D11::createResourceTexture(
 	HTexture& texRsc,
 	const STextureResourceData* data,
 	const STextureResourceDesc& desc
 )
 {
-	DXGI_FORMAT format = TextureFormatToDXGIFormat(desc.texformat);
+	DXGI_FORMAT format = ImageFormatToDXGIFormat(desc.texformat);
 	D3D11_USAGE usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
 	D3D11_CPU_ACCESS_FLAG access = D3D11_CPU_ACCESS_READ;
 	
@@ -231,7 +231,7 @@ ERenderStatus D3D11Render::createResourceTexture(
 	return eOk;
 }
 
-void D3D11Render::destroyTexture(HTexture texture)
+void D3D11::destroyTexture(HTexture texture)
 {
 	if (D3D11Texture* t = D3D11Texture::upcast(texture))
 	{

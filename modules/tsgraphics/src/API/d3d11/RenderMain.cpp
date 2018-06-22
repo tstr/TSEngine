@@ -21,7 +21,7 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	Init
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D11Render::D3D11Render(const SRenderApiConfig& cfg)
+D3D11::D3D11(const SRenderApiConfig& cfg)
 {
 	m_hwnd = reinterpret_cast<HWND>(cfg.windowHandle);
 	tsassert(IsWindow(m_hwnd));
@@ -213,7 +213,7 @@ D3D11Render::D3D11Render(const SRenderApiConfig& cfg)
 	//////////////////////////////////////////////////////////////////////////////////////////////
 }
 
-D3D11Render::~D3D11Render()
+D3D11::~D3D11()
 {
 	//If the swapchain is in fullscreen mode then exit before releasing the swapchain
 	if (m_dxgiSwapchain.Get())
@@ -233,17 +233,17 @@ D3D11Render::~D3D11Render()
 //	Context methods
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Render::createContext(IRenderContext** context)
+void D3D11::createContext(RenderContext** context)
 {
-	auto rc = new D3D11RenderContext(this);
+	auto rc = new D3D11Context(this);
 	*context = rc;
 	m_renderContexts.push_back(rc);
 }
 
-void D3D11Render::destroyContext(IRenderContext* context)
+void D3D11::destroyContext(RenderContext* context)
 {
 	//upcast
-	if (auto ptr = dynamic_cast<D3D11RenderContext*>(context))
+	if (auto ptr = dynamic_cast<D3D11Context*>(context))
 	{
 		auto it = find(m_renderContexts.begin(), m_renderContexts.end(), ptr);
 		m_renderContexts.erase(it);
@@ -255,7 +255,7 @@ void D3D11Render::destroyContext(IRenderContext* context)
 //	Pipeline methods
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Render::drawBegin()
+void D3D11::drawBegin()
 {
 	//Lock drawing
 	m_drawMutex.lock();
@@ -265,12 +265,12 @@ void D3D11Render::drawBegin()
 	tsassert(!m_drawActive.exchange(true));
 }
 
-void D3D11Render::drawEnd(IRenderContext** contexts, uint32 numContexts)
+void D3D11::drawEnd(IRenderContext** contexts, uint32 numContexts)
 {
 	//Execute queued command lists
 	for (uint32 i = 0; i < numContexts; i++)
 	{
-		if (auto rcon = dynamic_cast<D3D11RenderContext*>(contexts[i]))
+		if (auto rcon = dynamic_cast<D3D11Context*>(contexts[i]))
 		{
 			if (auto cmdlist = rcon->getCommandList().Get())
 			{
@@ -294,12 +294,12 @@ void D3D11Render::drawEnd(IRenderContext** contexts, uint32 numContexts)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Render::getDrawStatistics(SRenderStatistics& stats)
+void D3D11::getDrawStatistics(SRenderStatistics& stats)
 {
 	stats.drawcalls = m_drawCallCounter.load();
 }
 
-bool D3D11Render::getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc)
+bool D3D11::getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc)
 {
 	tsassert(m_device.Get());
 	tsassert(SUCCEEDED(m_device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, sampledesc.Count, &sampledesc.Quality)));

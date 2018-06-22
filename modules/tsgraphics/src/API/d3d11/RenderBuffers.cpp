@@ -11,7 +11,7 @@ using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ERenderStatus D3D11Render::createResourceBuffer(
+ERenderStatus D3D11::createResourceBuffer(
 	HBuffer& rsc,
 	const SBufferResourceData& data
 )
@@ -59,7 +59,7 @@ ERenderStatus D3D11Render::createResourceBuffer(
 	return eOk;
 }
 
-void D3D11Render::destroyBuffer(HBuffer buffer)
+void D3D11::destroyBuffer(HBuffer buffer)
 {
 	if (auto u = reinterpret_cast<IUnknown*>(buffer))
 	{

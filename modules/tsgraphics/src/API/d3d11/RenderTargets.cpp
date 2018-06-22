@@ -12,7 +12,7 @@ using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ERenderStatus D3D11Render::createTarget(
+ERenderStatus D3D11::createTarget(
 	HTarget& target,
 	const STargetDesc& targetDesc
 )
@@ -108,7 +108,7 @@ ERenderStatus D3D11Render::createTarget(
 	return eOk;
 }
 
-void D3D11Render::destroyTarget(HTarget target)
+void D3D11::destroyTarget(HTarget target)
 {
 	if (auto t = D3D11Target::upcast(target))
 	{

@@ -8,44 +8,36 @@
 
 namespace ts
 {
-	DXGI_FORMAT TextureFormatToDXGIFormat(ETextureFormat format)
+	DXGI_FORMAT ImageFormatToDXGIFormat(ImageFormat format)
 	{
 		switch (format)
 		{
-		case(eTextureFormatByte):
+		case(ImageFormat::BYTE):
 			return DXGI_FORMAT_R8_UINT;
 
-		case(eTextureFormatColourARGB):
+		case(ImageFormat::ARGB):
 			return DXGI_FORMAT_B8G8R8A8_UNORM;
-		case(eTextureFormatColourRGB):
-		case(eTextureFormatColourRGBA):
+		case(ImageFormat::RGB):
+		case(ImageFormat::RGBA):
 			return DXGI_FORMAT_R8G8B8A8_UNORM;
 
-		case(eTextureFormatFloat1):
+		case(ImageFormat::FLOAT1):
 			return DXGI_FORMAT_R32_FLOAT;
-		case(eTextureFormatFloat2):
+		case(ImageFormat::FLOAT2):
 			return DXGI_FORMAT_R32G32_FLOAT;
-		case (eTextureFormatFloat3):
+		case (ImageFormat::FLOAT3):
 			return DXGI_FORMAT_R32G32B32A32_FLOAT;
 			//return DXGI_FORMAT_R32G32B32_FLOAT;
-		case(eTextureFormatFloat4):
+		case(ImageFormat::FLOAT4):
 			return DXGI_FORMAT_R32G32B32A32_FLOAT;
 
-		case(eTextureFormatDepth16):
+		case(ImageFormat::DEPTH16):
 			return DXGI_FORMAT_D16_UNORM;
-		case(eTextureFormatDepth32):
+		case(ImageFormat::DEPTH32):
 			return DXGI_FORMAT_D32_FLOAT;
 		}
 			
 		return DXGI_FORMAT_UNKNOWN;
-	}
-		
-	ERenderStatus RenderStatusFromHRESULT(HRESULT hr)
-	{
-		if (SUCCEEDED(hr))
-			return ERenderStatus::eOk;
-
-		return ERenderStatus::eFail;
 	}
 }
 

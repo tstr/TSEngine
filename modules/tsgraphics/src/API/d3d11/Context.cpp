@@ -16,7 +16,7 @@ using namespace ts;
 //Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-D3D11RenderContext::D3D11RenderContext(D3D11Render* api) :
+D3D11Context::D3D11Context(D3D11* api) :
 	m_api(api)
 {
 	tsassert(api);
@@ -24,12 +24,12 @@ D3D11RenderContext::D3D11RenderContext(D3D11Render* api) :
 	tsassert(SUCCEEDED(device->CreateDeferredContext(0, m_context.GetAddressOf())));
 }
 
-D3D11RenderContext::~D3D11RenderContext()
+D3D11Context::~D3D11Context()
 {
 
 }
 
-void D3D11RenderContext::finish()
+void D3D11Context::finish()
 {
 	m_contextCommandList.Reset();
 
@@ -37,7 +37,7 @@ void D3D11RenderContext::finish()
 	m_context->FinishCommandList(false, m_contextCommandList.GetAddressOf());
 }
 
-void D3D11RenderContext::resetCommandList()
+void D3D11Context::resetCommandList()
 {
 	m_contextCommandList.Reset();
 }
@@ -46,7 +46,7 @@ void D3D11RenderContext::resetCommandList()
 //Resource updating
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11RenderContext::clearRenderTarget(HTarget h, const Vector& vec)
+void D3D11Context::clearRenderTarget(HTarget h, const Vector& vec)
 {
 	if (D3D11Target* target = D3D11Target::upcast(h))
 	{
@@ -54,7 +54,7 @@ void D3D11RenderContext::clearRenderTarget(HTarget h, const Vector& vec)
 	}
 }
 
-void D3D11RenderContext::clearDepthTarget(HTarget h, float depth)
+void D3D11Context::clearDepthTarget(HTarget h, float depth)
 {
 	if (D3D11Target* target = D3D11Target::upcast(h))
 	{
@@ -64,7 +64,7 @@ void D3D11RenderContext::clearDepthTarget(HTarget h, float depth)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11RenderContext::bufferUpdate(HBuffer rsc, const void* memory)
+void D3D11Context::bufferUpdate(HBuffer rsc, const void* memory)
 {
 	auto buffer = reinterpret_cast<ID3D11Buffer*>(rsc);
 
@@ -78,7 +78,7 @@ void D3D11RenderContext::bufferUpdate(HBuffer rsc, const void* memory)
 	}
 }
 
-void D3D11RenderContext::bufferCopy(HBuffer src, HBuffer dest)
+void D3D11Context::bufferCopy(HBuffer src, HBuffer dest)
 {
 	auto buffersrc = reinterpret_cast<ID3D11Buffer*>(src);
 	auto bufferdest = reinterpret_cast<ID3D11Buffer*>(dest);
@@ -93,7 +93,7 @@ void D3D11RenderContext::bufferCopy(HBuffer src, HBuffer dest)
 	}
 }
 
-void D3D11RenderContext::textureUpdate(HTexture rsc, uint32 index, const void* memory)
+void D3D11Context::textureUpdate(HTexture rsc, uint32 index, const void* memory)
 {
 	auto texture = D3D11Texture::upcast(rsc);
 
@@ -107,7 +107,7 @@ void D3D11RenderContext::textureUpdate(HTexture rsc, uint32 index, const void* m
 	}
 }
 
-void D3D11RenderContext::textureCopy(HTexture src, HTexture dest)
+void D3D11Context::textureCopy(HTexture src, HTexture dest)
 {
 	auto texsrc = D3D11Texture::upcast(src);
 	auto texdest = D3D11Texture::upcast(dest);
@@ -122,7 +122,7 @@ void D3D11RenderContext::textureCopy(HTexture src, HTexture dest)
 	}
 }
 
-void D3D11RenderContext::textureResolve(HTexture src, HTexture dest)
+void D3D11Context::textureResolve(HTexture src, HTexture dest)
 {
 	auto texsrc = D3D11Texture::upcast(src);
 	auto texdest = D3D11Texture::upcast(dest);

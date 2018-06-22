@@ -53,7 +53,7 @@ GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
 	pSystem(new System(this, cfg))
 {
 	//Configure low level render api
-	GraphicsDeviceConfig devcfg;
+	RenderDeviceConfig devcfg;
 	devcfg.adapterIndex = 0; //hard code the adapter for now
 	devcfg.display.resolutionH = cfg.display.height;
 	devcfg.display.resolutionW = cfg.display.width;
@@ -65,7 +65,7 @@ GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
 	apicfg.flags |= ERenderApiFlags::eFlagDebug;
 #endif
 
-	pDevice = RenderDevice::create(devcfg);
+	pDevice = RenderDevice::create(RenderDeviceID::D3D11, devcfg);
 
 	//If desired display mode is borderless, ISurface::enableBorderless() must be called manually
 	if (cfg.display.mode == eDisplayBorderless)

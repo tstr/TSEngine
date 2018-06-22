@@ -10,18 +10,18 @@
 
 namespace ts
 {
-	class D3D11RenderContext : public ts::IRenderContext
+	class D3D11Context : public RenderContext
 	{
 	private:
 
-		D3D11Render* m_api;
+		D3D11* m_api;
 		ComPtr<ID3D11DeviceContext> m_context;
 		ComPtr<ID3D11CommandList> m_contextCommandList;
 
 	public:
 		
-		D3D11RenderContext(D3D11Render* api);
-		~D3D11RenderContext();
+		D3D11Context(D3D11* api);
+		~D3D11Context();
 
 		void bufferUpdate(HBuffer rsc, const void* memory) override;
 		void bufferCopy(HBuffer src, HBuffer dest) override;

@@ -9,7 +9,7 @@
 #include <tscore/path.h>
 #include <tscore/system/memory.h>
 
-#include <tsgraphics/GraphicsSystem.h>
+#include <tsgraphics/Graphics.h>
 
 #include "Input.h"
 #include "VarTable.h"

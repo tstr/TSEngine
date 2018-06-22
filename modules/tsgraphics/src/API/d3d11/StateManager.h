@@ -17,63 +17,10 @@
 
 namespace std
 {
-	template<> struct hash<SDepthState>;
-	template<> struct hash<SRasterState>;
-	template<> struct hash<SBlendState>;
-	template<> struct hash<STextureSampler>;
-
-	/*
-	template<>
-	struct hash<SDepthState>
-	{
-		size_t operator()(const SDepthState& state) const;
-	};
-
-	template<>
-	struct hash<SRasterState>
-	{
-		size_t operator()(const SRasterState& state) const;
-	};
-
-	template<>
-	struct hash<SBlendState>
-	{
-
-		size_t operator()(const SBlendState& state) const;
-	};
-
-	template<>
-	struct hash<STextureSampler>
-	{
-		size_t operator()(const STextureSampler& state) const;
-	};
-
-	template<>
-	struct equal_to<SDepthState>
-	{
-		bool operator()(const SDepthState& left, const SDepthState& right) const;
-	};
-
-	template<>
-	struct equal_to<SRasterState>
-	{
-		bool operator()(const SRasterState& left, const SRasterState& right) const;
-	};
-
-	template<>
-	struct equal_to<SBlendState>
-	{
-
-		bool operator()(const SBlendState& left, const SBlendState& right) const;
-	};
-
-
-	template<>
-	struct equal_to<STextureSampler>
-	{
-		bool operator()(const STextureSampler& left, const STextureSampler& right) const;
-	};
-	//*/
+	template<> struct hash<DepthState>;
+	template<> struct hash<RasterizerState>;
+	template<> struct hash<BlendState>;
+	template<> struct hash<SamplerState>;
 }
 
 namespace ts
@@ -114,10 +61,10 @@ namespace ts
 		ComPtr<ID3D11Device> m_device;
 
 		//Caches
-		StateCache<SDepthState, ID3D11DepthStencilState> m_cacheDepthState;
-		StateCache<SRasterState, ID3D11RasterizerState> m_cacheRasterState;
-		StateCache<SBlendState, ID3D11BlendState> m_cacheBlendState;
-		StateCache<STextureSampler, ID3D11SamplerState> m_cacheSamplerState;
+		StateCache<DepthState, ID3D11DepthStencilState> m_cacheDepthState;
+		StateCache<RasterizerState, ID3D11RasterizerState> m_cacheRasterState;
+		StateCache<BlendState, ID3D11BlendState> m_cacheBlendState;
+		StateCache<SamplerState, ID3D11SamplerState> m_cacheSamplerState;
 
 	public:
 
@@ -128,10 +75,10 @@ namespace ts
 		{}
 		
 		//State creation methods - finds states with the closest matching parameters
-		HRESULT demandDepthState(const SDepthState& desc, ID3D11DepthStencilState** state);
-		HRESULT demandRasterizerState(const SRasterState& desc, ID3D11RasterizerState** state);
-		HRESULT demandBlendState(const SBlendState& desc, ID3D11BlendState** state);
-		HRESULT demandSamplerState(const STextureSampler& desc, ID3D11SamplerState** state);
+		HRESULT demandDepthState(const DepthState& desc, ID3D11DepthStencilState** state);
+		HRESULT demandRasterizerState(const RasterizerState& desc, ID3D11RasterizerState** state);
+		HRESULT demandBlendState(const BlendState& desc, ID3D11BlendState** state);
+		HRESULT demandSamplerState(const SamplerState& desc, ID3D11SamplerState** state);
 	};
 }
 
