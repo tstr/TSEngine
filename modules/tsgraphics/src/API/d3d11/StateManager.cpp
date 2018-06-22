@@ -14,7 +14,7 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-HRESULT D3D11StateManager::demandDepthState(const SDepthState & desc, ID3D11DepthStencilState** state)
+HRESULT D3D11StateManager::demandDepthState(const DepthState & desc, ID3D11DepthStencilState** state)
 {
 	if (m_cacheDepthState.find(desc, state))
 	{
@@ -48,7 +48,7 @@ HRESULT D3D11StateManager::demandDepthState(const SDepthState & desc, ID3D11Dept
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-HRESULT D3D11StateManager::demandRasterizerState(const SRasterState & desc, ID3D11RasterizerState** state)
+HRESULT D3D11StateManager::demandRasterizerState(const RasterizerState & desc, ID3D11RasterizerState** state)
 {
 	if (m_cacheRasterState.find(desc, state))
 	{
@@ -63,23 +63,23 @@ HRESULT D3D11StateManager::demandRasterizerState(const SRasterState & desc, ID3D
 
 		switch (desc.fillMode)
 		{
-		case eFillSolid:
+		case FillMode::SOLID:
 			rstrDesc.FillMode = D3D11_FILL_SOLID;
 			break;
-		case eFillWireframe:
+		case FillMode::WIREFRAME:
 			rstrDesc.FillMode = D3D11_FILL_WIREFRAME;
 			break;
 		}
 
 		switch (desc.cullMode)
 		{
-		case eCullNone:
+		case CullMode::NONE:
 			rstrDesc.CullMode = D3D11_CULL_NONE;
 			break;
-		case eCullBack:
+		case CullMode::BACK:
 			rstrDesc.CullMode = D3D11_CULL_BACK;
 			break;
-		case eCullFront:
+		case CullMode::FRONT:
 			rstrDesc.CullMode = D3D11_CULL_FRONT;
 			break;
 		}
@@ -100,7 +100,7 @@ HRESULT D3D11StateManager::demandRasterizerState(const SRasterState & desc, ID3D
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-HRESULT D3D11StateManager::demandBlendState(const SBlendState & desc, ID3D11BlendState** state)
+HRESULT D3D11StateManager::demandBlendState(const BlendState & desc, ID3D11BlendState** state)
 {
 	if (m_cacheBlendState.find(desc, state))
 	{
@@ -138,20 +138,20 @@ HRESULT D3D11StateManager::demandBlendState(const SBlendState & desc, ID3D11Blen
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline D3D11_TEXTURE_ADDRESS_MODE getAddressMode(ETextureAddressMode mode)
+inline D3D11_TEXTURE_ADDRESS_MODE getAddressMode(ImageAddressMode mode)
 {
 	switch (mode)
 	{
-		case (eTextureAddressClamp) : return D3D11_TEXTURE_ADDRESS_CLAMP;
-		case (eTextureAddressMirror): return D3D11_TEXTURE_ADDRESS_MIRROR;
-		case (eTextureAddressWrap)  : return D3D11_TEXTURE_ADDRESS_WRAP;
-		case (eTextureAddressBorder): return D3D11_TEXTURE_ADDRESS_BORDER;
+	case (ImageAddressMode::CLAMP) : return D3D11_TEXTURE_ADDRESS_CLAMP;
+	case (ImageAddressMode::MIRROR): return D3D11_TEXTURE_ADDRESS_MIRROR;
+	case (ImageAddressMode::WRAP)  : return D3D11_TEXTURE_ADDRESS_WRAP;
+	case (ImageAddressMode::BORDER): return D3D11_TEXTURE_ADDRESS_BORDER;
 	}
 
 	return D3D11_TEXTURE_ADDRESS_MODE(0);
 }
 
-HRESULT D3D11StateManager::demandSamplerState(const STextureSampler & desc, ID3D11SamplerState** state)
+HRESULT D3D11StateManager::demandSamplerState(const SamplerState & desc, ID3D11SamplerState** state)
 {
 	if (m_cacheSamplerState.find(desc, state))
 	{
@@ -172,30 +172,18 @@ HRESULT D3D11StateManager::demandSamplerState(const STextureSampler & desc, ID3D
 
 		switch (desc.filtering)
 		{
-		case eTextureFilterPoint:
+		case ImageFilterMode::POINT:
 			sampleDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 			break;
-		case eTextureFilterBilinear:
+		case ImageFilterMode::BILINEAR:
 			sampleDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 			break;
-		case eTextureFilterTrilinear:
+		case ImageFilterMode::TRILINEAR:
 			sampleDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 			break;
-		case eTextureFilterAnisotropic2x:
+		case ImageFilterMode::ANISOTROPIC:
 			sampleDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-			sampleDesc.MaxAnisotropy = 2;
-			break;
-		case eTextureFilterAnisotropic4x:
-			sampleDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-			sampleDesc.MaxAnisotropy = 4;
-			break;
-		case eTextureFilterAnisotropic8x:
-			sampleDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-			sampleDesc.MaxAnisotropy = 8;
-			break;
-		case eTextureFilterAnisotropic16x:
-			sampleDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-			sampleDesc.MaxAnisotropy = 16;
+			sampleDesc.MaxAnisotropy = desc.anisotropy;
 			break;
 		}
 

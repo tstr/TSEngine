@@ -9,7 +9,7 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
-#include <tsgraphics/api/renderapi.h>
+#include <tsgraphics/Device.h>
 
 #include "Base.h"
 #include "HandleTarget.h"
@@ -17,14 +17,58 @@
 
 namespace ts
 {
-	class D3D11RenderContext;
+	class D3D11Context;
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	//Main D3D11 class
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
-	class D3D11Render : public ts::IRender
+	class D3D11 : public RenderDevice
 	{
+	public:
+		
+		D3D11(const RenderDeviceConfig& cfg);
+		~D3D11();
+
+		//Internal methods
+		ComPtr<ID3D11Device> getDevice() const { return m_device; }
+
+		ComPtr<ID3D11BlendState> getBlendState() const { return m_blendState; }
+		ComPtr<ID3D11RasterizerState> getRasterizerState() const { return m_rasterizerState; }
+		ComPtr<ID3D11DepthStencilState> getDepthStencilState() const { return m_depthStencilState; }
+
+		void incrementDrawCallCounter() { m_drawCallCounter++; }
+
+		RenderContext* getContext() override;
+		void execute(RenderContext* context) override;
+
+		//Display methods
+		void setDisplayConfiguration(const DisplayConfig& displayCfg) override;
+		void getDisplayConfiguration(DisplayConfig& displayCfg) override;
+		ResourceHandle getDisplayTarget() override;
+
+		//Query device
+		void queryStats(RenderStats& stats) override;
+		void queryInfo(DeviceInfo& info) override;
+
+		//Resources
+		ResourceHandle createEmptyResource(ResourceHandle recycle) override;
+		ResourceHandle createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle) override;
+		ResourceHandle createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle) override;
+		ResourceSetHandle createResourceSet(const ResourceSetInfo& info, ResourceSetHandle recycle) override;
+		ShaderHandle createShader(const ShaderCreateInfo& info) override;
+		PipelineHandle createPipeline(ShaderHandle program, const PipelineCreateInfo& info) override;
+		TargetHandle createTarget(const TargetCreateInfo& info, TargetHandle recycle) override;
+		CommandHandle createCommand(const DrawCommandInfo& cmd, CommandHandle recycle) override;
+
+		//Destroy device objects
+		void destroy(ResourceHandle rsc) override;
+		void destroy(ResourceSetHandle set) override;
+		void destroy(ShaderHandle shader) override;
+		void destroy(PipelineHandle state) override;
+		void destroy(TargetHandle pass) override;
+		void destroy(CommandHandle cmd) override;
+
 	private:
 
 		HWND m_hwnd;
@@ -40,17 +84,17 @@ namespace ts
 
 		D3D11Target m_displayTarget;
 		D3D11StateManager m_stateManager;
-		
+
 		std::atomic<bool> m_drawActive;
 		std::mutex m_drawMutex;
 
 		//Swapchain methods
 		void rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc);
-		HRESULT translateSwapChainDesc(const SDisplayConfig& displayCfg, DXGI_SWAP_CHAIN_DESC& scDesc);
+		HRESULT translateSwapChainDesc(const DisplayConfig& displayCfg, DXGI_SWAP_CHAIN_DESC& scDesc);
 		void initDisplayTarget();
-		
+
 		//All allocated render contexts
-		std::vector<D3D11RenderContext*> m_renderContexts;
+		std::vector<D3D11Context*> m_renderContexts;
 		//Number of drawcalls per frame - for debugging
 		std::atomic<uint32> m_drawCallCounter;
 
@@ -59,68 +103,6 @@ namespace ts
 		ComPtr<ID3D11BlendState> m_blendState;
 		ComPtr<ID3D11RasterizerState> m_rasterizerState;
 		ComPtr<ID3D11DepthStencilState> m_depthStencilState;
-
-	public:
-		
-		D3D11Render(const SRenderApiConfig& cfg);
-		~D3D11Render();
-
-		//Internal methods
-		ComPtr<ID3D11Device> getDevice() const { return m_device; }
-
-		ComPtr<ID3D11BlendState> getBlendState() const { return m_blendState; }
-		ComPtr<ID3D11RasterizerState> getRasterizerState() const { return m_rasterizerState; }
-		ComPtr<ID3D11DepthStencilState> getDepthStencilState() const { return m_depthStencilState; }
-
-		void incrementDrawCallCounter() { m_drawCallCounter++; }
-
-		//Resource methods
-		ERenderStatus createResourceBuffer(
-			HBuffer& rsc,
-			const SBufferResourceData& data
-		) override;
-		
-		ERenderStatus createResourceTexture(
-			HTexture& rsc,
-			const STextureResourceData* data,
-			const STextureResourceDesc& desc
-		) override;
-		
-		ERenderStatus createShader(
-			HShader& shader,
-			const void* bytecode,
-			uint32 bytecodesize,
-			EShaderStage stage
-		) override;
-		
-		ERenderStatus createTarget(
-			HTarget& target,
-			const STargetDesc& targetDesc
-		) override;
-		
-		void destroyBuffer(HBuffer buffer) override;
-		void destroyTexture(HTexture texture) override;
-		void destroyShader(HShader shader) override;
-		void destroyTarget(HTarget target) override;
-		
-		//Command methods
-		ERenderStatus createDrawCommand(HDrawCmd& cmd, const SDrawCommand& desc) override;
-		void destroyDrawCommand(HDrawCmd cmd) override;
-		
-		//Render context
-		void createContext(IRenderContext** context) override;
-		void destroyContext(IRenderContext* context) override;
-		
-		//Window methods
-		void setDisplayConfiguration(const SDisplayConfig& displayCfg) override;
-		void getDisplayConfiguration(SDisplayConfig& displayCfg) override;
-		void getDisplayTarget(HTarget& target) override;
-
-		//Statistics
-		void getDrawStatistics(SRenderStatistics& stats) override;
-
-		void drawBegin() override;
-		void drawEnd(IRenderContext** contexts, uint32 numContexts) override;
 	};
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////

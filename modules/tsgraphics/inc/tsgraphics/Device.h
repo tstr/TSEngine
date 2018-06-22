@@ -11,6 +11,12 @@
 
 namespace ts
 {
+    enum class RenderDeviceID
+    {
+        NONE,
+        D3D11
+    };
+
     /*
         Device interface
         
@@ -26,7 +32,7 @@ namespace ts
 		using Ptr = UPtr<RenderDevice, Deleter>;
 
 		//Initialization
-		static Ptr create(const GraphicsDeviceConfig& config);
+		static Ptr create(RenderDeviceID id, const RenderDeviceConfig& config);
 		static void destroy(RenderDevice* device);
 
 		virtual RenderContext* getContext() = 0;
@@ -49,17 +55,17 @@ namespace ts
         virtual ResourceSetHandle createResourceSet(const ResourceSetInfo& info, ResourceSetHandle recycle = (ResourceSetHandle)0) = 0;
 		//Pipeline state
         virtual ShaderHandle createShader(const ShaderCreateInfo& info) = 0;
-        virtual StateHandle createState(ShaderHandle program, const StateCreateInfo& info) = 0;
+        virtual PipelineHandle createPipeline(ShaderHandle program, const PipelineCreateInfo& info) = 0;
 		//Output target
         virtual TargetHandle createTarget(const TargetCreateInfo& info, TargetHandle recycle = (TargetHandle)0) = 0;
         //Commands
-        virtual CommandHandle createCommand(const DrawCommand& cmd, CommandHandle recycle = (CommandHandle)0) = 0;
+        virtual CommandHandle createCommand(const DrawCommandInfo& cmd, CommandHandle recycle = (CommandHandle)0) = 0;
         
         //Destroy device objects
 		virtual void destroy(ResourceHandle rsc) = 0;
 		virtual void destroy(ResourceSetHandle set) = 0;
 		virtual void destroy(ShaderHandle shader) = 0;
-		virtual void destroy(StateHandle state) = 0;
+		virtual void destroy(PipelineHandle state) = 0;
 		virtual void destroy(TargetHandle pass) = 0;
         virtual void destroy(CommandHandle cmd) = 0;
     };

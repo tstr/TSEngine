@@ -20,7 +20,7 @@ namespace ts
 	enum class ResourceHandle : uintptr;
 	enum class ResourceSetHandle : uintptr;
 	enum class ShaderHandle : uintptr;
-	enum class StateHandle : uintptr;
+	enum class PipelineHandle : uintptr;
 	enum class TargetHandle : uintptr;
 	enum class CommandHandle : uintptr;
 
@@ -36,7 +36,7 @@ namespace ts
 		bool fullscreen = false;
 	};
 
-	struct GraphicsDeviceConfig
+	struct RenderDeviceConfig
 	{
 		intptr windowHandle = 0;
 		uint32 adapterIndex = 0;
@@ -162,7 +162,7 @@ namespace ts
 		BORDER
 	};
 
-	struct ImageSampler
+	struct SamplerState
 	{
 		ImageAddressMode addressU;
 		ImageAddressMode addressV;
@@ -234,31 +234,34 @@ namespace ts
 		WIREFRAME = 2
 	};
 
+	struct RasterizerState
+	{
+		bool enableScissor = false;
+		CullMode cullMode = CullMode::NONE;
+		FillMode fillMode = FillMode::SOLID;
+	};
+
+	struct DepthState
+	{
+		bool enableDepth = false;
+		bool enableStencil = false;
+	};
+
+	struct BlendState
+	{
+		bool enable = false;
+	};
+
 	/*
 		Pipeline state info structure
 	*/
-	struct StateCreateInfo
+	struct PipelineCreateInfo
 	{
-		struct RasterizerState
-		{
-			bool enableScissor = false;
-			CullMode cullMode = CullMode::NONE;
-			FillMode fillMode = FillMode::SOLID;
-		} raster;
+		RasterizerState raster;
+		DepthState depth;
+		BlendState blend;
 
-		struct DepthState
-		{
-			bool enableDepth = false;
-			bool enableStencil = false;
-		} depth;
-
-		struct BlendState
-		{
-			bool enable = false;
-		} blend;
-
-
-		const ImageSampler* samplers;
+		const SamplerState* samplers;
 		size_t samplerCount;
 
 		const VertexAttribute* vertexAttrib;
@@ -278,7 +281,15 @@ namespace ts
         TESSCTRL,
         TESSEVAL,
         PIXEL,
-        COMPUTE
+        COMPUTE,
+
+		MAX_STAGES
+	};
+
+	struct ShaderBytecode
+	{
+		const void* bytecode;
+		size_t size;
 	};
 
 	/*
@@ -286,20 +297,7 @@ namespace ts
 	*/
 	struct ShaderCreateInfo
 	{
-		const void* vsByteCode;		//vertex shader
-		const void* psByteCode;		//pixel shader
-		const void* tesByteCode;	//tessellation evaluation shader
-		const void* tcsByteCode;	//tessellation control shader
-		const void* gsByteCode;		//geometry shader
-
-		size_t vsSize;
-		size_t psSize;
-		size_t tesSize;
-		size_t tcsSize;
-		size_t gsSize;
-
-		const void* cosByteCode;	//compute shader
-		size_t cosSize;
+		ShaderBytecode stages[(size_t)ShaderStage::MAX_STAGES];
 	};
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -341,8 +339,8 @@ namespace ts
         const ImageView* resources;  //shader resources
         uint32 resourceCount;
         
-        const ResourceHandle* constants; //Constant buffers
-        uint32 constantsCount;
+        const ResourceHandle* constantBuffers; //Constant buffers
+        uint32 constantBuffersCount;
         
         const VertexBufferView* vertexBuffers;
         uint32 vertexBufferCount;
@@ -362,18 +360,16 @@ namespace ts
 		INDEXEDINSTANCED
 	};
 
-	struct DrawCommand
+	struct DrawCommandInfo
 	{
 		TargetHandle target;
-		StateHandle state;
+		PipelineHandle state;
 		ResourceSetHandle resources;
 
-		uint32 indexStart = 0;
-		uint32 indexCount = 0;
-		uint32 vertexStart = 0;
-		uint32 vertexCount = 0;
-		int32 vertexBase = 0;
-		uint32 instanceCount = 1;
+		uint32 start = 0; //vertex/index start
+		uint32 count = 0; //vertex/index count
+		int32 vbase = 0;  //vertex base
+		uint32 instances = 1;
 
 		DrawMode draw = DrawMode::VERTEX;
 	};

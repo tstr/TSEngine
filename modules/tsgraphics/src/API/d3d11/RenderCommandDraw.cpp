@@ -34,7 +34,7 @@ inline ishader_t* getID3DShader(HShader handle)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ERenderStatus D3D11Render::createDrawCommand(HDrawCmd& hDraw, const SDrawCommand& cmdDesc)
+ERenderStatus D3D11::createDrawCommand(HDrawCmd& hDraw, const SDrawCommand& cmdDesc)
 {
 	D3D11DrawCommand* d3dCmd = new D3D11DrawCommand();
 	
@@ -161,7 +161,7 @@ ERenderStatus D3D11Render::createDrawCommand(HDrawCmd& hDraw, const SDrawCommand
 	return eOk;
 }
 
-void D3D11Render::destroyDrawCommand(HDrawCmd hDraw)
+void D3D11::destroyDrawCommand(HDrawCmd hDraw)
 {
 	if (auto d = D3D11DrawCommand::upcast(hDraw))
 	{

@@ -1,7 +1,7 @@
 /*
 	Render API
 
-	D3D11Render shader handling methods
+	Shader handling methods
 */
 
 #include "render.h"
@@ -10,97 +10,78 @@
 
 using namespace ts;
 
-inline HShader downcast(D3D11Shader* shader)
-{
-	return (HShader)reinterpret_cast<HShader&>(shader);
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ERenderStatus D3D11Render::createShader(
-	HShader& shader,
-	const void* bytecode,
-	uint32 bytecodesize,
-	EShaderStage stage
-)
+ShaderHandle D3D11::createShader(const ShaderCreateInfo& info)
 {
-	switch (stage)
+	UPtr<D3D11Shader> program;
+
+	//Has stage
+	auto has = [&info](ShaderStage stage)
 	{
-		case (EShaderStage::eShaderStageVertex):
-		{
-			ComPtr<ID3D11VertexShader> vertexshader;
-			HRESULT hr = m_device->CreateVertexShader(bytecode, bytecodesize, nullptr, vertexshader.GetAddressOf());
-			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
-		
-			shader = D3D11Shader::downcast(new D3D11Shader(vertexshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
-			return eOk;
-		}
+		return info.stages[(size_t)stage].bytecode != nullptr;
+	};
 
-		case (EShaderStage::eShaderStagePixel):
-		{
-			ComPtr<ID3D11PixelShader> pixelshader;
-			HRESULT hr = m_device->CreatePixelShader(bytecode, bytecodesize, nullptr, pixelshader.GetAddressOf());
+	if (has(ShaderStage::VERTEX))
+	{
+		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::VERTEX];
+		HRESULT hr = m_device->CreateVertexShader(bc.bytecode, bc.size, nullptr, program->vertex.GetAddressOf());
+		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+	}
 
-			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
+	if (has(ShaderStage::GEOMETRY))
+	{
+		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::GEOMETRY];
+		HRESULT hr = m_device->CreateGeometryShader(bc.bytecode, bc.size, nullptr, program->geometry.GetAddressOf());
+		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+	}
 
-			shader = D3D11Shader::downcast(new D3D11Shader(pixelshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
-			return eOk;
-		}
+	if (has(ShaderStage::TESSCTRL))
+	{
+		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::TESSCTRL];
+		HRESULT hr = m_device->CreateDomainShader(bc.bytecode, bc.size, nullptr, program->domain.GetAddressOf());
+		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+	}
 
-		case (EShaderStage::eShaderStageGeometry):
-		{
-			ComPtr<ID3D11GeometryShader> geometryshader;
-			HRESULT hr = m_device->CreateGeometryShader(bytecode, bytecodesize, nullptr, geometryshader.GetAddressOf());
+	if (has(ShaderStage::TESSEVAL))
+	{
+		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::TESSEVAL];
+		HRESULT hr = m_device->CreateHullShader(bc.bytecode, bc.size, nullptr, program->hull.GetAddressOf());
+		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+	}
 
-			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
+	if (has(ShaderStage::PIXEL))
+	{
+		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::PIXEL];
+		HRESULT hr = m_device->CreatePixelShader(bc.bytecode, bc.size, nullptr, program->pixel.GetAddressOf());
+		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+	}
 
-			shader = D3D11Shader::downcast(new D3D11Shader(geometryshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
-			return eOk;
-		}
-
-		case (EShaderStage::eShaderStageTessCtrl):
-		{
-			ComPtr<ID3D11HullShader> hullshader;
-			HRESULT hr = m_device->CreateHullShader(bytecode, bytecodesize, nullptr, hullshader.GetAddressOf());
-			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
-
-			shader = D3D11Shader::downcast(new D3D11Shader(hullshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
-			return eOk;
-		}
-
-		case (EShaderStage::eShaderStageTessEval):
-		{
-			ComPtr<ID3D11DomainShader> domainshader;
-			HRESULT hr = m_device->CreateDomainShader(bytecode, bytecodesize, nullptr, domainshader.GetAddressOf());
-
-			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
-
-			shader = D3D11Shader::downcast(new D3D11Shader(domainshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
-			return eOk;
-		}
-
-		case (EShaderStage::eShaderStageCompute):
-		{
-			ComPtr<ID3D11ComputeShader> computeshader;
-			HRESULT hr = m_device->CreateComputeShader(bytecode, bytecodesize, nullptr, computeshader.GetAddressOf());
-
-			if (FAILED(hr)) return RenderStatusFromHRESULT(hr);
-
-			shader = D3D11Shader::downcast(new D3D11Shader(computeshader.Get(), MemoryBuffer(bytecode, bytecodesize)));
-			return eOk;
-		}
-
-		default:
-			return eInvalidParameter;
+	if (has(ShaderStage::COMPUTE))
+	{
+		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::COMPUTE];
+		HRESULT hr = m_device->CreateComputeShader(bc.bytecode, bc.size, nullptr, program->compute.GetAddressOf());
+		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
 	}
 }
 
-void D3D11Render::destroyShader(HShader shader)
+void D3D11::destroy(ShaderHandle shader)
 {
 	if (auto s = D3D11Shader::upcast(shader))
 	{
 		delete s;
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void D3D11Shader::bind(ID3D11DeviceContext* context)
+{
+	context->VSSetShader(vertex.Get(), nullptr, 0);
+	context->PSSetShader(pixel.Get(), nullptr, 0);
+	context->GSSetShader(geometry.Get(), nullptr, 0);
+	context->DSSetShader(domain.Get(), nullptr, 0);
+	context->HSSetShader(hull.Get(), nullptr, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

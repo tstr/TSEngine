@@ -14,7 +14,7 @@ using namespace ts;
 //	Gets/sets the configuration of the display (swapchain)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Render::setDisplayConfiguration(const SDisplayConfig& displayCfg)
+void D3D11::setDisplayConfiguration(const DisplayConfig& displayCfg)
 {
 	//Lock
 	std::lock_guard<std::mutex> lk(m_drawMutex);
@@ -74,7 +74,7 @@ void D3D11Render::setDisplayConfiguration(const SDisplayConfig& displayCfg)
 }
 
 //todo: make thread safe
-void D3D11Render::getDisplayConfiguration(SDisplayConfig& displayCfg)
+void D3D11::getDisplayConfiguration(DisplayConfig& displayCfg)
 {
 	DXGI_SWAP_CHAIN_DESC desc;
 	ZeroMemory(&desc, sizeof(DXGI_SWAP_CHAIN_DESC));
@@ -96,7 +96,7 @@ void D3D11Render::getDisplayConfiguration(SDisplayConfig& displayCfg)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Render::rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc)
+void D3D11::rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc)
 {
 	//Release swapchain
 	m_dxgiSwapchain.Reset();
@@ -115,7 +115,7 @@ void D3D11Render::rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc)
 	initDisplayTarget();
 }
 
-HRESULT D3D11Render::translateSwapChainDesc(const SDisplayConfig& displayCfg, DXGI_SWAP_CHAIN_DESC& desc)
+HRESULT D3D11::translateSwapChainDesc(const DisplayConfig& displayCfg, DXGI_SWAP_CHAIN_DESC& desc)
 {
 	HRESULT hr = m_dxgiSwapchain->GetDesc(&desc);
 
@@ -147,7 +147,7 @@ HRESULT D3D11Render::translateSwapChainDesc(const SDisplayConfig& displayCfg, DX
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //creates a new 
-void D3D11Render::initDisplayTarget()
+void D3D11::initDisplayTarget()
 {
 	m_displayTarget.reset();
 	
@@ -184,7 +184,7 @@ void D3D11Render::initDisplayTarget()
 	m_displayTarget = D3D11Target(rtv.GetAddressOf(), 1, dsv.Get());
 }
 
-void D3D11Render::getDisplayTarget(HTarget& target)
+void D3D11::getDisplayTarget(HTarget& target)
 {
 	target = D3D11Target::downcast(&m_displayTarget);
 }

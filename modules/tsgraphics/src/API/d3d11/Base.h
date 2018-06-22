@@ -15,7 +15,7 @@
 #include <tscore/debug/assert.h>
 #include <tscore/debug/log.h>
 
-#include <tsgraphics/api/renderapi.h>
+#include <tsgraphics/Device.h>
 
 #define IID_OF(i) __uuidof(i)
 

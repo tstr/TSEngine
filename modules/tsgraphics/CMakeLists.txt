@@ -56,6 +56,7 @@ SET(tsgraphics_src
 	${tsgraphics_api_d3d11_src}
 	
 	src/Graphics.cpp
+	src/api/Device.cpp
 
 	src/CommandQueue.cpp
 	src/CommandDispatchers.cpp
