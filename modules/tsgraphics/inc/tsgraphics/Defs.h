@@ -110,8 +110,6 @@ namespace ts
 		_2D        = 2,
 		_3D        = 3,
 		CUBE       = 4,
-		ARRAY_2D   = 5,
-		ARRAY_CUBE = 6 
 	};
 
 	struct ResourceData

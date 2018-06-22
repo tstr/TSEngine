@@ -29,16 +29,15 @@ SET(tsgraphics_api_d3d11_src
 	src/api/d3d11/Render.h
 	src/api/d3d11/RenderMain.cpp
 	src/api/d3d11/RenderDisplay.cpp
-	src/api/d3d11/RenderTexture.cpp
-	src/api/d3d11/RenderShader.cpp
-	src/api/d3d11/RenderTargets.cpp
-	src/api/d3d11/RenderBuffers.cpp
 	src/api/d3d11/RenderCommandDraw.cpp
 	
 	src/api/d3d11/Handle.h
-	src/api/d3d11/HandleTexture.h
+	src/api/d3d11/HandleResource.h
+	src/api/d3d11/HandleResource.cpp
 	src/api/d3d11/HandleShader.h
+	src/api/d3d11/HandleShader.cpp
 	src/api/d3d11/HandleTarget.h
+	src/api/d3d11/HandleTarget.cpp
 	src/api/d3d11/HandleCommandDraw.h
 	
 	src/api/d3d11/Context.cpp
@@ -47,8 +46,6 @@ SET(tsgraphics_api_d3d11_src
 	src/api/d3d11/StateManager.cpp
 	src/api/d3d11/StateManager.h
 	src/api/d3d11/StateManagerHash.inl
-	
-	src/api/d3d11/Adapter.cpp
 )
 
 SET(tsgraphics_src
