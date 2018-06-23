@@ -45,7 +45,7 @@ namespace ts
 
         bool null() const { return (m_d == nullptr) || (m_h == (Handle)0); }
         
-        operator bool() const { return null(); }
+        operator bool() const { return !null(); }
         
     private:
         
@@ -78,9 +78,9 @@ namespace ts
 		static Ptr create(RenderDeviceID id, const RenderDeviceConfig& config);
 		static void destroy(RenderDevice* device);
 
-		virtual RenderContext* getContext() = 0;
-		virtual void execute(RenderContext* context) = 0;
-        
+		virtual RenderContext* context() = 0;
+		virtual void commit() = 0;
+
         //Display methods
 		virtual void setDisplayConfiguration(const DisplayConfig& displayCfg) = 0;
 		virtual void getDisplayConfiguration(DisplayConfig& displayCfg) = 0;

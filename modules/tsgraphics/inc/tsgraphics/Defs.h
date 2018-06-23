@@ -38,6 +38,12 @@ namespace ts
 
 	struct RenderDeviceConfig
 	{
+		enum Flags : uint8
+		{
+			DEBUG,
+			DEBUG_REPORT
+		};
+
 		intptr windowHandle = 0;
 		uint32 adapterIndex = 0;
 		DisplayConfig display;

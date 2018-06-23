@@ -1,69 +1,97 @@
 /*
 	Render API
 
-	D3D11Target class
+	Target class
 */
 
 #pragma once
 
-#include "render.h"
-#include "helpers.h"
-#include "handle.h"
+#include "Render.h"
+#include "Helpers.h"
+#include "Handle.h"
+#include "HandleResource.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace ts
 {
-	class D3D11Target : public Handle<D3D11Target, TargetHandle>
+	struct TargetView
 	{
-	private:
+		D3D11Resource* output = nullptr;
+		uint32 index = 0;
+	};
 
-		ComPtr<ID3D11RenderTargetView> m_renderTargets[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
-		uint32 m_renderTargetsCount = 0;
-		ComPtr<ID3D11DepthStencilView> m_depthStencil;
+	struct D3D11Target : public Handle<D3D11Target, TargetHandle>
+	{
+		std::vector<TargetView> renderTargets;
+		TargetView depthStencil;
 
-	public:
+		D3D11_VIEWPORT viewport;
+		D3D11_RECT scissor;
 
-		D3D11Target() {}
-		
-		D3D11Target(ID3D11RenderTargetView** rtvs, uint32 rtvCount, ID3D11DepthStencilView* dsv)
+		//Warm the view cache for each rtv+dsv
+		void warm()
 		{
-			for (uint32 i = 0; i < rtvCount; i++)
-				m_renderTargets[i] = ComPtr<ID3D11RenderTargetView>(rtvs[i]);
+			for (const TargetView& view : renderTargets)
+			{
+				if (view.output)
+					view.output->getRTV(view.index);
+			}
 
-			m_renderTargetsCount = rtvCount;
-
-			m_depthStencil = ComPtr<ID3D11DepthStencilView>(dsv);
+			if (depthStencil.output)
+				depthStencil.output->getDSV(depthStencil.index);
 		}
-
-		~D3D11Target() { reset(); }
 
 		void clearRenderTargets(ID3D11DeviceContext* context, const Vector& vec)
 		{
-			for (uint32 i = 0; i < m_renderTargetsCount; i++)
-				context->ClearRenderTargetView(m_renderTargets[i].Get(), (const float*)&vec);
+			for (const TargetView& view : renderTargets)
+			{
+				if (view.output)
+					context->ClearRenderTargetView(view.output->getRTV(view.index), (const float*)&vec);
+			}
 		}
 
 		void clearDepthStencil(ID3D11DeviceContext* context, float depth)
 		{
-			context->ClearDepthStencilView(m_depthStencil.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, depth, 0);
+			context->ClearDepthStencilView(
+				depthStencil.output->getDSV(depthStencil.index),
+				D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+				depth,
+				0
+			);
 		}
 		
-		//Binds all RTV's and DSV's in this target to a device context
 		void bind(ID3D11DeviceContext* context)
 		{
-			context->OMSetRenderTargets(m_renderTargetsCount, (ID3D11RenderTargetView**)m_renderTargets, m_depthStencil.Get());
+			ID3D11RenderTargetView* rtvs[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+
+			for (size_t i = 0; i < renderTargets.size(); i++)
+			{
+				rtvs[i] = nullptr;
+				D3D11Resource* output = renderTargets[i].output;
+				if (output != nullptr)
+					rtvs[i] = output->getRTV(renderTargets[i].index);
+			}
+
+			ID3D11DepthStencilView* dsv = nullptr;
+
+			if (depthStencil.output != nullptr)
+			{
+				dsv = depthStencil.output->getDSV(depthStencil.index);
+			}
+
+			context->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, rtvs, dsv);
+
+			context->RSSetViewports(1, &viewport);
+			context->RSSetScissorRects(1, &scissor);
 		}
 
-		//Releases all RTV's and DSV's in this target
 		void reset()
 		{
-			for (uint32 i = 0; i < m_renderTargetsCount; i++)
-				m_renderTargets[i].Reset();
-
-			m_depthStencil.Reset();
-
-			m_renderTargetsCount = 0;
+			renderTargets.clear();
+			depthStencil.output = nullptr;
+			ZeroMemory(&scissor, sizeof(D3D11_VIEWPORT));
+			ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
 		}
 	};
 }
