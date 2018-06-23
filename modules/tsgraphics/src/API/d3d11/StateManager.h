@@ -73,6 +73,8 @@ namespace ts
 		D3D11StateManager(ID3D11Device* device) :
 			m_device(device)
 		{}
+
+		ID3D11Device* getDevice() const { return m_device.Get(); }
 		
 		//State creation methods - finds states with the closest matching parameters
 		HRESULT demandDepthState(const DepthState& desc, ID3D11DepthStencilState** state);

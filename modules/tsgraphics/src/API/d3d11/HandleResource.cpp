@@ -19,7 +19,7 @@ using namespace std;
 // Empty resource allocation
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RPtr<ResourceHandle> ts::D3D11::createEmptyResource(ResourceHandle recycle)
+RPtr<ResourceHandle> D3D11::createEmptyResource(ResourceHandle recycle)
 {
 	if (recycle != (ResourceHandle)0)
 	{

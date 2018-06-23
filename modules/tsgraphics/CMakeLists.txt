@@ -38,6 +38,8 @@ SET(tsgraphics_api_d3d11_src
 	src/api/d3d11/HandleShader.cpp
 	src/api/d3d11/HandleTarget.h
 	src/api/d3d11/HandleTarget.cpp
+	src/api/d3d11/HandlePipeline.h
+	src/api/d3d11/HandlePipeline.cpp
 	src/api/d3d11/HandleCommandDraw.h
 	
 	src/api/d3d11/Context.cpp
