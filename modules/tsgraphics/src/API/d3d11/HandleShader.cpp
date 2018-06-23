@@ -12,7 +12,7 @@ using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ShaderHandle D3D11::createShader(const ShaderCreateInfo& info)
+RPtr<ShaderHandle> D3D11::createShader(const ShaderCreateInfo& info)
 {
 	UPtr<D3D11Shader> program;
 
@@ -26,43 +26,45 @@ ShaderHandle D3D11::createShader(const ShaderCreateInfo& info)
 	{
 		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::VERTEX];
 		HRESULT hr = m_device->CreateVertexShader(bc.bytecode, bc.size, nullptr, program->vertex.GetAddressOf());
-		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+		if (FAILED(hr)) return RPtr<ShaderHandle>();
 	}
 
 	if (has(ShaderStage::GEOMETRY))
 	{
 		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::GEOMETRY];
 		HRESULT hr = m_device->CreateGeometryShader(bc.bytecode, bc.size, nullptr, program->geometry.GetAddressOf());
-		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+		if (FAILED(hr)) return RPtr<ShaderHandle>();
 	}
 
 	if (has(ShaderStage::TESSCTRL))
 	{
 		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::TESSCTRL];
 		HRESULT hr = m_device->CreateDomainShader(bc.bytecode, bc.size, nullptr, program->domain.GetAddressOf());
-		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+		if (FAILED(hr)) return RPtr<ShaderHandle>();
 	}
 
 	if (has(ShaderStage::TESSEVAL))
 	{
 		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::TESSEVAL];
 		HRESULT hr = m_device->CreateHullShader(bc.bytecode, bc.size, nullptr, program->hull.GetAddressOf());
-		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+		if (FAILED(hr)) return RPtr<ShaderHandle>();
 	}
 
 	if (has(ShaderStage::PIXEL))
 	{
 		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::PIXEL];
 		HRESULT hr = m_device->CreatePixelShader(bc.bytecode, bc.size, nullptr, program->pixel.GetAddressOf());
-		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+		if (FAILED(hr)) return RPtr<ShaderHandle>();
 	}
 
 	if (has(ShaderStage::COMPUTE))
 	{
 		const ShaderBytecode& bc = info.stages[(size_t)ShaderStage::COMPUTE];
 		HRESULT hr = m_device->CreateComputeShader(bc.bytecode, bc.size, nullptr, program->compute.GetAddressOf());
-		if (FAILED(hr)) return D3D11Shader::downcast(nullptr);
+		if (FAILED(hr)) return RPtr<ShaderHandle>();
 	}
+
+	return RPtr<ShaderHandle>(this, D3D11Shader::downcast(program.release()));
 }
 
 void D3D11::destroy(ShaderHandle shader)

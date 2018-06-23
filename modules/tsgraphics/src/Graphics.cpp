@@ -25,7 +25,6 @@ typedef lock_guard<Lock> Guard;
 struct GraphicsSystem::System : public GraphicsConfig
 {
 	GraphicsSystem* system;
-
 	//Primary rendering context
 	RenderContext* context;
 

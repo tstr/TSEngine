@@ -59,7 +59,7 @@ int ImageLoader::load(const Path& filepath, ImageLoadInfo& info)
 
 	info.desc.format = (ImageFormat)imgReader.format();
 	info.desc.type = (ImageType)imgReader.type();
-	info.desc.mask = (uint8)ImageTypeMask::SRV;
+	info.desc.usage = ImageUsage::SRV;
 	info.desc.height = imgReader.height();
 	info.desc.width = imgReader.width();
 	info.desc.length = imgReader.length();

@@ -14,7 +14,7 @@
 
 namespace ts
 {
-	class D3D11Target : public Handle<D3D11Target, HTarget>
+	class D3D11Target : public Handle<D3D11Target, TargetHandle>
 	{
 	private:
 
