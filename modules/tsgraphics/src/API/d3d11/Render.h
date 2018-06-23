@@ -8,11 +8,10 @@
 
 #include <vector>
 #include <atomic>
-#include <mutex>
-#include <tsgraphics/Device.h>
 
 #include "Base.h"
-#include "HandleTarget.h"
+#include "Context.h"
+#include "HandleResource.h"
 #include "StateManager.h"
 
 namespace ts
@@ -33,19 +32,15 @@ namespace ts
 		//Internal methods
 		ComPtr<ID3D11Device> getDevice() const { return m_device; }
 
-		ComPtr<ID3D11BlendState> getBlendState() const { return m_blendState; }
-		ComPtr<ID3D11RasterizerState> getRasterizerState() const { return m_rasterizerState; }
-		ComPtr<ID3D11DepthStencilState> getDepthStencilState() const { return m_depthStencilState; }
-
 		void incrementDrawCallCounter() { m_drawCallCounter++; }
 
-		RenderContext* getContext() override;
-		void execute(RenderContext* context) override;
+		RenderContext* context() override { return &m_context; }
+		void commit() override;
 
 		//Display methods
 		void setDisplayConfiguration(const DisplayConfig& displayCfg) override;
 		void getDisplayConfiguration(DisplayConfig& displayCfg) override;
-		ResourceHandle getDisplayTarget() override;
+		ResourceHandle getDisplayTarget() override { return D3D11Resource::downcast(&m_displayResourceProxy); }
 
 		//Query device
 		void queryStats(RenderStats& stats) override;
@@ -86,27 +81,20 @@ namespace ts
 		ComPtr<ID3D11Device> m_device;
 		ComPtr<ID3D11DeviceContext> m_immediateContext;
 
-		D3D11Target m_displayTarget;
-		D3D11StateManager m_stateManager;
+		D3D11Context m_context;
 
-		std::atomic<bool> m_drawActive;
-		std::mutex m_drawMutex;
+		D3D11Resource m_displayResourceProxy;
+		D3D11StateManager m_stateManager;
 
 		//Swapchain methods
 		void rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc);
 		HRESULT translateSwapChainDesc(const DisplayConfig& displayCfg, DXGI_SWAP_CHAIN_DESC& scDesc);
-		void initDisplayTarget();
+		void updateDisplayResource();
 
-		//All allocated render contexts
-		std::vector<D3D11Context*> m_renderContexts;
 		//Number of drawcalls per frame - for debugging
 		std::atomic<uint32> m_drawCallCounter;
 
 		bool getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc);
-
-		ComPtr<ID3D11BlendState> m_blendState;
-		ComPtr<ID3D11RasterizerState> m_rasterizerState;
-		ComPtr<ID3D11DepthStencilState> m_depthStencilState;
 	};
 	
 	/////////////////////////////////////////////////////////////////////////////////////////////////

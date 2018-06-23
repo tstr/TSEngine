@@ -6,8 +6,10 @@
 
 #pragma once
 
-#include "base.h"
-#include "handle.h"
+#include <unordered_map>
+
+#include "Base.h"
+#include "Handle.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -51,12 +53,13 @@ namespace ts
 
 	public:
 
-		D3D11Resource(ID3D11Resource* rsc, bool isImage) : m_rsc(rsc), m_isImage(isImage) {}
+		D3D11Resource(ComPtr<ID3D11Resource> rsc, bool isImage) : m_rsc(rsc), m_isImage(isImage) {}
 		~D3D11Resource() { reset(); }
 		
 		ID3D11Resource* getResource() const { m_rsc.Get(); }
 		ID3D11Buffer* getBuffer() const { return (isImage()) ? nullptr : static_cast<ID3D11Buffer*>(m_rsc.Get()); }
 		bool isImage() const { return m_isImage; }
+		bool isBuffer() const { return !m_isImage; }
 		
 		ID3D11ShaderResourceView* getSRV(uint32 arrayIndex, uint32 arrayCount, ImageType type);
 		ID3D11RenderTargetView* getRTV(uint32 arrayIndex);
@@ -64,10 +67,12 @@ namespace ts
 
 		void reset()
 		{
-			m_rsc.Reset();
+			//clear views
 			m_srvCache.clear();
 			m_rtvCache.clear();
 			m_dsvCache.clear();
+			//clear resourc
+			m_rsc.Reset();
 		}
 	};
 }

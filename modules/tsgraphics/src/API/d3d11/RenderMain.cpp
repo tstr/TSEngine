@@ -21,7 +21,9 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	Init
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D11::D3D11(const SRenderApiConfig& cfg)
+D3D11::D3D11(const RenderDeviceConfig& cfg) :
+	m_context(this),
+	m_displayResourceProxy(nullptr, true)
 {
 	m_hwnd = reinterpret_cast<HWND>(cfg.windowHandle);
 	tsassert(IsWindow(m_hwnd));
@@ -30,7 +32,6 @@ D3D11::D3D11(const SRenderApiConfig& cfg)
 
 	//initialize members
 	m_apiFlags = cfg.flags;
-	m_drawActive.store(false);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	//initialize direct3D
@@ -72,7 +73,7 @@ D3D11::D3D11(const SRenderApiConfig& cfg)
 
 	D3D_FEATURE_LEVEL featureLevel;
 
-	if (cfg.flags & ERenderApiFlags::eFlagDebug)
+	if (cfg.flags & RenderDeviceConfig::DEBUG)
 	{
 		flags |= D3D11_CREATE_DEVICE_DEBUG;
 	}
@@ -164,51 +165,10 @@ D3D11::D3D11(const SRenderApiConfig& cfg)
 	}
 	*/
 
-	//Create render targets for this swapchain
-	initDisplayTarget();
+	//Setup resource proxies for this swapchain
+	updateDisplayResource();
 
 	m_stateManager = D3D11StateManager(m_device.Get());
-
-	//////////////////////////////////////////////////////////////////////////////////////////////
-	
-	//States
-	{
-		D3D11_BLEND_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
-		desc.AlphaToCoverageEnable = false;
-		desc.RenderTarget[0].BlendEnable = true;
-		desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-		desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-		desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-		desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-		desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-		desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-		m_device->CreateBlendState(&desc, m_blendState.GetAddressOf());
-	}
-
-	{
-		D3D11_DEPTH_STENCIL_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
-		desc.DepthEnable = false;
-		desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-		desc.StencilEnable = false;
-		desc.FrontFace.StencilFailOp = desc.FrontFace.StencilDepthFailOp = desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-		desc.BackFace = desc.FrontFace;
-		m_device->CreateDepthStencilState(&desc, m_depthStencilState.GetAddressOf());
-	}
-
-	{
-		D3D11_RASTERIZER_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
-		desc.FillMode = D3D11_FILL_SOLID;
-		desc.CullMode = D3D11_CULL_NONE;
-		desc.ScissorEnable = true;
-		desc.DepthClipEnable = true;
-		m_device->CreateRasterizerState(&desc, m_rasterizerState.GetAddressOf());
-	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 }
@@ -221,7 +181,7 @@ D3D11::~D3D11()
 		m_dxgiSwapchain->SetFullscreenState(false, nullptr);
 	}
 
-	if (m_apiFlags & ERenderApiFlags::eFlagReportObjects)
+	if (m_apiFlags & RenderDeviceConfig::DEBUG_REPORT)
 	{
 		ComPtr<ID3D11Debug> debug;
 		m_device.As(&debug);
@@ -230,75 +190,41 @@ D3D11::~D3D11()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	Context methods
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11::createContext(RenderContext** context)
-{
-	auto rc = new D3D11Context(this);
-	*context = rc;
-	m_renderContexts.push_back(rc);
-}
-
-void D3D11::destroyContext(RenderContext* context)
-{
-	//upcast
-	if (auto ptr = dynamic_cast<D3D11Context*>(context))
+void D3D11::commit()
+{	
+	if (ID3D11CommandList* cmdlist = m_context.getCommandList())
 	{
-		auto it = find(m_renderContexts.begin(), m_renderContexts.end(), ptr);
-		m_renderContexts.erase(it);
-		delete ptr;
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	Pipeline methods
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void D3D11::drawBegin()
-{
-	//Lock drawing
-	m_drawMutex.lock();
-
-	//Sets drawing status to active
-	//If status was already marked as active then show error
-	tsassert(!m_drawActive.exchange(true));
-}
-
-void D3D11::drawEnd(IRenderContext** contexts, uint32 numContexts)
-{
-	//Execute queued command lists
-	for (uint32 i = 0; i < numContexts; i++)
-	{
-		if (auto rcon = dynamic_cast<D3D11Context*>(contexts[i]))
-		{
-			if (auto cmdlist = rcon->getCommandList().Get())
-			{
-				m_immediateContext->ExecuteCommandList(cmdlist, false);
-				rcon->resetCommandList(); //Every command list must be released every frame
-			}
-		}
+		m_immediateContext->ExecuteCommandList(cmdlist, false);
+		m_context.resetCommandList(); //Every command list must be released every frame
 	}
 
 	//Send queued commands to the GPU and present swapchain backbuffer
 	m_dxgiSwapchain->Present(0, 0);
 	//Reset draw call counter each frame
 	m_drawCallCounter = 0;
-
-	//Sets drawing status to inactive
-	//If status was already marked as inactive then show error
-	tsassert(m_drawActive.exchange(false));
-	//Unlock drawing
-	m_drawMutex.unlock();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11::getDrawStatistics(SRenderStatistics& stats)
+void D3D11::queryStats(RenderStats& stats)
 {
 	stats.drawcalls = m_drawCallCounter.load();
 }
 
+void D3D11::queryInfo(DeviceInfo& info)
+{
+	DXGI_ADAPTER_DESC desc;
+	m_dxgiAdapter->GetDesc(&desc);
+
+	_bstr_t str = desc.Description;
+	info.adapterName = (const char*)str;
+	info.gpuVideoMemory = desc.DedicatedVideoMemory;
+	info.gpuSystemMemory = desc.DedicatedSystemMemory;
+	info.sharedSystemMemory = desc.SharedSystemMemory;
+}
+
+//helper function
 bool D3D11::getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc)
 {
 	tsassert(m_device.Get());
@@ -306,31 +232,6 @@ bool D3D11::getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc)
 	sampledesc.Quality--;
 
 	return true;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-namespace ts
-{
-	namespace abi
-	{
-		extern "C"
-		{
-			int createRenderApi(IRender** api, const SRenderApiConfig& cfg)
-			{
-				*api = new D3D11Render(cfg);
-				return 0;
-			}
-
-			void destroyRenderApi(IRender* api)
-			{
-				if (auto ptr = dynamic_cast<ts::D3D11Render*>(api))
-				{
-					delete ptr;
-				}
-			}
-		}
-	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -6,19 +6,20 @@
 	Can be an image or buffer
 */
 
-#include "render.h"
-#include "helpers.h"
+#include "Render.h"
+#include "Helpers.h"
 #include "HandleResource.h"
+
 #include <vector>
 
 using namespace ts;
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Create an empty resource
+// Empty resource allocation
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RPtr<ResourceHandle> D3D11::createEmptyResource(ResourceHandle recycle)
+RPtr<ResourceHandle> ts::D3D11::createEmptyResource(ResourceHandle recycle)
 {
 	if (recycle != (ResourceHandle)0)
 	{
@@ -237,11 +238,69 @@ RPtr<ResourceHandle> D3D11::createResourceImage(const ResourceData* data, const 
 	{
 		auto rsc = D3D11Resource::upcast(recycle);
 		rsc->reset();
-		return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new(rsc) D3D11Resource(resource.Get(), true)));
+		return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new(rsc) D3D11Resource(resource, true)));
 	}
 	else
 	{
-		return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new D3D11Resource(resource.Get(), true)));
+		return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new D3D11Resource(resource, true)));
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Buffer creation
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+RPtr<ResourceHandle> D3D11::createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle)
+{
+	ComPtr<ID3D11Buffer> buffer;
+
+	D3D11_SUBRESOURCE_DATA subdata;
+	D3D11_BUFFER_DESC subdesc;
+
+	ZeroMemory(&subdata, sizeof(D3D11_SUBRESOURCE_DATA));
+	ZeroMemory(&subdesc, sizeof(D3D11_BUFFER_DESC));
+
+	//For now keep resource usage as default
+	subdesc.Usage = D3D11_USAGE_DEFAULT;
+
+	switch (info.type)
+	{
+	case BufferType::VERTEX: { subdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER; break; }
+	case BufferType::INDEX: { subdesc.BindFlags = D3D11_BIND_INDEX_BUFFER; break; }
+	case BufferType::CONSTANTS: { subdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; break; }
+	}
+
+	//Only dynamic resources are allowed direct access to buffer memory
+	if (subdesc.Usage == D3D11_USAGE_DYNAMIC)
+	{
+		subdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	}
+
+	subdesc.MiscFlags = 0;
+	subdesc.ByteWidth = info.size;
+
+	subdata.pSysMem = data.memory;
+	subdata.SysMemPitch = data.memoryByteWidth;
+	subdata.SysMemSlicePitch = data.memoryByteDepth;
+
+	HRESULT hr = m_device->CreateBuffer(&subdesc, &subdata, buffer.GetAddressOf());
+
+	if (FAILED(hr))
+	{
+		return RPtr<ResourceHandle>();
+	}
+	else
+	{
+		if (recycle != (ResourceHandle)0)
+		{
+			auto rsc = D3D11Resource::upcast(recycle);
+			rsc->reset();
+			return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new(rsc) D3D11Resource(buffer, false)));
+		}
+		else
+		{
+			return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new D3D11Resource(buffer, false)));
+		}
 	}
 }
 
@@ -255,6 +314,8 @@ void D3D11::destroy(ResourceHandle hrsc)
 	}
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  Texture view caching
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ID3D11ShaderResourceView* D3D11Resource::getSRV(uint32 arrayIndex, uint32 arrayCount, ImageType type)
@@ -482,64 +543,6 @@ ID3D11DepthStencilView* D3D11Resource::getDSV(uint32 arrayIndex)
 		}
 
 		return nullptr;
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Buffer creation
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-RPtr<ResourceHandle> D3D11::createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle)
-{
-	ID3D11Buffer* buffer = nullptr;
-
-	D3D11_SUBRESOURCE_DATA subdata;
-	D3D11_BUFFER_DESC subdesc;
-
-	ZeroMemory(&subdata, sizeof(D3D11_SUBRESOURCE_DATA));
-	ZeroMemory(&subdesc, sizeof(D3D11_BUFFER_DESC));
-
-	//For now keep resource usage as default
-	subdesc.Usage = D3D11_USAGE_DEFAULT;
-
-	switch (info.type)
-	{
-	case BufferType::VERTEX: { subdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER; break; }
-	case BufferType::INDEX : { subdesc.BindFlags = D3D11_BIND_INDEX_BUFFER; break; }
-	case BufferType::CONSTANTS: { subdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; break; }
-	}
-
-	//Only dynamic resources are allowed direct access to buffer memory
-	if (subdesc.Usage == D3D11_USAGE_DYNAMIC)
-	{
-		subdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	}
-
-	subdesc.MiscFlags = 0;
-	subdesc.ByteWidth = info.size;
-
-	subdata.pSysMem = data.memory;
-	subdata.SysMemPitch = data.memoryByteWidth;
-	subdata.SysMemSlicePitch = data.memoryByteDepth;
-
-	HRESULT hr = m_device->CreateBuffer(&subdesc, &subdata, &buffer);
-
-	if (FAILED(hr))
-	{
-		return RPtr<ResourceHandle>();
-	}
-	else
-	{
-		if (recycle != (ResourceHandle)0)
-		{
-			auto rsc = D3D11Resource::upcast(recycle);
-			rsc->reset();
-			return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new(rsc) D3D11Resource(buffer, false)));
-		}
-		else
-		{
-			return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new D3D11Resource(buffer, false)));
-		}
 	}
 }
 
