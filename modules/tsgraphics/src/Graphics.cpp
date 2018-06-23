@@ -11,7 +11,7 @@
 #include <atomic>
 
 #include <tsgraphics/Graphics.h>
-#include <tsgraphics/Device.h>
+#include <tsgraphics/Driver.h>
 
 using namespace std;
 using namespace ts;
@@ -80,7 +80,7 @@ GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
 	}
 
 	//Create main render context
-	pSystem->context = pDevice->getContext();
+	pSystem->context = pDevice->context();
 }
 
 GraphicsSystem::~GraphicsSystem()
@@ -303,7 +303,7 @@ void GraphicsSystem::end()
 	RenderContext* rc = pSystem->context;
 
 	rc->finish();
-	device()->execute(rc);
+	device()->commit();
 }
 
 void GraphicsSystem::execute(CommandQueue* queue)

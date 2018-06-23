@@ -8,7 +8,7 @@
 #include <tscore/alloc/Linear.h>
 #include <tscore/debug/assert.h>
 
-#include <tsgraphics/Device.h>
+#include <tsgraphics/Driver.h>
 
 #include <algorithm>
 

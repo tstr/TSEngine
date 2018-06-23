@@ -2,8 +2,8 @@
     Device interface
 */
 
-#include <tsgraphics/Device.h>
-#include "d3d11/Render.h"
+#include <tsgraphics/Driver.h>
+#include "api/d3d11/Render.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
