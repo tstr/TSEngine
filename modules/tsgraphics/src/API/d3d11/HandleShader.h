@@ -4,6 +4,8 @@
 	Shader program class
 */
 
+#pragma once
+
 #include "render.h"
 #include "handle.h"
 
@@ -19,7 +21,12 @@ namespace ts
 		ComPtr<ID3D11PixelShader> pixel;
 		ComPtr<ID3D11ComputeShader> compute;
 
+		MemoryBuffer vertexBytecode;
+
 		//Bind shader program stages
 		void bind(ID3D11DeviceContext* context);
+
+		//Create an input layout for this particular shader program
+		ComPtr<ID3D11InputLayout> createInputLayout(const VertexAttribute* attributeList, size_t attributeCount);
 	};
 }

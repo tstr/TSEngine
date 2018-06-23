@@ -1,7 +1,9 @@
 /*
 	Render API
 	
-	D3D11Texture class
+	Resource object
+
+	Can be an image or buffer
 */
 
 #pragma once

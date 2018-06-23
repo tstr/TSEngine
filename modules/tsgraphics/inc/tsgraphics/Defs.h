@@ -188,7 +188,7 @@ namespace ts
 
 	enum class VertexTopology
 	{
-		POINT,
+		POINTLIST,
 		LINELIST,
 		LINESTRIP,
 		TRIANGELIST,
@@ -274,8 +274,8 @@ namespace ts
 		const SamplerState* samplers;
 		size_t samplerCount;
 
-		const VertexAttribute* vertexAttrib;
-		size_t vertexAttribCount;
+		const VertexAttribute* vertexAttributeList;
+		size_t vertexAttributeCount;
 
 		VertexTopology topology;
 	};
