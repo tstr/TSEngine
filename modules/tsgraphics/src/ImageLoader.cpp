@@ -6,7 +6,7 @@
 
 #include "ImageLoader.h"
 
-#include <tsgraphics/Device.h>
+#include <tsgraphics/Driver.h>
 #include <tsgraphics/schemas/Texture.rcs.h>
 
 #include <tscore/debug/assert.h>

@@ -15,7 +15,7 @@
 #include <tscore/ptr.h>
 #include <tscore/delegate.h>
 
-#include "Device.h"
+#include "Driver.h"
 
 namespace ts
 {

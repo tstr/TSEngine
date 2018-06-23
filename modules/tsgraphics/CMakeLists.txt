@@ -16,7 +16,7 @@ set(tsgraphics_inc
 	inc/tsgraphics/FrameGraph.h
     
 	inc/tsgraphics/Defs.h
-	inc/tsgraphics/Device.h
+	inc/tsgraphics/Driver.h
 	inc/tsgraphics/Graphics.h
 )
 
@@ -53,7 +53,7 @@ SET(tsgraphics_src
 	${tsgraphics_api_d3d11_src}
 	
 	src/Graphics.cpp
-	src/api/Device.cpp
+	src/Driver.cpp
 
 	src/CommandQueue.cpp
 	src/CommandDispatchers.cpp

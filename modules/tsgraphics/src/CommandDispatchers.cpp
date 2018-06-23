@@ -3,7 +3,7 @@
 */
 
 #include <tsgraphics/CommandQueue.h>
-#include <tsgraphics/Device.h>
+#include <tsgraphics/Driver.h>
 
 using namespace std;
 using namespace ts;
