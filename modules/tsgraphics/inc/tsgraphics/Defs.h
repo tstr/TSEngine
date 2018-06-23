@@ -97,12 +97,18 @@ namespace ts
 		DEPTH32
 	};
 
-	enum class ImageTypeMask : uint8
+	enum class ImageUsage : uint8
 	{
-		SRV = 1 << 0,
-		RTV = 1 << 1,
-		DSV = 1 << 2
+		SRV = 1 << 0, //shader resource
+		RTV = 1 << 1, //render target
+		DSV = 1 << 2  //depth target
 	};
+
+	inline ImageUsage operator&(ImageUsage lhs, ImageUsage rhs) { return (ImageUsage)((uint8)lhs & (uint8)rhs); }
+    inline ImageUsage operator|(ImageUsage lhs, ImageUsage rhs) { return (ImageUsage)((uint8)lhs | (uint8)rhs); }
+	inline ImageUsage& operator|=(ImageUsage& lhs, ImageUsage rhs) { lhs = (ImageUsage)((uint8)lhs | (uint8)rhs); return lhs; }
+	inline bool operator==(ImageUsage lhs, uint8 rhs) { return (uint8)lhs == rhs; }
+	inline bool operator!=(ImageUsage lhs, uint8 rhs) { return (uint8)lhs != rhs; }
 
 	enum class ImageType : uint8
 	{
@@ -129,7 +135,7 @@ namespace ts
 	{
 		ImageFormat format = ImageFormat::UNKNOWN;
 		ImageType type = ImageType::_2D;
-		uint8 mask = (uint8)ImageTypeMask::SRV;
+		ImageUsage usage = ImageUsage::SRV;
 
 		uint32 width = 0;
 		uint32 height = 0;
@@ -360,9 +366,9 @@ namespace ts
 
 	struct DrawCommandInfo
 	{
-		TargetHandle target;
+		TargetHandle outputs;
 		PipelineHandle state;
-		ResourceSetHandle resources;
+		ResourceSetHandle inputs;
 
 		uint32 start = 0; //vertex/index start
 		uint32 count = 0; //vertex/index count

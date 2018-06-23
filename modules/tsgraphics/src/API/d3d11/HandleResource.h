@@ -20,21 +20,20 @@ namespace ts
 		ComPtr<ID3D11Resource> m_rsc;
 		bool m_isImage;
 
-		struct SRV
+		struct SRVKey
 		{
 			uint32 arrayIndex = 0;
 			uint32 arrayCount = 0;
 			ImageType type;
 
-			bool operator==(const SRV& other)
+			//key comp
+			bool operator==(const SRVKey& other) const
 			{
 				return other.arrayCount == arrayCount && other.arrayIndex == arrayIndex && other.type == type;
 			}
-		};
 
-		struct SRVHash
-		{
-			size_t operator()(const SRV& srv)
+			//key hash
+			size_t operator()(const SRVKey& srv) const
 			{
 				return (((size_t)srv.type * 8) + srv.arrayCount) * 310348631 + srv.arrayIndex;
 			}
@@ -46,7 +45,7 @@ namespace ts
 		/*
 			View caches
 		*/
-		Cache<SRV, ID3D11ShaderResourceView, SRVHash> m_srvCache;
+		Cache<SRVKey, ID3D11ShaderResourceView, SRVKey> m_srvCache;
 		Cache<uint32, ID3D11RenderTargetView> m_rtvCache;
 		Cache<uint32, ID3D11DepthStencilView> m_dsvCache;
 

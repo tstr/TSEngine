@@ -15,10 +15,28 @@ using namespace ts;
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Create an empty resource
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+RPtr<ResourceHandle> D3D11::createEmptyResource(ResourceHandle recycle)
+{
+	if (recycle != (ResourceHandle)0)
+	{
+		auto rsc = D3D11Resource::upcast(recycle);
+		rsc->reset();
+		return RPtr<ResourceHandle>(this, recycle);
+	}
+	else
+	{
+		return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new D3D11Resource(nullptr, false)));
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Image creation
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ResourceHandle D3D11::createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle)
+RPtr<ResourceHandle> D3D11::createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle)
 {
 	DXGI_FORMAT format = ImageFormatToDXGIFormat(info.format);
 	D3D11_USAGE usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
@@ -84,20 +102,20 @@ ResourceHandle D3D11::createResourceImage(const ResourceData* data, const ImageR
 
 	UINT bindFlags = 0;
 
-	if (info.mask & (uint8)ImageTypeMask::SRV)
+	if ((info.usage & ImageUsage::SRV) != 0)
 	{
 		bindFlags |= D3D11_BIND_SHADER_RESOURCE;
 	}
-	if (info.mask & (uint8)ImageTypeMask::RTV)
+	if ((info.usage & ImageUsage::RTV) != 0)
 	{
 		bindFlags |= D3D11_BIND_RENDER_TARGET;
 	}
-	if (info.mask & (uint8)ImageTypeMask::DSV)
+	if ((info.usage & ImageUsage::DSV) != 0)
 	{
 		if (bindFlags & D3D11_BIND_RENDER_TARGET)
 		{
 			tswarn("A texture resource with the D3D11_BIND_RENDER_TARGET flag cannot have the D3D11_BIND_DEPTH_STENCIL flag set");
-			return D3D11Resource::downcast(0);
+			return RPtr<ResourceHandle>();
 		}
 
 		bindFlags |= D3D11_BIND_DEPTH_STENCIL;
@@ -190,7 +208,7 @@ ResourceHandle D3D11::createResourceImage(const ResourceData* data, const ImageR
 
 	if (FAILED(hr))
 	{
-		return D3D11Resource::downcast(0);
+		return RPtr<ResourceHandle>();
 	}
 
 	if (info.useMips)
@@ -212,18 +230,18 @@ ResourceHandle D3D11::createResourceImage(const ResourceData* data, const ImageR
 
 	if (FAILED(hr))
 	{
-		return D3D11Resource::downcast(nullptr);
+		return RPtr<ResourceHandle>();
 	}
 
 	if (recycle != (ResourceHandle)0)
 	{
 		auto rsc = D3D11Resource::upcast(recycle);
 		rsc->reset();
-		return D3D11Resource::downcast(new(rsc) D3D11Resource(resource.Get(), true));
+		return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new(rsc) D3D11Resource(resource.Get(), true)));
 	}
 	else
 	{
-		return D3D11Resource::downcast(new D3D11Resource(resource.Get(), true));
+		return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new D3D11Resource(resource.Get(), true)));
 	}
 }
 
@@ -243,7 +261,7 @@ ID3D11ShaderResourceView* D3D11Resource::getSRV(uint32 arrayIndex, uint32 arrayC
 {
 	if (!isImage()) return nullptr;
 
-	SRV view;
+	SRVKey view;
 	view.arrayIndex = arrayIndex;
 	view.arrayCount = arrayCount;
 	view.type = type;
@@ -253,10 +271,12 @@ ID3D11ShaderResourceView* D3D11Resource::getSRV(uint32 arrayIndex, uint32 arrayC
 
 	auto it = m_srvCache.find(view);
 
+	//Cache hit
 	if (it != m_srvCache.end())
 	{
 		return it->second.Get();
 	}
+	//Cache miss
 	else
 	{
 		ID3D11Resource* rsc = m_rsc.Get();
@@ -365,10 +385,12 @@ ID3D11RenderTargetView* D3D11Resource::getRTV(uint32 arrayIndex)
 
 	auto it = m_rtvCache.find(arrayIndex);
 
+	//Cache hit
 	if (it != m_rtvCache.end())
 	{
 		return it->second.Get();
 	}
+	//Cache miss
 	else
 	{
 		//kind of dangerous
@@ -418,10 +440,12 @@ ID3D11DepthStencilView* D3D11Resource::getDSV(uint32 arrayIndex)
 
 	auto it = m_dsvCache.find(arrayIndex);
 
+	//Cache hit
 	if (it != m_dsvCache.end())
 	{
 		return it->second.Get();
 	}
+	//Cache miss
 	else
 	{
 		if (ID3D11Texture2D* tex = static_cast<ID3D11Texture2D*>(m_rsc.Get()))
@@ -465,7 +489,7 @@ ID3D11DepthStencilView* D3D11Resource::getDSV(uint32 arrayIndex)
 // Buffer creation
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ResourceHandle D3D11::createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle)
+RPtr<ResourceHandle> D3D11::createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle)
 {
 	ID3D11Buffer* buffer = nullptr;
 
@@ -502,7 +526,7 @@ ResourceHandle D3D11::createResourceBuffer(const ResourceData& data, const Buffe
 
 	if (FAILED(hr))
 	{
-		return D3D11Resource::downcast(nullptr);
+		return RPtr<ResourceHandle>();
 	}
 	else
 	{
@@ -510,11 +534,11 @@ ResourceHandle D3D11::createResourceBuffer(const ResourceData& data, const Buffe
 		{
 			auto rsc = D3D11Resource::upcast(recycle);
 			rsc->reset();
-			return D3D11Resource::downcast(new(rsc) D3D11Resource(buffer, false));
+			return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new(rsc) D3D11Resource(buffer, false)));
 		}
 		else
 		{
-			return D3D11Resource::downcast(new D3D11Resource(buffer, false));
+			return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new D3D11Resource(buffer, false)));
 		}
 	}
 }

@@ -52,14 +52,18 @@ namespace ts
 		void queryInfo(DeviceInfo& info) override;
 
 		//Resources
-		ResourceHandle createEmptyResource(ResourceHandle recycle) override;
-		ResourceHandle createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle) override;
-		ResourceHandle createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle) override;
-		ResourceSetHandle createResourceSet(const ResourceSetInfo& info, ResourceSetHandle recycle) override;
-		ShaderHandle createShader(const ShaderCreateInfo& info) override;
-		PipelineHandle createPipeline(ShaderHandle program, const PipelineCreateInfo& info) override;
-		TargetHandle createTarget(const TargetCreateInfo& info, TargetHandle recycle) override;
-		CommandHandle createCommand(const DrawCommandInfo& cmd, CommandHandle recycle) override;
+		RPtr<ResourceHandle> createEmptyResource(ResourceHandle recycle) override;
+		RPtr<ResourceHandle> createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle) override;
+		RPtr<ResourceHandle> createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle) override;
+		//Resource set
+		RPtr<ResourceSetHandle> createResourceSet(const ResourceSetInfo& info, ResourceSetHandle recycle) override;
+		//Pipeline state
+		RPtr<ShaderHandle> createShader(const ShaderCreateInfo& info) override;
+		RPtr<PipelineHandle> createPipeline(ShaderHandle program, const PipelineCreateInfo& info) override;
+		//Output target
+		RPtr<TargetHandle> createTarget(const TargetCreateInfo& info, TargetHandle recycle) override;
+		//Commands
+		RPtr<CommandHandle> createCommand(const DrawCommandInfo& cmd, CommandHandle recycle) override;
 
 		//Destroy device objects
 		void destroy(ResourceHandle rsc) override;

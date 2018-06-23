@@ -11,6 +11,49 @@
 
 namespace ts
 {
+    /*
+        Resource handle object
+        manages lifetime of device resouces
+    */
+    template<typename Handle>
+    class RPtr
+    {
+    public:
+        
+        RPtr() : m_d(nullptr), m_h((Handle)0) {}
+        RPtr(std::nullptr_t, Handle h) : RPtr() {}
+        RPtr(RenderDevice* d, Handle h) : m_d(d), m_h(h) {}
+        ~RPtr() { reset(); }
+        
+        RPtr(RPtr<Handle>&& rhs) { *this = rhs; }
+        
+        RPtr(const RPtr<Handle>&) = delete;
+        RPtr<Handle>& operator=(const RPtr<Handle>& rhs) = delete;
+        
+        RPtr<Handle>& operator=(RPtr<Handle>&& rhs)
+        {
+            std::swap(m_d, rhs.m_d);
+            std::swap(m_h, rhs.m_h);
+            return *this;
+        }
+        
+        RenderDevice* const device() const { return m_d; }
+        Handle handle() const { return m_h; }
+        
+        void reset() { if (!null()) m_d->destroy(m_h); }
+		Handle release() { auto h = m_h; m_h = (Handle)0; return h; }
+
+        bool null() const { return (m_d == nullptr) || (m_h == (Handle)0); }
+        
+        operator bool() const { return null(); }
+        
+    private:
+        
+        RenderDevice* m_d;
+        Handle m_h;
+    };
+    
+    
     enum class RenderDeviceID
     {
         NONE,
@@ -48,18 +91,18 @@ namespace ts
 		virtual void queryInfo(DeviceInfo& info) = 0;
         
         //Resources
-        virtual ResourceHandle createEmptyResource(ResourceHandle recycle = (ResourceHandle)0) = 0;
-        virtual ResourceHandle createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle = (ResourceHandle)0) = 0;
-		virtual ResourceHandle createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle = (ResourceHandle)0) = 0;
+        virtual RPtr<ResourceHandle> createEmptyResource(ResourceHandle recycle = (ResourceHandle)0) = 0;
+        virtual RPtr<ResourceHandle> createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle = (ResourceHandle)0) = 0;
+		virtual RPtr<ResourceHandle> createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle = (ResourceHandle)0) = 0;
         //Resource set
-        virtual ResourceSetHandle createResourceSet(const ResourceSetInfo& info, ResourceSetHandle recycle = (ResourceSetHandle)0) = 0;
+        virtual RPtr<ResourceSetHandle> createResourceSet(const ResourceSetInfo& info, ResourceSetHandle recycle = (ResourceSetHandle)0) = 0;
 		//Pipeline state
-        virtual ShaderHandle createShader(const ShaderCreateInfo& info) = 0;
-        virtual PipelineHandle createPipeline(ShaderHandle program, const PipelineCreateInfo& info) = 0;
+        virtual RPtr<ShaderHandle> createShader(const ShaderCreateInfo& info) = 0;
+        virtual RPtr<PipelineHandle> createPipeline(ShaderHandle program, const PipelineCreateInfo& info) = 0;
 		//Output target
-        virtual TargetHandle createTarget(const TargetCreateInfo& info, TargetHandle recycle = (TargetHandle)0) = 0;
+        virtual RPtr<TargetHandle> createTarget(const TargetCreateInfo& info, TargetHandle recycle = (TargetHandle)0) = 0;
         //Commands
-        virtual CommandHandle createCommand(const DrawCommandInfo& cmd, CommandHandle recycle = (CommandHandle)0) = 0;
+        virtual RPtr<CommandHandle> createCommand(const DrawCommandInfo& cmd, CommandHandle recycle = (CommandHandle)0) = 0;
         
         //Destroy device objects
 		virtual void destroy(ResourceHandle rsc) = 0;
