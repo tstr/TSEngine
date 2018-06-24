@@ -13,7 +13,8 @@ using namespace ts;
 
 RPtr<TargetHandle> Dx11::createTarget(const TargetCreateInfo& info, TargetHandle recycle)
 {
-	DxTarget* target = (recycle == (TargetHandle)0) ? new DxTarget() : DxTarget::upcast(recycle);
+	UPtr<DxTarget> newTarget(new DxTarget());
+	DxTarget* target = (recycle == (TargetHandle)0) ? newTarget.release() : DxTarget::upcast(recycle);
 	target->reset();
 
 	target->viewport.TopLeftX = (FLOAT)info.viewport.x;
@@ -47,7 +48,7 @@ RPtr<TargetHandle> Dx11::createTarget(const TargetCreateInfo& info, TargetHandle
 
 void Dx11::destroy(TargetHandle target)
 {
-	if (auto t = DxTarget::upcast(target))
+	if (DxTarget* t = DxTarget::upcast(target))
 	{
 		delete t;
 	}

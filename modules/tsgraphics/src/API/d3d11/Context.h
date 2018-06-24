@@ -24,6 +24,7 @@ namespace ts
 
 	public:
 		
+		Dx11Context() {}
 		Dx11Context(Dx11* api);
 		~Dx11Context();
 

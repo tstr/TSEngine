@@ -21,36 +21,48 @@ namespace ts
     public:
         
         RPtr() : m_d(nullptr), m_h((Handle)0) {}
-        RPtr(std::nullptr_t, Handle h) : RPtr() {}
         RPtr(RenderDevice* d, Handle h) : m_d(d), m_h(h) {}
         ~RPtr() { reset(); }
         
-        RPtr(RPtr<Handle>&& rhs) { *this = rhs; }
-        
-        RPtr(const RPtr<Handle>&) = delete;
-        RPtr<Handle>& operator=(const RPtr<Handle>& rhs) = delete;
-        
+		//Moveable
+        RPtr(RPtr<Handle>&& rhs)
+		{
+			std::swap(m_d, rhs.m_d);
+			std::swap(m_h, rhs.m_h);
+		}
+
         RPtr<Handle>& operator=(RPtr<Handle>&& rhs)
         {
             std::swap(m_d, rhs.m_d);
             std::swap(m_h, rhs.m_h);
             return *this;
         }
-        
+
+		//no copy
+		RPtr(const RPtr<Handle>&) = delete;
+		void operator=(const RPtr<Handle>&) = delete;
+
         RenderDevice* const device() const { return m_d; }
         Handle handle() const { return m_h; }
-        
-        void reset() { if (!null()) m_d->destroy(m_h); }
-		Handle release() { auto h = m_h; m_h = (Handle)0; return h; }
+		//Handle release() { auto h = m_h; m_h = (Handle)0; return h; }
 
-        bool null() const { return (m_d == nullptr) || (m_h == (Handle)0); }
-        
-        operator bool() const { return !null(); }
+		bool null() const { return (m_d == nullptr) || (m_h == (Handle)0); }
+		operator bool() const { return !null(); }
+
+		void reset()
+		{
+			if (!null())
+			{
+				m_d->destroy(m_h);
+				m_d = nullptr;
+				m_h = (Handle)0;
+			}
+		}
         
     private:
         
-        RenderDevice* m_d;
-        Handle m_h;
+        RenderDevice* m_d; //device
+        Handle m_h;        //device resource handle
     };
     
     /*
@@ -81,7 +93,7 @@ namespace ts
 		
         //Query device
 		virtual void queryStats(RenderStats& stats) = 0;
-		virtual void queryInfo(DeviceInfo& info) = 0;
+		virtual void queryInfo(RenderDeviceInfo& info) = 0;
         
         //Resources
         virtual RPtr<ResourceHandle> createEmptyResource(ResourceHandle recycle = (ResourceHandle)0) = 0;

@@ -37,7 +37,7 @@ namespace ts
 
 		RGBA(uint32 d) : data(d) {}
 
-		RGBA(byte red, byte green, byte blue, byte alpha = 0) :
+		RGBA(byte red, byte green, byte blue, byte alpha = 255) :
 			r(red),
 			g(green),
 			b(blue),
