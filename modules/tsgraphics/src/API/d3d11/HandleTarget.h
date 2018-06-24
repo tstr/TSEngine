@@ -17,11 +17,11 @@ namespace ts
 {
 	struct TargetView
 	{
-		D3D11Resource* output = nullptr;
+		DxResource* output = nullptr;
 		uint32 index = 0;
 	};
 
-	struct D3D11Target : public Handle<D3D11Target, TargetHandle>
+	struct DxTarget : public Handle<DxTarget, TargetHandle>
 	{
 		std::vector<TargetView> renderTargets;
 		TargetView depthStencil;
@@ -70,7 +70,7 @@ namespace ts
 			for (size_t i = 0; i < renderTargets.size(); i++)
 			{
 				rtvs[i] = nullptr;
-				D3D11Resource* output = renderTargets[i].output;
+				DxResource* output = renderTargets[i].output;
 				if (output != nullptr)
 					rtvs[i] = output->getRTV(renderTargets[i].index);
 			}

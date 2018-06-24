@@ -11,9 +11,9 @@ using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RPtr<TargetHandle> D3D11::createTarget(const TargetCreateInfo& info, TargetHandle recycle)
+RPtr<TargetHandle> Dx11::createTarget(const TargetCreateInfo& info, TargetHandle recycle)
 {
-	D3D11Target* target = (recycle == (TargetHandle)0) ? new D3D11Target() : D3D11Target::upcast(recycle);
+	DxTarget* target = (recycle == (TargetHandle)0) ? new DxTarget() : DxTarget::upcast(recycle);
 	target->reset();
 
 	target->viewport.TopLeftX = (FLOAT)info.viewport.x;
@@ -31,23 +31,23 @@ RPtr<TargetHandle> D3D11::createTarget(const TargetCreateInfo& info, TargetHandl
 	for (size_t i = 0; i < info.attachmentCount; i++)
 	{
 		TargetView view;
-		view.output = D3D11Resource::upcast(info.attachments[i].image);
+		view.output = DxResource::upcast(info.attachments[i].image);
 		view.index = info.attachments[i].index;
 		target->renderTargets.push_back(view);
 	}
 
-	target->depthStencil.output = D3D11Resource::upcast(info.depth.image);
+	target->depthStencil.output = DxResource::upcast(info.depth.image);
 	target->depthStencil.index = info.depth.index;
 
 	//Prewarm the view cache
 	target->warm();
 
-	return RPtr<TargetHandle>(this, D3D11Target::downcast(target));
+	return RPtr<TargetHandle>(this, DxTarget::downcast(target));
 }
 
-void D3D11::destroy(TargetHandle target)
+void Dx11::destroy(TargetHandle target)
 {
-	if (auto t = D3D11Target::upcast(target))
+	if (auto t = DxTarget::upcast(target))
 	{
 		delete t;
 	}

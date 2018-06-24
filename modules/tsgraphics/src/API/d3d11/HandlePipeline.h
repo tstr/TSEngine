@@ -15,18 +15,18 @@
 
 namespace ts
 {
-	class D3D11Pipeline : public Handle<D3D11Pipeline, PipelineHandle>
+	class DxPipeline : public Handle<DxPipeline, PipelineHandle>
 	{
 	public:
 
-		D3D11Pipeline(D3D11StateManager& states, ShaderHandle program, const PipelineCreateInfo& info);
-		~D3D11Pipeline() {}
+		DxPipeline(DxStateManager& states, ShaderHandle program, const PipelineCreateInfo& info);
+		~DxPipeline() {}
 		
 		void bind(ID3D11DeviceContext* context);
 
 	private:
 
-		D3D11Shader* m_program;
+		DxShader* m_program;
 
 		ComPtr<ID3D11RasterizerState> m_rasterState;
 		ComPtr<ID3D11DepthStencilState> m_depthState;

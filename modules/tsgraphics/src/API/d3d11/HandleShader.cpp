@@ -14,9 +14,9 @@ using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RPtr<ShaderHandle> D3D11::createShader(const ShaderCreateInfo& info)
+RPtr<ShaderHandle> Dx11::createShader(const ShaderCreateInfo& info)
 {
-	UPtr<D3D11Shader> program;
+	UPtr<DxShader> program;
 
 	//Has stage
 	auto has = [&info](ShaderStage stage)
@@ -69,12 +69,12 @@ RPtr<ShaderHandle> D3D11::createShader(const ShaderCreateInfo& info)
 		if (FAILED(hr)) return RPtr<ShaderHandle>();
 	}
 
-	return RPtr<ShaderHandle>(this, D3D11Shader::downcast(program.release()));
+	return RPtr<ShaderHandle>(this, DxShader::downcast(program.release()));
 }
 
-void D3D11::destroy(ShaderHandle shader)
+void Dx11::destroy(ShaderHandle shader)
 {
-	if (auto s = D3D11Shader::upcast(shader))
+	if (auto s = DxShader::upcast(shader))
 	{
 		delete s;
 	}
@@ -82,7 +82,7 @@ void D3D11::destroy(ShaderHandle shader)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Shader::bind(ID3D11DeviceContext* context)
+void DxShader::bind(ID3D11DeviceContext* context)
 {
 	context->VSSetShader(vertex.Get(), nullptr, 0);
 	context->PSSetShader(pixel.Get(), nullptr, 0);
@@ -91,7 +91,7 @@ void D3D11Shader::bind(ID3D11DeviceContext* context)
 	context->HSSetShader(hull.Get(), nullptr, 0);
 }
 
-ComPtr<ID3D11InputLayout> D3D11Shader::createInputLayout(const VertexAttribute* attributeList, size_t attributeCount)
+ComPtr<ID3D11InputLayout> DxShader::createInputLayout(const VertexAttribute* attributeList, size_t attributeCount)
 {
 	if (vertex.Get() == nullptr || vertexBytecode.pointer() == nullptr)
 	{

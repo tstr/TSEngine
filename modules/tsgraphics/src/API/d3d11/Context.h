@@ -12,20 +12,20 @@
 
 namespace ts
 {
-	class D3D11;
+	class Dx11;
 
-	class D3D11Context : public RenderContext
+	class Dx11Context : public RenderContext
 	{
 	private:
 
-		D3D11* m_driver;
+		Dx11* m_driver;
 		ComPtr<ID3D11DeviceContext> m_context;
 		ComPtr<ID3D11CommandList> m_contextCommandList;
 
 	public:
 		
-		D3D11Context(D3D11* api);
-		~D3D11Context();
+		Dx11Context(Dx11* api);
+		~Dx11Context();
 
 		void resourceUpdate(ResourceHandle rsc, const void* memory, uint32 index) override;
 		void resourceCopy(ResourceHandle src, ResourceHandle dest) override;

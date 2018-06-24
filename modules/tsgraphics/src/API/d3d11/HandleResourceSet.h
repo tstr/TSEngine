@@ -14,14 +14,14 @@
 
 namespace ts
 {
-	class D3D11ResourceSet : public Handle<D3D11ResourceSet, ResourceSetHandle>
+	class DxResourceSet : public Handle<DxResourceSet, ResourceSetHandle>
 	{
 	public:
 
 		//shader resource view
 		struct SRV
 		{
-			D3D11Resource* tex;
+			DxResource* tex;
 			ImageType type;
 			uint32 index;
 			uint32 count;
@@ -29,7 +29,7 @@ namespace ts
 			SRV() : tex(nullptr), type(ImageType::_2D), index(0), count(0) {}
 
 			SRV(const ImageView& view) :
-				tex(D3D11Resource::upcast(view.image)),
+				tex(DxResource::upcast(view.image)),
 				type(view.type),
 				index(view.index),
 				count(view.count)
@@ -44,14 +44,14 @@ namespace ts
 		//vertex buffer view
 		struct VBV
 		{
-			D3D11Resource* buffer;
+			DxResource* buffer;
 			uint32 stride;
 			uint32 offset;
 
 			VBV() : buffer(nullptr), stride(0), offset(0) {}
 
 			VBV(const VertexBufferView& view) :
-				buffer(D3D11Resource::upcast(view.buffer)),
+				buffer(DxResource::upcast(view.buffer)),
 				stride(view.stride),
 				offset(view.offset)
 			{}
@@ -59,7 +59,7 @@ namespace ts
 			ID3D11Buffer* getBuffer() const { return (buffer == nullptr) ? nullptr : buffer->asBuffer(); }
 		};
 
-		using CBV = D3D11Resource*;
+		using CBV = DxResource*;
 
 		HRESULT create(const ResourceSetCreateInfo& info);
 
@@ -78,6 +78,6 @@ namespace ts
 		std::vector<SRV> m_srvs;
 		std::vector<CBV> m_constantBuffers;
 		std::vector<VBV> m_vertexBuffers;
-		D3D11Resource* m_indexBuffer;
+		DxResource* m_indexBuffer;
 	};
 }

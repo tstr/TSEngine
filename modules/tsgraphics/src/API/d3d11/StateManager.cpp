@@ -14,7 +14,7 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-HRESULT D3D11StateManager::demandDepthState(const DepthState & desc, ID3D11DepthStencilState** state)
+HRESULT DxStateManager::demandDepthState(const DepthState & desc, ID3D11DepthStencilState** state)
 {
 	if (m_cacheDepthState.find(desc, state))
 	{
@@ -48,7 +48,7 @@ HRESULT D3D11StateManager::demandDepthState(const DepthState & desc, ID3D11Depth
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-HRESULT D3D11StateManager::demandRasterizerState(const RasterizerState & desc, ID3D11RasterizerState** state)
+HRESULT DxStateManager::demandRasterizerState(const RasterizerState & desc, ID3D11RasterizerState** state)
 {
 	if (m_cacheRasterState.find(desc, state))
 	{
@@ -100,7 +100,7 @@ HRESULT D3D11StateManager::demandRasterizerState(const RasterizerState & desc, I
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-HRESULT D3D11StateManager::demandBlendState(const BlendState & desc, ID3D11BlendState** state)
+HRESULT DxStateManager::demandBlendState(const BlendState & desc, ID3D11BlendState** state)
 {
 	if (m_cacheBlendState.find(desc, state))
 	{
@@ -151,7 +151,7 @@ inline D3D11_TEXTURE_ADDRESS_MODE getAddressMode(ImageAddressMode mode)
 	return D3D11_TEXTURE_ADDRESS_MODE(0);
 }
 
-HRESULT D3D11StateManager::demandSamplerState(const SamplerState & desc, ID3D11SamplerState** state)
+HRESULT DxStateManager::demandSamplerState(const SamplerState & desc, ID3D11SamplerState** state)
 {
 	if (m_cacheSamplerState.find(desc, state))
 	{

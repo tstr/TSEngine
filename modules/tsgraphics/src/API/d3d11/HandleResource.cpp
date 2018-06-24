@@ -19,17 +19,17 @@ using namespace std;
 // Empty resource allocation
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RPtr<ResourceHandle> D3D11::createEmptyResource(ResourceHandle recycle)
+RPtr<ResourceHandle> Dx11::createEmptyResource(ResourceHandle recycle)
 {
 	if (recycle != (ResourceHandle)0)
 	{
-		auto rsc = D3D11Resource::upcast(recycle);
+		auto rsc = DxResource::upcast(recycle);
 		rsc->reset();
 		return RPtr<ResourceHandle>(this, recycle);
 	}
 	else
 	{
-		return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new D3D11Resource(nullptr, false)));
+		return RPtr<ResourceHandle>(this, DxResource::downcast(new DxResource(nullptr, false)));
 	}
 }
 
@@ -37,7 +37,7 @@ RPtr<ResourceHandle> D3D11::createEmptyResource(ResourceHandle recycle)
 // Image creation
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RPtr<ResourceHandle> D3D11::createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle)
+RPtr<ResourceHandle> Dx11::createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle)
 {
 	DXGI_FORMAT format = ImageFormatToDXGIFormat(info.format);
 	D3D11_USAGE usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
@@ -236,13 +236,13 @@ RPtr<ResourceHandle> D3D11::createResourceImage(const ResourceData* data, const 
 
 	if (recycle != (ResourceHandle)0)
 	{
-		auto rsc = D3D11Resource::upcast(recycle);
+		auto rsc = DxResource::upcast(recycle);
 		rsc->reset();
-		return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new(rsc) D3D11Resource(resource, true)));
+		return RPtr<ResourceHandle>(this, DxResource::downcast(new(rsc) DxResource(resource, true)));
 	}
 	else
 	{
-		return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new D3D11Resource(resource, true)));
+		return RPtr<ResourceHandle>(this, DxResource::downcast(new DxResource(resource, true)));
 	}
 }
 
@@ -250,7 +250,7 @@ RPtr<ResourceHandle> D3D11::createResourceImage(const ResourceData* data, const 
 // Buffer creation
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RPtr<ResourceHandle> D3D11::createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle)
+RPtr<ResourceHandle> Dx11::createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle)
 {
 	ComPtr<ID3D11Buffer> buffer;
 
@@ -293,20 +293,20 @@ RPtr<ResourceHandle> D3D11::createResourceBuffer(const ResourceData& data, const
 	{
 		if (recycle != (ResourceHandle)0)
 		{
-			auto rsc = D3D11Resource::upcast(recycle);
+			auto rsc = DxResource::upcast(recycle);
 			rsc->reset();
-			return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new(rsc) D3D11Resource(buffer, false)));
+			return RPtr<ResourceHandle>(this, DxResource::downcast(new(rsc) DxResource(buffer, false)));
 		}
 		else
 		{
-			return RPtr<ResourceHandle>(this, D3D11Resource::downcast(new D3D11Resource(buffer, false)));
+			return RPtr<ResourceHandle>(this, DxResource::downcast(new DxResource(buffer, false)));
 		}
 	}
 }
 
-void D3D11::destroy(ResourceHandle hrsc)
+void Dx11::destroy(ResourceHandle hrsc)
 {
-	auto rsc = D3D11Resource::upcast(hrsc);
+	auto rsc = DxResource::upcast(hrsc);
 
 	if (rsc)
 	{
@@ -318,7 +318,7 @@ void D3D11::destroy(ResourceHandle hrsc)
 //  Texture view caching
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ID3D11ShaderResourceView* D3D11Resource::getSRV(uint32 arrayIndex, uint32 arrayCount, ImageType type)
+ID3D11ShaderResourceView* DxResource::getSRV(uint32 arrayIndex, uint32 arrayCount, ImageType type)
 {
 	if (!isImage()) return nullptr;
 
@@ -437,7 +437,7 @@ ID3D11ShaderResourceView* D3D11Resource::getSRV(uint32 arrayIndex, uint32 arrayC
 	}
 }
 
-ID3D11RenderTargetView* D3D11Resource::getRTV(uint32 arrayIndex)
+ID3D11RenderTargetView* DxResource::getRTV(uint32 arrayIndex)
 {
 	if (!isImage()) return nullptr;
 
@@ -492,7 +492,7 @@ ID3D11RenderTargetView* D3D11Resource::getRTV(uint32 arrayIndex)
 	}
 }
 
-ID3D11DepthStencilView* D3D11Resource::getDSV(uint32 arrayIndex)
+ID3D11DepthStencilView* DxResource::getDSV(uint32 arrayIndex)
 {
 	if (!isImage()) return nullptr;
 

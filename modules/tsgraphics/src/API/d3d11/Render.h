@@ -1,7 +1,7 @@
 /*
 	Render API
 
-	DirectX 11 implementation of Render API
+	DirectX 11 implementation of Render Driver
 */
 
 #pragma once
@@ -16,18 +16,19 @@
 
 namespace ts
 {
-	class D3D11Context;
+	class Dx11Context;
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	//Main D3D11 class
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-
-	class D3D11 : public RenderDevice
+	/*
+	
+		Main D3D11 driver class
+	
+	*/
+	class Dx11 : public RenderDevice
 	{
 	public:
 		
-		D3D11(const RenderDeviceConfig& cfg);
-		~D3D11();
+		Dx11(const RenderDeviceConfig& cfg);
+		~Dx11();
 
 		RenderContext* context() override { return &m_context; }
 		void commit() override;
@@ -35,7 +36,7 @@ namespace ts
 		//Display methods
 		void setDisplayConfiguration(const DisplayConfig& displayCfg) override;
 		void getDisplayConfiguration(DisplayConfig& displayCfg) override;
-		ResourceHandle getDisplayTarget() override { return D3D11Resource::downcast(&m_displayResourceProxy); }
+		ResourceHandle getDisplayTarget() override { return DxResource::downcast(&m_displayResourceProxy); }
 
 		//Query device
 		void queryStats(RenderStats& stats) override;
@@ -81,10 +82,10 @@ namespace ts
 		ComPtr<ID3D11Device> m_device;
 		ComPtr<ID3D11DeviceContext> m_immediateContext;
 
-		D3D11Context m_context;
+		Dx11Context m_context;
 
-		D3D11Resource m_displayResourceProxy;
-		D3D11StateManager m_stateManager;
+		DxResource m_displayResourceProxy;
+		DxStateManager m_stateManager;
 
 		//Swapchain methods
 		void rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc);
