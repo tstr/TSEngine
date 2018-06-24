@@ -16,12 +16,22 @@ using namespace ts;
 
 RPtr<ShaderHandle> Dx11::createShader(const ShaderCreateInfo& info)
 {
-	UPtr<DxShader> program;
+	UPtr<DxShader> program(new DxShader());
+
+	uint8 stageCount = 0;
 
 	//Has stage
-	auto has = [&info](ShaderStage stage)
+	auto has = [&stageCount, &info](ShaderStage stage)
 	{
-		return info.stages[(size_t)stage].bytecode != nullptr;
+		//If has stage
+		if (info.stages[(size_t)stage].bytecode != nullptr)
+		{
+			//Increment stage number
+			stageCount++;
+			return true;
+		}
+
+		return false;
 	};
 
 	if (has(ShaderStage::VERTEX))
@@ -69,7 +79,15 @@ RPtr<ShaderHandle> Dx11::createShader(const ShaderCreateInfo& info)
 		if (FAILED(hr)) return RPtr<ShaderHandle>();
 	}
 
-	return RPtr<ShaderHandle>(this, DxShader::downcast(program.release()));
+	//If there are any stages in this program
+	if (stageCount > 0)
+	{
+		//Return new program
+		return RPtr<ShaderHandle>(this, DxShader::downcast(program.release()));
+	}
+
+	//Otherwise return null
+	return RPtr<ShaderHandle>();
 }
 
 void Dx11::destroy(ShaderHandle shader)

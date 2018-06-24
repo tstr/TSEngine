@@ -11,12 +11,9 @@
 
 RPtr<ResourceSetHandle> Dx11::createResourceSet(const ResourceSetCreateInfo& info, ResourceSetHandle recycle)
 {
-	DxResourceSet* set = DxResourceSet::upcast(recycle);
-	
-	if (set == nullptr)
-	{
-		set = new DxResourceSet();
-	}
+	UPtr<DxResourceSet> newSet(new DxResourceSet());
+	DxResourceSet* set = (recycle == (ResourceSetHandle)0) ? newSet.release() : DxResourceSet::upcast(recycle);
+	set->reset();
 
 	HRESULT hr = set->create(info);
 

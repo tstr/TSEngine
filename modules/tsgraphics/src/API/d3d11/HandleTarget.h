@@ -92,8 +92,8 @@ namespace ts
 		{
 			renderTargets.clear();
 			depthStencil.output = nullptr;
-			ZeroMemory(&scissor, sizeof(D3D11_VIEWPORT));
-			ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+			ZeroMemory(&scissor, sizeof(scissor));
+			ZeroMemory(&viewport, sizeof(viewport));
 		}
 	};
 }

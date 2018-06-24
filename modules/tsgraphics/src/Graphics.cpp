@@ -60,7 +60,7 @@ GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
 	devcfg.windowHandle = pSystem->surface->getHandle();
 
 #ifdef _DEBUG
-	apicfg.flags |= ERenderApiFlags::eFlagDebug;
+	devcfg.flags |= RenderDeviceConfig::DEBUG;
 #endif
 
 	pDevice = RenderDevice::create(RenderDriverID::DX11, devcfg);

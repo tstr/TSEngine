@@ -40,7 +40,7 @@ namespace ts
 
 		//Query device
 		void queryStats(RenderStats& stats) override;
-		void queryInfo(DeviceInfo& info) override;
+		void queryInfo(RenderDeviceInfo& info) override;
 
 		//Resources
 		RPtr<ResourceHandle> createEmptyResource(ResourceHandle recycle) override;

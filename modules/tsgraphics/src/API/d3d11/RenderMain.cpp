@@ -22,7 +22,6 @@ using namespace std;
 //	Init
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Dx11::Dx11(const RenderDeviceConfig& cfg) :
-	m_context(this),
 	m_displayResourceProxy(nullptr, true)
 {
 	m_hwnd = reinterpret_cast<HWND>(cfg.windowHandle);
@@ -169,6 +168,7 @@ Dx11::Dx11(const RenderDeviceConfig& cfg) :
 	updateDisplayResource();
 
 	m_stateManager = DxStateManager(m_device.Get());
+	m_context = Dx11Context(this);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 }
@@ -212,7 +212,7 @@ void Dx11::queryStats(RenderStats& stats)
 	stats.drawcalls = m_drawCallCounter.load();
 }
 
-void Dx11::queryInfo(DeviceInfo& info)
+void Dx11::queryInfo(RenderDeviceInfo& info)
 {
 	DXGI_ADAPTER_DESC desc;
 	m_dxgiAdapter->GetDesc(&desc);

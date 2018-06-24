@@ -5,6 +5,7 @@
 #pragma once
 
 #include <tscore/types.h>
+#include <tscore/strings.h>
 
 #include "Colour.h"
 
@@ -61,9 +62,9 @@ namespace ts
 		uint32 drawcalls = 0;
 	};
 
-	struct DeviceInfo
+	struct RenderDeviceInfo
 	{
-		const char* adapterName;
+		String adapterName;
 		uint64 gpuVideoMemory;		//GPU accessible video memory capacity
 		uint64 gpuSystemMemory;		//GPU accessible system memory capacity
 		uint64 sharedSystemMemory;	//GPU/CPU accessible system memory capacity
@@ -304,8 +305,8 @@ namespace ts
 
 	struct ShaderBytecode
 	{
-		const void* bytecode;
-		size_t size;
+		const void* bytecode = nullptr;
+		size_t size = 0;
 	};
 
 	/*
@@ -322,17 +323,17 @@ namespace ts
     
     struct ImageView
     {
-        ResourceHandle image;
-        uint32 index;
-		uint32 count;
-		ImageType type;
+        ResourceHandle image = (ResourceHandle)0;
+        uint32 index = 0;
+		uint32 count = 1;
+		ImageType type = ImageType::_2D;
     };
     
     struct VertexBufferView
     {
-        ResourceHandle buffer;
-        uint32 stride;
-        uint32 offset;
+        ResourceHandle buffer = (ResourceHandle)0;
+        uint32 stride = 0;
+        uint32 offset = 0;
     };
 
 	/*
