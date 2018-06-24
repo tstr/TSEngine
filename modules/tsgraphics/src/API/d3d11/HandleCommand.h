@@ -14,11 +14,11 @@
 
 namespace ts
 {
-	struct D3D11DrawCommand : public Handle<D3D11DrawCommand, CommandHandle>
+	struct DxDrawCommand : public Handle<DxDrawCommand, CommandHandle>
 	{
-        D3D11Pipeline* pipeline;
-        D3D11ResourceSet* inputs;
-        D3D11Target* outputs;
+        DxPipeline* pipeline;
+        DxResourceSet* inputs;
+        DxTarget* outputs;
 
 		uint32 start = 0;
 		uint32 count = 0;

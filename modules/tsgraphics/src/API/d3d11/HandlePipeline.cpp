@@ -11,14 +11,14 @@ using namespace ts;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RPtr<PipelineHandle> D3D11::createPipeline(ShaderHandle program, const PipelineCreateInfo& info)
+RPtr<PipelineHandle> Dx11::createPipeline(ShaderHandle program, const PipelineCreateInfo& info)
 {
-	return RPtr<PipelineHandle>(this, D3D11Pipeline::downcast(new D3D11Pipeline(m_stateManager, program, info)));
+	return RPtr<PipelineHandle>(this, DxPipeline::downcast(new DxPipeline(m_stateManager, program, info)));
 }
 
-void D3D11::destroy(PipelineHandle hpipe)
+void Dx11::destroy(PipelineHandle hpipe)
 {
-	if (auto p = D3D11Pipeline::upcast(hpipe))
+	if (auto p = DxPipeline::upcast(hpipe))
 	{
 		delete p;
 	}
@@ -26,11 +26,11 @@ void D3D11::destroy(PipelineHandle hpipe)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-D3D11Pipeline::D3D11Pipeline(D3D11StateManager& states, ShaderHandle program, const PipelineCreateInfo& info)
+DxPipeline::DxPipeline(DxStateManager& states, ShaderHandle program, const PipelineCreateInfo& info)
 {
 	ID3D11Device* device = states.getDevice();
 
-	m_program = D3D11Shader::upcast(program);
+	m_program = DxShader::upcast(program);
 	tsassert(m_program != nullptr);
 
 	//Resolve states
@@ -67,7 +67,7 @@ D3D11Pipeline::D3D11Pipeline(D3D11StateManager& states, ShaderHandle program, co
 
 }
 
-void D3D11Pipeline::bind(ID3D11DeviceContext* context)
+void DxPipeline::bind(ID3D11DeviceContext* context)
 {
 	//Bind shader
 	m_program->bind(context);

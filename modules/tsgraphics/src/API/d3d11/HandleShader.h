@@ -11,7 +11,7 @@
 
 namespace ts
 {
-	struct D3D11Shader : public Handle<D3D11Shader, ShaderHandle>
+	struct DxShader : public Handle<DxShader, ShaderHandle>
 	{
 		//Shader stages
 		ComPtr<ID3D11VertexShader> vertex;

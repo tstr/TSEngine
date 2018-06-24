@@ -15,7 +15,7 @@ using namespace ts;
 	Draw call mapping table
 	Alternative to using switch statement
 */
-static void drawCallSig(ID3D11DeviceContext*, D3D11DrawCommand*);
+static void drawCallSig(ID3D11DeviceContext*, DxDrawCommand*);
 using DrawCaller = decltype(drawCallSig)*;
 
 DrawCaller* drawFunctions()
@@ -47,11 +47,11 @@ DrawCaller* drawFunctions()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void D3D11Context::submit(CommandHandle command)
+void Dx11Context::submit(CommandHandle command)
 {
 	auto ctx = m_context.Get();
 
-	if (auto cmd = D3D11DrawCommand::upcast(command))
+	if (auto cmd = DxDrawCommand::upcast(command))
 	{
 		//Bind input/output resources and pipeline state
 		cmd->pipeline->bind(ctx);

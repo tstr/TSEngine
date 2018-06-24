@@ -7,14 +7,20 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RenderDevice::Ptr RenderDevice::create(RenderDeviceID id, const RenderDeviceConfig& config)
+RenderDevice::Ptr RenderDevice::create(RenderDriverID id, const RenderDeviceConfig& config)
 {
-    return RenderDevice::Ptr(new D3D11(config));
+	switch (id)
+	{
+	case RenderDriverID::DX11:
+		return RenderDevice::Ptr(new Dx11(config));
+	default:
+		return RenderDevice::Ptr();
+	}
 }
 
 void RenderDevice::destroy(RenderDevice* device)
 {
-    auto dptr = dynamic_cast<D3D11*>(device);
+    auto dptr = dynamic_cast<Dx11*>(device);
     
     if (dptr != nullptr)
     {

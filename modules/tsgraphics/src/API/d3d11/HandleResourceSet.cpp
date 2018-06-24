@@ -9,13 +9,13 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RPtr<ResourceSetHandle> D3D11::createResourceSet(const ResourceSetCreateInfo& info, ResourceSetHandle recycle)
+RPtr<ResourceSetHandle> Dx11::createResourceSet(const ResourceSetCreateInfo& info, ResourceSetHandle recycle)
 {
-	D3D11ResourceSet* set = D3D11ResourceSet::upcast(recycle);
+	DxResourceSet* set = DxResourceSet::upcast(recycle);
 	
 	if (set == nullptr)
 	{
-		set = new D3D11ResourceSet();
+		set = new DxResourceSet();
 	}
 
 	HRESULT hr = set->create(info);
@@ -26,12 +26,12 @@ RPtr<ResourceSetHandle> D3D11::createResourceSet(const ResourceSetCreateInfo& in
 		return RPtr<ResourceSetHandle>();
 	}
 
-	return RPtr<ResourceSetHandle>(this, D3D11ResourceSet::downcast(set));
+	return RPtr<ResourceSetHandle>(this, DxResourceSet::downcast(set));
 }
 
-void D3D11::destroy(ResourceSetHandle handle)
+void Dx11::destroy(ResourceSetHandle handle)
 {
-	if (auto t = D3D11ResourceSet::upcast(handle))
+	if (auto t = DxResourceSet::upcast(handle))
 	{
 		delete t;
 	}
@@ -39,7 +39,7 @@ void D3D11::destroy(ResourceSetHandle handle)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-HRESULT D3D11ResourceSet::create(const ResourceSetCreateInfo& info)
+HRESULT DxResourceSet::create(const ResourceSetCreateInfo& info)
 {
 	reset();
 
@@ -47,7 +47,7 @@ HRESULT D3D11ResourceSet::create(const ResourceSetCreateInfo& info)
 	m_constantBuffers.reserve(info.constantBuffersCount);
 	for (size_t i = 0; i < info.constantBuffersCount; i++)
 	{
-		m_constantBuffers.push_back(CBV(D3D11Resource::upcast(info.constantBuffers[i])));
+		m_constantBuffers.push_back(CBV(DxResource::upcast(info.constantBuffers[i])));
 	}
 	
 	//Get vertex buffers
@@ -64,12 +64,12 @@ HRESULT D3D11ResourceSet::create(const ResourceSetCreateInfo& info)
 		m_srvs.push_back(SRV(info.resources[i]));
 	}
 
-	m_indexBuffer = D3D11Resource::upcast(info.indexBuffer);
+	m_indexBuffer = DxResource::upcast(info.indexBuffer);
 
 	return S_OK;
 }
 
-void D3D11ResourceSet::bind(ID3D11DeviceContext* context)
+void DxResourceSet::bind(ID3D11DeviceContext* context)
 {
 	//Bind SRV
 	UINT i = 0;

@@ -1,7 +1,7 @@
 /*
 	Render API
 
-	D3D11Render main methods
+	D3D11 driver main methods
 */
 
 #include "render.h"
@@ -21,7 +21,7 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	Init
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D11::D3D11(const RenderDeviceConfig& cfg) :
+Dx11::Dx11(const RenderDeviceConfig& cfg) :
 	m_context(this),
 	m_displayResourceProxy(nullptr, true)
 {
@@ -168,12 +168,12 @@ D3D11::D3D11(const RenderDeviceConfig& cfg) :
 	//Setup resource proxies for this swapchain
 	updateDisplayResource();
 
-	m_stateManager = D3D11StateManager(m_device.Get());
+	m_stateManager = DxStateManager(m_device.Get());
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 }
 
-D3D11::~D3D11()
+Dx11::~Dx11()
 {
 	//If the swapchain is in fullscreen mode then exit before releasing the swapchain
 	if (m_dxgiSwapchain.Get())
@@ -191,7 +191,7 @@ D3D11::~D3D11()
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11::commit()
+void Dx11::commit()
 {	
 	if (ID3D11CommandList* cmdlist = m_context.getCommandList())
 	{
@@ -207,12 +207,12 @@ void D3D11::commit()
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11::queryStats(RenderStats& stats)
+void Dx11::queryStats(RenderStats& stats)
 {
 	stats.drawcalls = m_drawCallCounter.load();
 }
 
-void D3D11::queryInfo(DeviceInfo& info)
+void Dx11::queryInfo(DeviceInfo& info)
 {
 	DXGI_ADAPTER_DESC desc;
 	m_dxgiAdapter->GetDesc(&desc);
@@ -225,7 +225,7 @@ void D3D11::queryInfo(DeviceInfo& info)
 }
 
 //helper function
-bool D3D11::getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc)
+bool Dx11::getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc)
 {
 	tsassert(m_device.Get());
 	tsassert(SUCCEEDED(m_device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, sampledesc.Count, &sampledesc.Quality)));

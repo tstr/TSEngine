@@ -14,22 +14,18 @@
 
 #include "CommandQueue.h"
 #include "Surface.h"
+#include "Defs.h"
+#include "Driver.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace ts
 {
-	enum EGraphicsAPIID
+	enum class DisplayMode
 	{
-		eGraphicsAPI_Null  = 0,
-		eGraphicsAPI_D3D11 = 1
-	};
-	
-	enum EDisplayMode
-	{
-		eDisplayWindowed,
-		eDisplayBorderless,
-		eDisplayFullscreen
+		WINDOWED,
+		BORDERLESS,
+		FULLSCREEN
 	};
 
 	/*
@@ -42,9 +38,9 @@ namespace ts
 		uint height = 0;
 
 		//Multisample count
-		uint multisampleLevel;
+		uint multisampleLevel = 1;
 
-		EDisplayMode mode = eDisplayWindowed;
+		DisplayMode mode = DisplayMode::WINDOWED;
 	};
 
 	/*
@@ -58,8 +54,8 @@ namespace ts
 		//Display settings
 		GraphicsDisplayOptions display;
 
-		//Graphics API id
-		EGraphicsAPIID apiid = EGraphicsAPIID::eGraphicsAPI_Null;
+		//Graphics driver id
+		RenderDriverID id = RenderDriverID::NONE;
 
 		//Root asset loading path for textures/shaders/models
 		Path rootpath;
@@ -95,7 +91,7 @@ namespace ts
 
 		TSGRAPHICS_API bool setDisplayResolution(uint w, uint h);
 		TSGRAPHICS_API bool setDisplayMultisamplingLevel(uint ms);
-		TSGRAPHICS_API bool setDisplayMode(EDisplayMode mode);
+		TSGRAPHICS_API bool setDisplayMode(DisplayMode mode);
 
 		TSGRAPHICS_API void getDisplayOptions(GraphicsDisplayOptions& opt);
 

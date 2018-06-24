@@ -53,13 +53,6 @@ namespace ts
         Handle m_h;
     };
     
-    
-    enum class RenderDeviceID
-    {
-        NONE,
-        D3D11
-    };
-
     /*
         Device interface
         
@@ -75,7 +68,7 @@ namespace ts
 		using Ptr = UPtr<RenderDevice, Deleter>;
 
 		//Initialization
-		static Ptr create(RenderDeviceID id, const RenderDeviceConfig& config);
+		static Ptr create(RenderDriverID id, const RenderDeviceConfig& config);
 		static void destroy(RenderDevice* device);
 
 		virtual RenderContext* context() = 0;

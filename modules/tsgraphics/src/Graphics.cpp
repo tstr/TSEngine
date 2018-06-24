@@ -13,11 +13,10 @@
 #include <tsgraphics/Graphics.h>
 #include <tsgraphics/Driver.h>
 
-using namespace std;
 using namespace ts;
 
-typedef recursive_mutex Lock;
-typedef lock_guard<Lock> Guard;
+typedef std::recursive_mutex Lock;
+typedef std::lock_guard<Lock> Guard;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //	Internal implementation
@@ -29,7 +28,7 @@ struct GraphicsSystem::System : public GraphicsConfig
 	RenderContext* context;
 
 	Lock displayLock;
-	atomic<bool> displayNeedRebuild;
+	std::atomic<bool> displayNeedRebuild;
 
 	/*
 		Construct system
@@ -56,7 +55,7 @@ GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
 	devcfg.adapterIndex = 0; //hard code the adapter for now
 	devcfg.display.resolutionH = cfg.display.height;
 	devcfg.display.resolutionW = cfg.display.width;
-	devcfg.display.fullscreen = (cfg.display.mode == EDisplayMode::eDisplayFullscreen);
+	devcfg.display.fullscreen = (cfg.display.mode == DisplayMode::FULLSCREEN);
 	devcfg.display.multisampleLevel = cfg.display.multisampleLevel;
 	devcfg.windowHandle = pSystem->surface->getHandle();
 
@@ -64,17 +63,17 @@ GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
 	apicfg.flags |= ERenderApiFlags::eFlagDebug;
 #endif
 
-	pDevice = RenderDevice::create(RenderDeviceID::D3D11, devcfg);
+	pDevice = RenderDevice::create(RenderDriverID::DX11, devcfg);
 
 	//If desired display mode is borderless, ISurface::enableBorderless() must be called manually
-	if (cfg.display.mode == eDisplayBorderless)
+	if (cfg.display.mode == DisplayMode::BORDERLESS)
 	{
 		cfg.surface->enableBorderless(true);
 		//Refreshing the display forces the display to resize
 		this->refreshDisplay();
 	}
 
-	if (cfg.display.mode == eDisplayFullscreen)
+	if (cfg.display.mode == DisplayMode::FULLSCREEN)
 	{
 		this->refreshDisplay();
 	}
@@ -134,7 +133,7 @@ bool GraphicsSystem::setDisplayMultisamplingLevel(uint level)
 	return true;
 }
 
-bool GraphicsSystem::setDisplayMode(EDisplayMode mode)
+bool GraphicsSystem::setDisplayMode(DisplayMode mode)
 {
 	tsassert(pSystem);
 
@@ -179,33 +178,33 @@ void GraphicsSystem::System::doRebuildDisplay()
 		Change display mode
 	*/
 	{
-		EDisplayMode curMode;
+		DisplayMode curMode;
 
 		//Get current display mode
 
 		if (config.fullscreen)
-			curMode = eDisplayFullscreen;
+			curMode = DisplayMode::FULLSCREEN;
 		else if (surface->isBorderless())
-			curMode = eDisplayBorderless;
+			curMode = DisplayMode::BORDERLESS;
 		else
-			curMode = eDisplayWindowed;
+			curMode = DisplayMode::WINDOWED;
 
 		//Desired display mode
-		EDisplayMode& mode = display.mode;
+		DisplayMode& mode = display.mode;
 
 		//While current display mode is not the desired display mode
 		while (curMode != mode)
 		{
 			switch (curMode)
 			{
-				case eDisplayWindowed:
+				case DisplayMode::WINDOWED:
 				{
-					if (mode == eDisplayBorderless)
+					if (mode == DisplayMode::BORDERLESS)
 					{
 						//Enter borderless
 						surface->enableBorderless(true);
 					}
-					else if (mode == eDisplayFullscreen)
+					else if (mode == DisplayMode::FULLSCREEN)
 					{
 						//Enter fullscreen
 						config.fullscreen = true;
@@ -216,18 +215,18 @@ void GraphicsSystem::System::doRebuildDisplay()
 					break;
 				}
 
-				case eDisplayBorderless:
+				case DisplayMode::BORDERLESS:
 				{
-					curMode = eDisplayWindowed;
+					curMode = DisplayMode::WINDOWED;
 
 					//Exit borderless
 					surface->enableBorderless(false);
 					break;
 				}
 
-				case eDisplayFullscreen:
+				case DisplayMode::FULLSCREEN:
 				{
-					curMode = eDisplayWindowed;
+					curMode = DisplayMode::WINDOWED;
 
 					//Exit fullscreen
 					config.fullscreen = false;
@@ -243,7 +242,7 @@ void GraphicsSystem::System::doRebuildDisplay()
 	*/
 	if ((config.resolutionH != display.height) || (config.resolutionW != display.width))
 	{
-		if (display.mode == eDisplayWindowed)
+		if (display.mode == DisplayMode::WINDOWED)
 		{
 			uint curW = 0;
 			uint curH = 0;
@@ -258,7 +257,7 @@ void GraphicsSystem::System::doRebuildDisplay()
 		config.resolutionW = display.width;
 		config.resolutionH = display.height;
 		config.multisampleLevel = 0;
-		config.fullscreen = display.mode == eDisplayFullscreen;
+		config.fullscreen = display.mode == DisplayMode::FULLSCREEN;
 
 		system->device()->setDisplayConfiguration(config);
 	}

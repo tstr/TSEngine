@@ -17,19 +17,19 @@ using namespace ts;
 //  Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-D3D11Context::D3D11Context(D3D11* driver) :
+Dx11Context::Dx11Context(Dx11* driver) :
 	m_driver(driver)
 {
 	tsassert(m_driver);
 	tsassert(SUCCEEDED(m_driver->getDevice()->CreateDeferredContext(0, m_context.GetAddressOf())));
 }
 
-D3D11Context::~D3D11Context()
+Dx11Context::~Dx11Context()
 {
 
 }
 
-void D3D11Context::finish()
+void Dx11Context::finish()
 {
 	m_contextCommandList.Reset();
 
@@ -37,7 +37,7 @@ void D3D11Context::finish()
 	m_context->FinishCommandList(false, m_contextCommandList.GetAddressOf());
 }
 
-void D3D11Context::resetCommandList()
+void Dx11Context::resetCommandList()
 {
 	m_contextCommandList.Reset();
 }
@@ -46,17 +46,17 @@ void D3D11Context::resetCommandList()
 //Resource updating
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Context::clearColourTarget(TargetHandle h, uint32 colour)
+void Dx11Context::clearColourTarget(TargetHandle h, uint32 colour)
 {
-	if (D3D11Target* target = D3D11Target::upcast(h))
+	if (DxTarget* target = DxTarget::upcast(h))
 	{
 		target->clearRenderTargets(m_context.Get(), RGBA(colour));
 	}
 }
 
-void D3D11Context::clearDepthTarget(TargetHandle h, float depth)
+void Dx11Context::clearDepthTarget(TargetHandle h, float depth)
 {
-	if (D3D11Target* target = D3D11Target::upcast(h))
+	if (DxTarget* target = DxTarget::upcast(h))
 	{
 		target->clearDepthStencil(m_context.Get(), depth);
 	}
@@ -64,9 +64,9 @@ void D3D11Context::clearDepthTarget(TargetHandle h, float depth)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Context::resourceUpdate(ResourceHandle rsc, const void* memory, uint32 index)
+void Dx11Context::resourceUpdate(ResourceHandle rsc, const void* memory, uint32 index)
 {
-	D3D11Resource* pRsc = D3D11Resource::upcast(rsc);
+	DxResource* pRsc = DxResource::upcast(rsc);
 
 	if (pRsc)
 	{
@@ -78,10 +78,10 @@ void D3D11Context::resourceUpdate(ResourceHandle rsc, const void* memory, uint32
 	}
 }
 
-void D3D11Context::resourceCopy(ResourceHandle src, ResourceHandle dest)
+void Dx11Context::resourceCopy(ResourceHandle src, ResourceHandle dest)
 {
-	auto pSrc = D3D11Resource::upcast(src);
-	auto pDest = D3D11Resource::upcast(dest);
+	auto pSrc = DxResource::upcast(src);
+	auto pDest = DxResource::upcast(dest);
 
 	if (pSrc && pDest)
 	{
@@ -93,10 +93,10 @@ void D3D11Context::resourceCopy(ResourceHandle src, ResourceHandle dest)
 	}
 }
 
-void D3D11Context::imageResolve(ResourceHandle src, ResourceHandle dest, uint32 index)
+void Dx11Context::imageResolve(ResourceHandle src, ResourceHandle dest, uint32 index)
 {
-	auto pSrc = D3D11Resource::upcast(src);
-	auto pDest = D3D11Resource::upcast(dest);
+	auto pSrc = DxResource::upcast(src);
+	auto pDest = DxResource::upcast(dest);
 
 	if (pSrc && pDest && pSrc->isImage() && pDest->isImage())
 	{

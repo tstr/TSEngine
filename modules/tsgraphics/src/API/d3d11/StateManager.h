@@ -25,7 +25,7 @@ namespace std
 
 namespace ts
 {
-	class D3D11StateManager
+	class DxStateManager
 	{
 	private:
 
@@ -68,9 +68,9 @@ namespace ts
 
 	public:
 
-		D3D11StateManager() {}
+		DxStateManager() {}
 
-		D3D11StateManager(ID3D11Device* device) :
+		DxStateManager(ID3D11Device* device) :
 			m_device(device)
 		{}
 

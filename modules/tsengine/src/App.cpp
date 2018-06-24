@@ -11,7 +11,7 @@
 #include <tsgraphics/colour.h>
 
 //Subsystems
-#include <tsgraphics/GraphicsSystem.h>
+#include <tsgraphics/Graphics.h>
 #include <tsengine/Input.h>
 
 #include "platform/Window.h"
@@ -173,12 +173,12 @@ Application::Application(int argc, char** argv)
 	m_vars->get("video.multisamplecount", samplecount);
 
 	GraphicsConfig gcfg;
-	gcfg.surface = static_cast<ISurface*>(m_window.get());
+	gcfg.surface = m_window.get();
 	gcfg.display.width = width;
 	gcfg.display.height = height;
-	gcfg.display.mode = (EDisplayMode)displaymode;
+	gcfg.display.mode = (DisplayMode)displaymode;
 	gcfg.display.multisampleLevel = samplecount;
-	gcfg.apiid = EGraphicsAPIID::eGraphicsAPI_D3D11;
+	gcfg.id = RenderDriverID::DX11;
 	gcfg.rootpath = assetpath;
 
 	m_graphicsSystem.reset(new GraphicsSystem(gcfg));

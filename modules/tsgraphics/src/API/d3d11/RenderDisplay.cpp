@@ -1,9 +1,9 @@
 /*
 	Render API
 
-	D3D11Render display methods:
+	Driver display methods:
 
-		In this context the term "display" means the same thing as a DXGI swap-chain.
+	In this context the term "display" means the same thing as a DXGI swap-chain.
 */
 
 #include "render.h"
@@ -14,7 +14,7 @@ using namespace ts;
 //	Gets/sets the configuration of the display (swapchain)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11::setDisplayConfiguration(const DisplayConfig& displayCfg)
+void Dx11::setDisplayConfiguration(const DisplayConfig& displayCfg)
 {
 	DXGI_SWAP_CHAIN_DESC newDesc;
 	DXGI_SWAP_CHAIN_DESC curDesc;
@@ -71,7 +71,7 @@ void D3D11::setDisplayConfiguration(const DisplayConfig& displayCfg)
 }
 
 //todo: make thread safe
-void D3D11::getDisplayConfiguration(DisplayConfig& displayCfg)
+void Dx11::getDisplayConfiguration(DisplayConfig& displayCfg)
 {
 	DXGI_SWAP_CHAIN_DESC desc;
 	ZeroMemory(&desc, sizeof(DXGI_SWAP_CHAIN_DESC));
@@ -93,7 +93,7 @@ void D3D11::getDisplayConfiguration(DisplayConfig& displayCfg)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11::rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc)
+void Dx11::rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc)
 {
 	//Release swapchain
 	m_dxgiSwapchain.Reset();
@@ -112,7 +112,7 @@ void D3D11::rebuildSwapChain(DXGI_SWAP_CHAIN_DESC& scDesc)
 	updateDisplayResource();
 }
 
-HRESULT D3D11::translateSwapChainDesc(const DisplayConfig& displayCfg, DXGI_SWAP_CHAIN_DESC& desc)
+HRESULT Dx11::translateSwapChainDesc(const DisplayConfig& displayCfg, DXGI_SWAP_CHAIN_DESC& desc)
 {
 	HRESULT hr = m_dxgiSwapchain->GetDesc(&desc);
 
@@ -140,13 +140,13 @@ HRESULT D3D11::translateSwapChainDesc(const DisplayConfig& displayCfg, DXGI_SWAP
 }
 
 //creates a new 
-void D3D11::updateDisplayResource()
+void Dx11::updateDisplayResource()
 {
 	ComPtr<ID3D11Texture2D> backbuffer;
 	HRESULT hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());
 	tsassert(SUCCEEDED(hr));
 
-	m_displayResourceProxy = D3D11Resource(backbuffer, true);
+	m_displayResourceProxy = DxResource(backbuffer, true);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

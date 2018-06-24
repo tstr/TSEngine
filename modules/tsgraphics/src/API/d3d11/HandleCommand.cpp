@@ -13,14 +13,14 @@ using namespace ts;
 //  Draw command
 ///////////////////////////////////////////////////////////////////////////////
 
-RPtr<CommandHandle> D3D11::createCommand(const DrawCommandInfo& info, CommandHandle recycle)
+RPtr<CommandHandle> Dx11::createCommand(const DrawCommandInfo& info, CommandHandle recycle)
 {
-	auto r = D3D11DrawCommand::upcast(recycle);
-	UPtr<D3D11DrawCommand> cmd((r == nullptr) ? new D3D11DrawCommand() : r);
+	auto r = DxDrawCommand::upcast(recycle);
+	UPtr<DxDrawCommand> cmd((r == nullptr) ? new DxDrawCommand() : r);
 	
-	cmd->pipeline = D3D11Pipeline::upcast(info.pipeline);
-	cmd->inputs = D3D11ResourceSet::upcast(info.inputs);
-	cmd->outputs = D3D11Target::upcast(info.outputs);
+	cmd->pipeline = DxPipeline::upcast(info.pipeline);
+	cmd->inputs = DxResourceSet::upcast(info.inputs);
+	cmd->outputs = DxTarget::upcast(info.outputs);
 
 	cmd->count = info.count;
 	cmd->start = info.start;
@@ -28,12 +28,12 @@ RPtr<CommandHandle> D3D11::createCommand(const DrawCommandInfo& info, CommandHan
 	cmd->instances = info.instances;
 	cmd->mode = info.mode;
 
-	return RPtr<CommandHandle>(this, D3D11DrawCommand::downcast(cmd.release()));
+	return RPtr<CommandHandle>(this, DxDrawCommand::downcast(cmd.release()));
 }
 
-void D3D11::destroy(CommandHandle cmd)
+void Dx11::destroy(CommandHandle cmd)
 {
-	if (auto d = D3D11DrawCommand::upcast(cmd))
+	if (auto d = DxDrawCommand::upcast(cmd))
 	{
 		delete d;
 	}

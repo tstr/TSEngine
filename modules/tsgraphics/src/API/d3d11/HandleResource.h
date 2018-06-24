@@ -17,7 +17,7 @@
 
 namespace ts
 {
-	class D3D11Resource : public Handle<D3D11Resource, ResourceHandle>
+	class DxResource : public Handle<DxResource, ResourceHandle>
 	{
 	private:
 
@@ -55,8 +55,8 @@ namespace ts
 
 	public:
 
-		D3D11Resource(ComPtr<ID3D11Resource> rsc, bool isImage) : m_rsc(rsc), m_isImage(isImage) {}
-		~D3D11Resource() { reset(); }
+		DxResource(ComPtr<ID3D11Resource> rsc, bool isImage) : m_rsc(rsc), m_isImage(isImage) {}
+		~DxResource() { reset(); }
 		
 		ID3D11Resource* asResource() const { return m_rsc.Get(); }
 		ID3D11Buffer* asBuffer() const { return (isImage()) ? nullptr : static_cast<ID3D11Buffer*>(m_rsc.Get()); }
