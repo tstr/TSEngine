@@ -42,12 +42,14 @@ namespace ts
 				depthStencil.output->getDSV(depthStencil.index);
 		}
 
-		void clearRenderTargets(ID3D11DeviceContext* context, const Vector& vec)
+		void clearRenderTargets(ID3D11DeviceContext* context, RGBA colour)
 		{
+			Vector vcolour = colour;
+
 			for (const TargetView& view : renderTargets)
 			{
 				if (view.output)
-					context->ClearRenderTargetView(view.output->getRTV(view.index), (const float*)&vec);
+					context->ClearRenderTargetView(view.output->getRTV(view.index), (const float*)&vcolour);
 			}
 		}
 

@@ -16,10 +16,10 @@ RPtr<TargetHandle> D3D11::createTarget(const TargetCreateInfo& info, TargetHandl
 	D3D11Target* target = (recycle == (TargetHandle)0) ? new D3D11Target() : D3D11Target::upcast(recycle);
 	target->reset();
 
-	target->viewport.TopLeftX = info.viewport.x;
-	target->viewport.TopLeftY = info.viewport.y;
-	target->viewport.Width = info.viewport.w;
-	target->viewport.Height = info.viewport.w;
+	target->viewport.TopLeftX = (FLOAT)info.viewport.x;
+	target->viewport.TopLeftY = (FLOAT)info.viewport.y;
+	target->viewport.Width = (FLOAT)info.viewport.w;
+	target->viewport.Height = (FLOAT)info.viewport.w;
 	target->viewport.MaxDepth = 1;
 	target->viewport.MinDepth = -1;
 

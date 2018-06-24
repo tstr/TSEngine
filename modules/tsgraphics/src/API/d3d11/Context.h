@@ -29,7 +29,7 @@ namespace ts
 
 		void resourceUpdate(ResourceHandle rsc, const void* memory, uint32 index) override;
 		void resourceCopy(ResourceHandle src, ResourceHandle dest) override;
-		void imageResolve(ResourceHandle src, ResourceHandle dest) override;
+		void imageResolve(ResourceHandle src, ResourceHandle dest, uint32 index) override;
 
 		void clearColourTarget(TargetHandle pass, uint32 colour) override;
 		void clearDepthTarget(TargetHandle pass, float depth) override;

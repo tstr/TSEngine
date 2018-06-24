@@ -375,7 +375,7 @@ namespace ts
 	struct DrawCommandInfo
 	{
 		TargetHandle outputs;
-		PipelineHandle state;
+		PipelineHandle pipeline;
 		ResourceSetHandle inputs;
 
 		uint32 start = 0; //vertex/index start
@@ -383,6 +383,6 @@ namespace ts
 		int32 vbase = 0;  //vertex base
 		uint32 instances = 1;
 
-		DrawMode draw = DrawMode::VERTEX;
+		DrawMode mode = DrawMode::VERTEX;
 	};
 }

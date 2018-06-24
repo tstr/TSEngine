@@ -4,24 +4,24 @@
 	D3D11 implementation of rendering context
 */
 
-#include "context.h"
-#include "helpers.h"
-#include "handletarget.h"
-#include "handletexture.h"
+#include "Render.h"
+#include "Context.h"
+#include "Helpers.h"
+#include "HandleResource.h"
+#include "HandleTarget.h"
 
 using namespace std;
 using namespace ts;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Constructor
+//  Constructor
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-D3D11Context::D3D11Context(D3D11* api) :
-	m_api(api)
+D3D11Context::D3D11Context(D3D11* driver) :
+	m_driver(driver)
 {
-	tsassert(api);
-	auto device = m_api->getDevice();
-	tsassert(SUCCEEDED(device->CreateDeferredContext(0, m_context.GetAddressOf())));
+	tsassert(m_driver);
+	tsassert(SUCCEEDED(m_driver->getDevice()->CreateDeferredContext(0, m_context.GetAddressOf())));
 }
 
 D3D11Context::~D3D11Context()
@@ -46,15 +46,15 @@ void D3D11Context::resetCommandList()
 //Resource updating
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Context::clearRenderTarget(HTarget h, const Vector& vec)
+void D3D11Context::clearColourTarget(TargetHandle h, uint32 colour)
 {
 	if (D3D11Target* target = D3D11Target::upcast(h))
 	{
-		target->clearRenderTargets(m_context.Get(), vec);
+		target->clearRenderTargets(m_context.Get(), RGBA(colour));
 	}
 }
 
-void D3D11Context::clearDepthTarget(HTarget h, float depth)
+void D3D11Context::clearDepthTarget(TargetHandle h, float depth)
 {
 	if (D3D11Target* target = D3D11Target::upcast(h))
 	{
@@ -64,13 +64,13 @@ void D3D11Context::clearDepthTarget(HTarget h, float depth)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3D11Context::bufferUpdate(HBuffer rsc, const void* memory)
+void D3D11Context::resourceUpdate(ResourceHandle rsc, const void* memory, uint32 index)
 {
-	auto buffer = reinterpret_cast<ID3D11Buffer*>(rsc);
+	D3D11Resource* pRsc = D3D11Resource::upcast(rsc);
 
-	if (buffer)
+	if (pRsc)
 	{
-		m_context->UpdateSubresource(buffer, 0, nullptr, memory, 0, 0);
+		m_context->UpdateSubresource(pRsc->asResource(), index, nullptr, memory, 0, 0);
 	}
 	else
 	{
@@ -78,14 +78,14 @@ void D3D11Context::bufferUpdate(HBuffer rsc, const void* memory)
 	}
 }
 
-void D3D11Context::bufferCopy(HBuffer src, HBuffer dest)
+void D3D11Context::resourceCopy(ResourceHandle src, ResourceHandle dest)
 {
-	auto buffersrc = reinterpret_cast<ID3D11Buffer*>(src);
-	auto bufferdest = reinterpret_cast<ID3D11Buffer*>(dest);
+	auto pSrc = D3D11Resource::upcast(src);
+	auto pDest = D3D11Resource::upcast(dest);
 
-	if (buffersrc && bufferdest)
+	if (pSrc && pDest)
 	{
-		m_context->CopyResource(bufferdest, buffersrc);
+		m_context->CopyResource(pDest->asResource(), pSrc->asResource());
 	}
 	else
 	{
@@ -93,43 +93,14 @@ void D3D11Context::bufferCopy(HBuffer src, HBuffer dest)
 	}
 }
 
-void D3D11Context::textureUpdate(HTexture rsc, uint32 index, const void* memory)
+void D3D11Context::imageResolve(ResourceHandle src, ResourceHandle dest, uint32 index)
 {
-	auto texture = D3D11Texture::upcast(rsc);
+	auto pSrc = D3D11Resource::upcast(src);
+	auto pDest = D3D11Resource::upcast(dest);
 
-	if (texture)
+	if (pSrc && pDest && pSrc->isImage() && pDest->isImage())
 	{
-		m_context->UpdateSubresource(texture->getResource().Get(), index, nullptr, memory, 0, 0);
-	}
-	else
-	{
-		tswarn("unable to update texture");
-	}
-}
-
-void D3D11Context::textureCopy(HTexture src, HTexture dest)
-{
-	auto texsrc = D3D11Texture::upcast(src);
-	auto texdest = D3D11Texture::upcast(dest);
-
-	if (texsrc && texdest)
-	{
-		m_context->CopyResource(texdest->getResource().Get(), texsrc->getResource().Get());
-	}
-	else
-	{
-		tswarn("unable to copy textures");
-	}
-}
-
-void D3D11Context::textureResolve(HTexture src, HTexture dest)
-{
-	auto texsrc = D3D11Texture::upcast(src);
-	auto texdest = D3D11Texture::upcast(dest);
-
-	if (texsrc && texdest)
-	{
-		m_context->ResolveSubresource(texdest->getResource().Get(), 0, texsrc->getResource().Get(), 0, DXGI_FORMAT_UNKNOWN);
+		m_context->ResolveSubresource(pDest->asResource(), index, pSrc->asResource(), index, DXGI_FORMAT_UNKNOWN);
 	}
 	else
 	{
