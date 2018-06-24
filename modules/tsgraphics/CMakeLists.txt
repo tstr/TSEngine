@@ -18,6 +18,9 @@ set(tsgraphics_inc
 	inc/tsgraphics/Defs.h
 	inc/tsgraphics/Driver.h
 	inc/tsgraphics/Graphics.h
+    
+	inc/tsgraphics/Shader.h
+    inc/tsgraphics/Image.h
 )
 
 SET(tsgraphics_api_d3d11_src
@@ -62,8 +65,8 @@ SET(tsgraphics_src
 	src/CommandQueue.cpp
 	src/CommandDispatchers.cpp
 	
-	src/ImageLoader.h
-	src/ImageLoader.cpp
+    src/Shader.cpp
+	src/Image.cpp
 )
 
 add_engine_module(
@@ -85,7 +88,7 @@ include(ResourceSchemaTool)
 set(schema_files
 	inc/tsgraphics/schemas/Model.schema
 	inc/tsgraphics/schemas/Shader.schema
-    inc/tsgraphics/schemas/Texture.schema
+    inc/tsgraphics/schemas/Image.schema
 )
 
 target_cpp_rschemas(TARGET tsgraphics HEADER_VAR schemas_hdrs SCHEMAS ${schema_files} APPENDPATH)

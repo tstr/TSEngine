@@ -26,7 +26,7 @@ endfunction()
 
 add_subdirectory(shaderlib)
 add_subdirectory(modellib)
-add_subdirectory(texturelib)
+add_subdirectory(imagelib)
 
 FILE(GLOB _python_modules "${CMAKE_CURRENT_SOURCE_DIR}/*.py")
 

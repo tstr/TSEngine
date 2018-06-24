@@ -165,7 +165,7 @@ RPtr<ResourceHandle> Dx11::createResourceImage(const ResourceData* data, const I
 			dtd.Usage = usage;
 			dtd.CPUAccessFlags = access;
 			dtd.MipLevels = miplevels;
-			dtd.SampleDesc.Count = info.msCount;
+			dtd.SampleDesc.Count = info.msLevels;
 			getMultisampleQuality(dtd.SampleDesc);
 
 			if (info.useMips)

@@ -155,7 +155,7 @@ namespace ts
 		uint32 length = 0; //or array length
 
 		bool useMips = false;
-		uint32 msCount = 1;
+		uint32 msLevels = 1;
         uint32 mipLevels = 1;
 	};
 	
