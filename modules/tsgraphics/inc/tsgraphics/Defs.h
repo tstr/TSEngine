@@ -318,6 +318,8 @@ namespace ts
     {
         ResourceHandle image;
         uint32 index;
+		uint32 count;
+		ImageType type;
     };
     
     struct VertexBufferView
@@ -344,7 +346,7 @@ namespace ts
 	/*
 		Resource set structure
 	*/
-	struct ResourceSetInfo
+	struct ResourceSetCreateInfo
 	{
         const ImageView* resources;  //shader resources
         uint32 resourceCount;

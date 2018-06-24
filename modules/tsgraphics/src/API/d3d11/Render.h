@@ -29,11 +29,6 @@ namespace ts
 		D3D11(const RenderDeviceConfig& cfg);
 		~D3D11();
 
-		//Internal methods
-		ComPtr<ID3D11Device> getDevice() const { return m_device; }
-
-		void incrementDrawCallCounter() { m_drawCallCounter++; }
-
 		RenderContext* context() override { return &m_context; }
 		void commit() override;
 
@@ -51,7 +46,7 @@ namespace ts
 		RPtr<ResourceHandle> createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle) override;
 		RPtr<ResourceHandle> createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle) override;
 		//Resource set
-		RPtr<ResourceSetHandle> createResourceSet(const ResourceSetInfo& info, ResourceSetHandle recycle) override;
+		RPtr<ResourceSetHandle> createResourceSet(const ResourceSetCreateInfo& info, ResourceSetHandle recycle) override;
 		//Pipeline state
 		RPtr<ShaderHandle> createShader(const ShaderCreateInfo& info) override;
 		RPtr<PipelineHandle> createPipeline(ShaderHandle program, const PipelineCreateInfo& info) override;
@@ -67,6 +62,11 @@ namespace ts
 		void destroy(PipelineHandle state) override;
 		void destroy(TargetHandle pass) override;
 		void destroy(CommandHandle cmd) override;
+
+		//Internal methods
+		ComPtr<ID3D11Device> getDevice() const { return m_device; }
+		
+		void incrementDrawCallCounter() { m_drawCallCounter++; }
 
 	private:
 

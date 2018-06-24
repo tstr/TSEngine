@@ -95,7 +95,7 @@ namespace ts
         virtual RPtr<ResourceHandle> createResourceBuffer(const ResourceData& data, const BufferResourceInfo& info, ResourceHandle recycle = (ResourceHandle)0) = 0;
 		virtual RPtr<ResourceHandle> createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle = (ResourceHandle)0) = 0;
         //Resource set
-        virtual RPtr<ResourceSetHandle> createResourceSet(const ResourceSetInfo& info, ResourceSetHandle recycle = (ResourceSetHandle)0) = 0;
+        virtual RPtr<ResourceSetHandle> createResourceSet(const ResourceSetCreateInfo& info, ResourceSetHandle recycle = (ResourceSetHandle)0) = 0;
 		//Pipeline state
         virtual RPtr<ShaderHandle> createShader(const ShaderCreateInfo& info) = 0;
         virtual RPtr<PipelineHandle> createPipeline(ShaderHandle program, const PipelineCreateInfo& info) = 0;
