@@ -122,7 +122,7 @@ namespace ts
     {
 		virtual void resourceUpdate(ResourceHandle rsc, const void* memory, uint32 index = 0) = 0;
 		virtual void resourceCopy(ResourceHandle src, ResourceHandle dest) = 0;
-		virtual void imageResolve(ResourceHandle src, ResourceHandle dest) = 0;
+		virtual void imageResolve(ResourceHandle src, ResourceHandle dest, uint32 index = 0) = 0;
 		
 		virtual void clearColourTarget(TargetHandle pass, uint32 colour) = 0;
 		virtual void clearDepthTarget(TargetHandle pass, float depth) = 0;

@@ -157,7 +157,13 @@ ComPtr<ID3D11InputLayout> D3D11Shader::createInputLayout(const VertexAttribute* 
 	ComPtr<ID3D11Device> device;
 	vertex->GetDevice(device.GetAddressOf());
 
-	HRESULT hr = device->CreateInputLayout(elementList.data(), elementList.size(), vertexBytecode.pointer(), vertexBytecode.size(), inputLayout.GetAddressOf());
+	HRESULT hr = device->CreateInputLayout(
+		elementList.data(),
+		(UINT)elementList.size(),
+		vertexBytecode.pointer(),
+		vertexBytecode.size(),
+		inputLayout.GetAddressOf()
+	);
 
 	if (FAILED(hr))
 	{
