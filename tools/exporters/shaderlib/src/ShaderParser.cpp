@@ -445,4 +445,6 @@ bool ShaderParser::parse(istream& stream)
 		}
 		}
 	}
+
+	return true;
 }

@@ -44,7 +44,7 @@ namespace ts
 
         RenderDevice* const device() const { return m_d; }
         Handle handle() const { return m_h; }
-		//Handle release() { auto h = m_h; m_h = (Handle)0; return h; }
+		Handle release() { auto h = m_h; m_h = (Handle)0; return h; }
 
 		bool null() const { return (m_d == nullptr) || (m_h == (Handle)0); }
 		operator bool() const { return !null(); }

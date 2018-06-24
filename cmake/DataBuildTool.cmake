@@ -24,7 +24,13 @@ add_custom_target(DATA_BUILD ALL
     COMMAND ${DATABUILD_TOOL} "--build" "${DATABUILD_INPUT_DIR}"
 )
 
+add_custom_target(DATA_CLEAN ALL
+    COMMAND ${CMAKE_COMMAND} -E echo "cleaning output directory: \"${DATABUILD_OUTPUT_DIR}\""
+    COMMAND ${CMAKE_COMMAND} -E remove_directory "${DATABUILD_OUTPUT_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${DATABUILD_OUTPUT_DIR}"
+)
+
 set_target_properties(
-	DATA_BUILD
+	DATA_BUILD DATA_CLEAN
 	PROPERTIES FOLDER commands
 )

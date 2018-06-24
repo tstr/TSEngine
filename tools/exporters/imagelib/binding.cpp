@@ -1,5 +1,5 @@
 /*
-	TextureLib extension
+	ImageLib extension
 */
 
 #include <codecvt>
@@ -7,8 +7,8 @@
 #include <algorithm>
 
 #include <tscore/strings.h>
-#include <tsgraphics/api/RenderDef.h>
-#include <tsgraphics/schemas/Texture.rcs.h>
+#include <tsgraphics/Driver.h>
+#include <tsgraphics/schemas/Image.rcs.h>
 
 using namespace std;
 
@@ -23,17 +23,20 @@ using namespace std;
 
 namespace py = pybind11;
 
-static bool LoadTGAFile(const char* filename, tsr::TextureBuilder& builder);
+static bool LoadTGAFile(const char* filename, tsr::ImageBuilder& builder);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool convertTexture2D(const std::string& textureFileName, const std::string& outputFileName)
 {
+	using ts::ImageFormat;
+	using ts::ImageType;
+
 	wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
 	wstring wfilename(converter.from_bytes(textureFileName));
 
 	/////////////////////////////////////////////////////////////////////////
-
+	
 	string extension;
 	string filename(textureFileName);
 
@@ -43,7 +46,7 @@ bool convertTexture2D(const std::string& textureFileName, const std::string& out
 	else
 		extension = filename.substr(pos, filename.size() - pos);
 	
-	tsr::TextureBuilder builder;
+	tsr::ImageBuilder builder;
 
 	if (ts::compare_string_weak(extension, ".tga"))
 	{
@@ -69,28 +72,28 @@ bool convertTexture2D(const std::string& textureFileName, const std::string& out
 			return false;
 		}
 
-		ts::ETextureFormat format = ts::eTextureFormatUnknown;
+		ImageFormat format = ImageFormat::UNKNOWN;
 		PixelFormat gdi_format = PixelFormatDontCare;
 
 		switch (bmp->GetPixelFormat())
 		{
 		case PixelFormat8bppIndexed:
 		{
-			format = ts::ETextureFormat::eTextureFormatByte;
+			format = ImageFormat::BYTE;
 			gdi_format = PixelFormat8bppIndexed;
 			break;
 		}
 		case PixelFormat24bppRGB:
 		{
 			//Graphics API doesn't support texture formats with bytewidths not a power of 2 so we need to force extra colour channel for this texture
-			format = ts::ETextureFormat::eTextureFormatColourARGB;
+			format = ImageFormat::ARGB;
 			gdi_format = PixelFormat32bppARGB;
 			break;
 		}
 		case PixelFormat32bppARGB:
 		default:
 		{
-			format = ts::ETextureFormat::eTextureFormatColourARGB;
+			format = ImageFormat::ARGB;
 			gdi_format = PixelFormat32bppARGB;
 		}
 		}
@@ -106,8 +109,8 @@ bool convertTexture2D(const std::string& textureFileName, const std::string& out
 			return false;
 		}
 
-		builder.set_format(format);
-		builder.set_type(ts::ETextureResourceType::eTypeTexture2D);
+		builder.set_format((uint32_t)format);
+		builder.set_type((uint32_t)ImageType::_2D);
 
 		builder.set_height(bmpData.Height);
 		builder.set_width(bmpData.Width);
@@ -139,8 +142,11 @@ bool convertTexture2D(const std::string& textureFileName, const std::string& out
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //GDI+ doesn't support TGA files so we have to use a separate loading mechanism
-static bool LoadTGAFile(const char* filename, tsr::TextureBuilder& builder)
+static bool LoadTGAFile(const char* filename, tsr::ImageBuilder& builder)
 {
+	using ts::ImageFormat;
+	using ts::ImageType;
+
 	struct TGAFILE
 	{
 		unsigned char imageTypeCode;
@@ -242,8 +248,8 @@ static bool LoadTGAFile(const char* filename, tsr::TextureBuilder& builder)
 	fclose(filePtr);
 	free(tgaFile.imageData);
 
-	builder.set_format(ts::eTextureFormatColourARGB);
-	builder.set_type(ts::ETextureResourceType::eTypeTexture2D);
+	builder.set_format((uint32_t)ImageFormat::ARGB);
+	builder.set_type((uint32_t)ImageType::_2D);
 
 	builder.set_height(tgaFile.imageHeight);
 	builder.set_width(tgaFile.imageWidth);
@@ -262,7 +268,7 @@ static bool LoadTGAFile(const char* filename, tsr::TextureBuilder& builder)
 
 static uintptr_t gdi_token;
 
-PYBIND11_MODULE(texturelib, m)
+PYBIND11_MODULE(imagelib, m)
 {
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	Gdiplus::GdiplusStartup((ULONG_PTR*)&gdi_token, &gdiplusStartupInput, 0);
