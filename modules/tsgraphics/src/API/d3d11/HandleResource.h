@@ -58,8 +58,8 @@ namespace ts
 		D3D11Resource(ComPtr<ID3D11Resource> rsc, bool isImage) : m_rsc(rsc), m_isImage(isImage) {}
 		~D3D11Resource() { reset(); }
 		
-		ID3D11Resource* getResource() const { m_rsc.Get(); }
-		ID3D11Buffer* getBuffer() const { return (isImage()) ? nullptr : static_cast<ID3D11Buffer*>(m_rsc.Get()); }
+		ID3D11Resource* asResource() const { m_rsc.Get(); }
+		ID3D11Buffer* asBuffer() const { return (isImage()) ? nullptr : static_cast<ID3D11Buffer*>(m_rsc.Get()); }
 		bool isImage() const { return m_isImage; }
 		bool isBuffer() const { return !m_isImage; }
 		

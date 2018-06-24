@@ -79,7 +79,7 @@ void D3D11Pipeline::bind(ID3D11DeviceContext* context)
 	context->OMSetDepthStencilState(m_depthState.Get(), 0);
 	
 	//Bind samplers
-	context->PSSetSamplers(0, m_samplers.size(), (ID3D11SamplerState**)m_samplers.data());
+	context->PSSetSamplers(0, (UINT)m_samplers.size(), (ID3D11SamplerState**)m_samplers.data());
 
 	//Bind vertex input description
 	context->IASetInputLayout(m_inputLayout.Get());
