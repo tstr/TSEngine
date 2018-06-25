@@ -106,5 +106,15 @@ function(add_engine_module)
 		${libname}
 		PROPERTIES FOLDER ${MODULE_FOLDER}
 	)
-	
+    
+    set(libname_i "${libname}-interface")
+    
+    # Add interface library for accessing public headers
+    add_library(${libname_i} INTERFACE)
+    
+    target_include_directories(${libname_i} INTERFACE
+        "${CMAKE_CURRENT_SOURCE_DIR}/${param_PUBLIC_DIR}"
+        "${CMAKE_CURRENT_BINARY_DIR}/${param_PUBLIC_DIR}"
+    )
+    
 endfunction()

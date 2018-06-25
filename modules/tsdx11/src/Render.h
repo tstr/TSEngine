@@ -30,6 +30,8 @@ namespace ts
 		Dx11(const RenderDeviceConfig& cfg);
 		~Dx11();
 
+		Dx11(const Dx11&) = delete;
+
 		RenderContext* context() override { return &m_context; }
 		void commit() override;
 

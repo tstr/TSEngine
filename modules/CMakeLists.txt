@@ -7,6 +7,7 @@ include(AddModule)
 ADD_SUBDIRECTORY(tscore)
 ADD_SUBDIRECTORY(tsengine)
 ADD_SUBDIRECTORY(tsgraphics)
+ADD_SUBDIRECTORY(tsdx11)
 
 ################################################################################################
 
