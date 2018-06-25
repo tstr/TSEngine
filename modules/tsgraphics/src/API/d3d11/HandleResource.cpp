@@ -29,7 +29,7 @@ RPtr<ResourceHandle> Dx11::createEmptyResource(ResourceHandle recycle)
 	}
 	else
 	{
-		return RPtr<ResourceHandle>(this, DxResource::downcast(new DxResource(nullptr, false)));
+		return RPtr<ResourceHandle>(this, DxResource::downcast(new DxResource(nullptr)));
 	}
 }
 
@@ -238,11 +238,11 @@ RPtr<ResourceHandle> Dx11::createResourceImage(const ResourceData* data, const I
 	{
 		auto rsc = DxResource::upcast(recycle);
 		rsc->reset();
-		return RPtr<ResourceHandle>(this, DxResource::downcast(new(rsc) DxResource(resource, true)));
+		return RPtr<ResourceHandle>(this, DxResource::downcast(new(rsc) DxResource(resource)));
 	}
 	else
 	{
-		return RPtr<ResourceHandle>(this, DxResource::downcast(new DxResource(resource, true)));
+		return RPtr<ResourceHandle>(this, DxResource::downcast(new DxResource(resource)));
 	}
 }
 
@@ -295,11 +295,11 @@ RPtr<ResourceHandle> Dx11::createResourceBuffer(const ResourceData& data, const 
 		{
 			auto rsc = DxResource::upcast(recycle);
 			rsc->reset();
-			return RPtr<ResourceHandle>(this, DxResource::downcast(new(rsc) DxResource(buffer, false)));
+			return RPtr<ResourceHandle>(this, DxResource::downcast(new(rsc) DxResource(buffer)));
 		}
 		else
 		{
-			return RPtr<ResourceHandle>(this, DxResource::downcast(new DxResource(buffer, false)));
+			return RPtr<ResourceHandle>(this, DxResource::downcast(new DxResource(buffer)));
 		}
 	}
 }

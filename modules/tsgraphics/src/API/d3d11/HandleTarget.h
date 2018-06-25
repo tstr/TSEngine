@@ -66,6 +66,7 @@ namespace ts
 		void bind(ID3D11DeviceContext* context)
 		{
 			ID3D11RenderTargetView* rtvs[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+			ZeroMemory(rtvs, sizeof(rtvs));
 
 			for (size_t i = 0; i < renderTargets.size(); i++)
 			{

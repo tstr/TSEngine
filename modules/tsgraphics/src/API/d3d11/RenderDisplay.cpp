@@ -146,7 +146,7 @@ void Dx11::updateDisplayResource()
 	HRESULT hr = m_dxgiSwapchain->GetBuffer(0, IID_OF(ID3D11Texture2D), (void**)backbuffer.GetAddressOf());
 	tsassert(SUCCEEDED(hr));
 
-	m_displayResourceProxy = DxResource(backbuffer, true);
+	m_displayResourceProxy = DxResource(backbuffer);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

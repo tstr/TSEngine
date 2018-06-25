@@ -26,7 +26,7 @@ namespace ts
 		bool load(RenderDevice* device, const String& shaderFile);
 
 		//Shader device handle
-		ShaderHandle handle() const { m_program.handle(); }
+		ShaderHandle handle() const { return m_program.handle(); }
 
 		//Shader state
 		bool loaded() const { return !m_program.null(); }

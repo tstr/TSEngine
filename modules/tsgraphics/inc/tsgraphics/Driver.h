@@ -44,19 +44,20 @@ namespace ts
 
         RenderDevice* const device() const { return m_d; }
         Handle handle() const { return m_h; }
-		Handle release() { auto h = m_h; m_h = (Handle)0; return h; }
+		Handle release() { auto h = m_h; m_h = Handle(); return h; }
 
-		bool null() const { return (m_d == nullptr) || (m_h == (Handle)0); }
+		bool null() const { return (m_d == nullptr) || (m_h == Handle()); }
 		operator bool() const { return !null(); }
 
-		void reset()
+		void reset(RenderDevice* d = nullptr, Handle h = Handle())
 		{
 			if (!null())
 			{
 				m_d->destroy(m_h);
-				m_d = nullptr;
-				m_h = (Handle)0;
 			}
+
+			m_d = d;
+			m_h = h;
 		}
         
     private:

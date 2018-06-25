@@ -51,8 +51,8 @@ DxPipeline::DxPipeline(DxStateManager& states, ShaderHandle program, const Pipel
 	//Get primitive topology
 	switch (info.topology)
 	{
-		case (VertexTopology::TRIANGELIST): { m_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break; }
-		case (VertexTopology::TRIANGESTRIP): { m_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; break; }
+		case (VertexTopology::TRIANGLELIST): { m_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break; }
+		case (VertexTopology::TRIANGLESTRIP): { m_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; break; }
 		case (VertexTopology::LINELIST): { m_topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; break; }
 		case (VertexTopology::LINESTRIP): { m_topology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP; break; }
 		case (VertexTopology::POINTLIST): { m_topology = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; break; }

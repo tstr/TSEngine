@@ -14,8 +14,11 @@
 
 #include "CommandQueue.h"
 #include "Surface.h"
-#include "Defs.h"
 #include "Driver.h"
+
+#include "Shader.h"
+#include "Image.h"
+#include "Model.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 

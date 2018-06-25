@@ -22,7 +22,6 @@ namespace ts
 	private:
 
 		ComPtr<ID3D11Resource> m_rsc;
-		bool m_isImage;
 
 		struct SRVKey
 		{
@@ -55,16 +54,18 @@ namespace ts
 
 	public:
 
-		DxResource(ComPtr<ID3D11Resource> rsc, bool isImage) : m_rsc(rsc), m_isImage(isImage) {}
+		DxResource(ComPtr<ID3D11Resource> rsc) : m_rsc(rsc) {}
 		~DxResource() { reset(); }
 		
 		ID3D11Resource* asResource() const { return m_rsc.Get(); }
-		ID3D11Buffer* asBuffer() const { return (isImage()) ? nullptr : static_cast<ID3D11Buffer*>(m_rsc.Get()); }
-		bool isImage() const { return m_isImage; }
-		bool isBuffer() const { return !m_isImage; }
+		ID3D11Buffer* asBuffer() const { return isBuffer() ? static_cast<ID3D11Buffer*>(m_rsc.Get()) : nullptr; }
+		bool isImage() const { return !isBuffer(); }
+		bool isBuffer() const { return getType() == D3D11_RESOURCE_DIMENSION_BUFFER; }
 
 		D3D11_RESOURCE_DIMENSION getType() const
 		{
+			if (!m_rsc) return D3D11_RESOURCE_DIMENSION_UNKNOWN;
+
 			D3D11_RESOURCE_DIMENSION type;
 			m_rsc->GetType(&type);
 			return type;
