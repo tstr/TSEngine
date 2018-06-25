@@ -3,7 +3,9 @@
 */
 
 #include <tsgraphics/Driver.h>
-#include "api/d3d11/Render.h"
+#include <tsdx11.h> //d3d11 driver
+
+using namespace ts;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -12,7 +14,7 @@ RenderDevice::Ptr RenderDevice::create(RenderDriverID id, const RenderDeviceConf
 	switch (id)
 	{
 	case RenderDriverID::DX11:
-		return RenderDevice::Ptr(new Dx11(config));
+		return RenderDevice::Ptr(createDX11device(config));
 	default:
 		return RenderDevice::Ptr();
 	}
@@ -20,12 +22,8 @@ RenderDevice::Ptr RenderDevice::create(RenderDriverID id, const RenderDeviceConf
 
 void RenderDevice::destroy(RenderDevice* device)
 {
-    auto dptr = dynamic_cast<Dx11*>(device);
-    
-    if (dptr != nullptr)
-    {
-        delete dptr;
-    }
+	//Hardcode for now to dx11
+	destroyDX11device(device);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

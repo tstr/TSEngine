@@ -235,3 +235,19 @@ bool Dx11::getMultisampleQuality(DXGI_SAMPLE_DESC& sampledesc)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+extern "C"
+{
+	RenderDevice* createDX11device(const RenderDeviceConfig& config)
+	{
+		return new Dx11(config);
+	}
+
+	void destroyDX11device(RenderDevice* device)
+	{
+		if (auto d = dynamic_cast<Dx11*>(device))
+		{
+			delete d;
+		}
+	}
+}

@@ -25,42 +25,8 @@ set(tsgraphics_inc
     inc/tsgraphics/Model.h
 )
 
-SET(tsgraphics_api_d3d11_src
-	
-	src/api/d3d11/Base.h
-	src/api/d3d11/Helpers.h
-	src/api/d3d11/Helpers.cpp
-	
-	src/api/d3d11/Render.h
-	src/api/d3d11/RenderMain.cpp
-	src/api/d3d11/RenderDisplay.cpp
-	
-	src/api/d3d11/Handle.h
-	src/api/d3d11/HandleResource.h
-	src/api/d3d11/HandleResource.cpp
-	src/api/d3d11/HandleResourceSet.h
-	src/api/d3d11/HandleResourceSet.cpp
-	src/api/d3d11/HandleTarget.h
-	src/api/d3d11/HandleTarget.cpp
-	src/api/d3d11/HandleShader.h
-	src/api/d3d11/HandleShader.cpp
-	src/api/d3d11/HandlePipeline.h
-	src/api/d3d11/HandlePipeline.cpp
-	src/api/d3d11/HandleCommand.h
-	src/api/d3d11/HandleCommand.cpp
-	
-	src/api/d3d11/Context.h
-	src/api/d3d11/Context.cpp
-	src/api/d3d11/ContextCommand.cpp
-	src/api/d3d11/StateManager.h
-	src/api/d3d11/StateManager.cpp
-	src/api/d3d11/StateManagerHash.inl
-)
-
 SET(tsgraphics_src
-	
-	${tsgraphics_api_d3d11_src}
-	
+
 	src/Graphics.cpp
 	src/Driver.cpp
 
@@ -81,6 +47,7 @@ add_engine_module(
 )
 
 TARGET_LINK_LIBRARIES(tsgraphics PUBLIC tscore)
+TARGET_LINK_LIBRARIES(tsgraphics PRIVATE tsdx11)
 
 #####################################################################################
 #	Generate resource schema headers
