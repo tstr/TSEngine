@@ -19,8 +19,10 @@ set(tsgraphics_inc
 	inc/tsgraphics/Driver.h
 	inc/tsgraphics/Graphics.h
     
+	inc/tsgraphics/Buffer.h
 	inc/tsgraphics/Shader.h
     inc/tsgraphics/Image.h
+    inc/tsgraphics/Model.h
 )
 
 SET(tsgraphics_api_d3d11_src
@@ -67,6 +69,7 @@ SET(tsgraphics_src
 	
     src/Shader.cpp
 	src/Image.cpp
+	src/Model.cpp
 )
 
 add_engine_module(

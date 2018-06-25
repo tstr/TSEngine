@@ -22,7 +22,7 @@ using namespace std;
 //	Init
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Dx11::Dx11(const RenderDeviceConfig& cfg) :
-	m_displayResourceProxy(nullptr, true)
+	m_displayResourceProxy(nullptr)
 {
 	m_hwnd = reinterpret_cast<HWND>(cfg.windowHandle);
 	tsassert(IsWindow(m_hwnd));

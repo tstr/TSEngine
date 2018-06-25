@@ -18,7 +18,7 @@ using namespace ts;
 static void drawCallSig(ID3D11DeviceContext*, DxDrawCommand*);
 using DrawCaller = decltype(drawCallSig)*;
 
-DrawCaller* drawFunctions()
+DrawCaller drawFunctions(DrawMode mode)
 {
 	static DrawCaller table[4];
 
@@ -42,7 +42,7 @@ DrawCaller* drawFunctions()
 		ctx->DrawIndexedInstanced(cmd->count, cmd->instances, cmd->start, cmd->vertexBase, 0);
 	};
 
-	return table;
+	return table[(size_t)mode];
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -60,7 +60,7 @@ void Dx11Context::submit(CommandHandle command)
 
 		//Lookup draw call function in table
 		//And call it
-		drawFunctions()[(size_t)cmd->mode](ctx, cmd);
+		drawFunctions(cmd->mode)(ctx, cmd);
 	}
 
 	//For debugging
