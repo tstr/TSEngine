@@ -16,10 +16,6 @@
 #include "Surface.h"
 #include "Driver.h"
 
-#include "Shader.h"
-#include "Image.h"
-#include "Model.h"
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace ts
