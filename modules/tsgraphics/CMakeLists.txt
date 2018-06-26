@@ -14,6 +14,7 @@ set(tsgraphics_inc
 	inc/tsgraphics/Surface.h
 	inc/tsgraphics/CommandQueue.h
 	inc/tsgraphics/FrameGraph.h
+	inc/tsgraphics/BindingSet.h
     
 	inc/tsgraphics/Defs.h
 	inc/tsgraphics/Driver.h

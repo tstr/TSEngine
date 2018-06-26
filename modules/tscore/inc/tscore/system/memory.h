@@ -58,103 +58,105 @@ namespace ts
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	class MemoryBuffer
+	class MemoryView
 	{
-	private:
-
-		void* m_data = nullptr;
-		size_t m_size = 0;
-
 	public:
 
-		void* pointer() { return m_data; }
-		const void* pointer() const { return m_data; }
-		size_t size() const { return m_size; }
+		byte* begin() { return m_start; }
+		const byte* begin() const { return m_start; }
+		byte* end() { return m_end; }
+		const byte* end() const { return m_end; }
+
+		byte* pointer() { return m_start; }
+		const byte* pointer() const { return m_start; }
+
+		size_t size() const { return m_end - m_start; }
+
+	protected:
+
+		byte* m_start;
+		byte* m_end;
+	};
+
+	class MemoryBuffer : public MemoryView
+	{
+	public:
 
 		MemoryBuffer() {}
 
 		MemoryBuffer(size_t reserve)
 		{
-			m_data = new byte[reserve];
-			m_size = reserve;
+			m_start = new byte[reserve];
+			m_end = m_start + reserve;
 		}
 
-		MemoryBuffer(const void* data, size_t size) :
-			m_size(size)
+		MemoryBuffer(const void* data, size_t size) : 
+			MemoryBuffer((const byte*)data, size)
+		{}
+
+		MemoryBuffer(const byte* data, size_t size)
 		{
-			m_data = new byte[m_size];
-			memcpy_s(m_data, m_size, data, size);
+			m_start = new byte[size];
+			m_end = m_start + size;
+
+			memcpy_s(m_start, this->size(), data, size);
 		}
 
 		explicit MemoryBuffer(const MemoryBuffer& copy)
 		{
-			if (m_data)
-				delete[] m_data;
+			if (this->size() < copy.size())
+			{
+				reset();
+				m_start = new byte[copy.size()];
+				m_end = m_start + copy.size();
+			}
 
-			m_size = copy.m_size;
-
-			if (m_data = new byte[m_size]) {}
-			else
-				throw std::exception("malloc failed to allocate enough memory");
-
-			memcpy(m_data, copy.m_data, m_size);
+			memcpy_s(this->begin(), this->size(), copy.begin(), copy.size());
 		}
 
-		MemoryBuffer(MemoryBuffer&& copy)
+		MemoryBuffer(MemoryBuffer&& other)
 		{
-			m_data = copy.m_data;
-			m_size = copy.m_size;
+			std::swap(m_start, other.m_start);
+			std::swap(m_end, other.m_end);
+		}
 
-			copy.m_data = nullptr;
-			copy.m_size = 0;
+		MemoryBuffer& operator=(MemoryBuffer&& other)
+		{
+			std::swap(m_start, other.m_start);
+			std::swap(m_end, other.m_end);
+			return *this;
 		}
 
 		MemoryBuffer& operator=(const MemoryBuffer& copy)
 		{
-			if (m_data)
-				delete[] m_data;
-
-			m_size = copy.m_size;
-
-			if (m_data = new byte[m_size]) {}
-			else
-				throw std::exception("malloc failed to allocate enough memory");
-
-			memcpy(m_data, copy.m_data, m_size);
-
-			return *this;
+			*this = MemoryBuffer(copy);
 		}
 
-		MemoryBuffer& operator=(MemoryBuffer&& copy)
+		~MemoryBuffer() { reset(); }
+
+		void reset()
 		{
-			m_data = copy.m_data;
-			m_size = copy.m_size;
+			if (m_start != nullptr)
+				delete m_start;
 
-			copy.m_data = nullptr;
-			copy.m_size = 0;
-
-			return *this;
+			m_start = nullptr;
+			m_end = nullptr;
 		}
 
-		~MemoryBuffer()
+
+		template<typename Type, typename = std::enable_if<std::is_pod<Type>::value>::type>
+		static MemoryBuffer from(const Type& t)
 		{
-			if (m_data)
-				delete[] m_data;
+			return MemoryBuffer((const byte*)&t, sizeof(Type));
+
+		}
+
+		template<typename Type, typename = std::enable_if<std::is_pod<Type>::value>::type>
+		static MemoryBuffer fromVector(const std::vector<Type>& v)
+		{
+			return MemoryBuffer((const byte*)&v[0], v.size() * sizeof(T));
 		}
 	};
 
-	template<typename T> inline
-		MemoryBuffer make_buffer(const T& t)
-	{
-		return MemoryBuffer(&t, sizeof(T));
-	}
-
-	template<typename T> inline
-		MemoryBuffer make_buffer_from_vector(const std::vector<T>& v)
-	{
-		return MemoryBuffer((const void*)&v[0], v.size() * sizeof(T));
-	}
-
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 }
