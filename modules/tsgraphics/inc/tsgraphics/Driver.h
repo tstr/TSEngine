@@ -62,8 +62,8 @@ namespace ts
         
     private:
         
-        RenderDevice* m_d; //device
-        Handle m_h;        //device resource handle
+        RenderDevice* m_d = nullptr; //device
+        Handle m_h = Handle();       //device resource handle
     };
     
     /*

@@ -16,6 +16,15 @@ namespace ts
 		Image(RenderDevice* device) { loadEmpty(device); }
 		Image(RenderDevice* device, const String& imageFile) { load(device, imageFile); }
         
+		Image(const Image&) = delete;
+
+		Image(Image&& rhs)
+		{
+			std::swap(m_error, rhs.m_error);
+			std::swap(m_img, rhs.m_img);
+			std::swap(m_imgInfo, rhs.m_imgInfo);
+		}
+
 		void loadEmpty(RenderDevice* device);
 		bool load(RenderDevice* device, const String& imageFile);
 

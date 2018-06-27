@@ -32,6 +32,7 @@ bool Image::load(RenderDevice* device, const String& imageFile)
 
 	if (loader.fail())
 	{
+		tswarn("Unable to load image.");
 		return !setError(true);
 	}
 

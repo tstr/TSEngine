@@ -150,9 +150,9 @@ namespace ts
 		ImageType type = ImageType::_2D;
 		ImageUsage usage = ImageUsage::SRV;
 
-		uint32 width = 0;
-		uint32 height = 0;
-		uint32 length = 0; //or array length
+		uint32 width = 1;
+		uint32 height = 1;
+		uint32 length = 1; //or array length
 
 		bool useMips = false;
 		uint32 msLevels = 1;

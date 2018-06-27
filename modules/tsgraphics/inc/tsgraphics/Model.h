@@ -32,6 +32,9 @@ namespace ts
 		uint32 indexStart = 0;
 
 		DrawMode mode;
+
+
+
 	};
 
 	class Model

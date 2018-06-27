@@ -74,15 +74,15 @@ namespace ts
 
 	protected:
 
-		byte* m_start;
-		byte* m_end;
+		byte* m_start = nullptr;
+		byte* m_end = nullptr;
 	};
 
 	class MemoryBuffer : public MemoryView
 	{
 	public:
 
-		MemoryBuffer() {}
+		MemoryBuffer() : MemoryView() {}
 
 		MemoryBuffer(size_t reserve)
 		{
