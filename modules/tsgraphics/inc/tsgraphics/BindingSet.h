@@ -61,14 +61,14 @@ namespace ts
 		}
 
 		//Access a slot, creates a new value if it does not exist
-		Type& at(uint32 slot, Type& def = Type())
+		Type& at(uint32 slot)
 		{
 			checkCapacity(slot);
 			
 			if (!bound(slot))
 			{
 				m_isBound[slot] = true;
-				m_values[slot] = def;
+				m_values[slot] = Type();
 			}
 			
 			return m_values[slot];

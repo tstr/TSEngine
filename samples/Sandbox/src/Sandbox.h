@@ -6,9 +6,9 @@
 
 #include <tsengine.h>
 
-#include "3D/Graphics3D.h"
 #include "Scene.h"
 #include "Entity.h"
+#include "3D/ForwardRender.h"
 
 namespace ts
 {
@@ -20,7 +20,7 @@ namespace ts
 
 		Scene m_scene;
 
-		Graphics3D m_g3D;
+		ForwardRenderer m_render;
 
 		
 		std::vector<Entity> m_entities;

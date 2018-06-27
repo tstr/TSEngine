@@ -20,6 +20,7 @@ namespace ts
 		using Base::handle;
 		using Base::device;
 		using Base::null;
+		using Base::operator bool;
 
 		Buffer() {}
 		Buffer(Buffer&& rhs) : Base(std::move((Base&&)*this)) {}
@@ -59,8 +60,8 @@ namespace ts
 			Create a buffer from a typed object
 		*/
 		template<
-			typename StructType,
-			typename = std::enable_if<std::is_pod<StructType>::value>::type
+			typename StructType
+			//typename = std::enable_if<std::is_pod<StructType>::value>::type
 		>
 		static Buffer create(RenderDevice* device, const StructType& data, BufferType type)
 		{

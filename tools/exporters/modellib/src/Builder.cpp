@@ -265,7 +265,7 @@ bool formatTexPath(const aiString& texName, Path& texPath)
 		return false;
 
 	string name = texName.C_Str();
-	name = name.substr(0, name.find_last_of('.')).append(".texture");
+	name = name.substr(0, name.find_last_of('.')).append(".image");
 
 	std::cout << name << std::endl;
 

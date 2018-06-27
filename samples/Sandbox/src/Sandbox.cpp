@@ -6,6 +6,8 @@
 
 #include <tscore/debug/log.h>
 
+#include "util/IniReader.h"
+
 using namespace std;
 using namespace ts;
 
@@ -14,7 +16,7 @@ using namespace ts;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 Sandbox::Sandbox(int argc, char** argv) :
 	Application(argc, argv),
-	m_g3D(graphics(), &m_scene),
+	m_render(graphics()),
 	m_scene(&m_entityManager, input())
 {}
 
@@ -95,56 +97,114 @@ void Sandbox::onExit()
 
 int Sandbox::loadModel(Entity entity, const String& modelfile)
 {
-	Path p(m_g3D.getContext()->getSystem()->getRootPath());
-	p.addDirectories(modelfile);
-	CModel model(m_g3D.getContext());
-
-	if (!model.import(p))
+	auto absPath = [this](auto r) -> Path
 	{
-		tserror("unable to import model \"%\"", p.str());
+		Path a(graphics()->getRootPath());
+		a.addDirectories(r);
+		return a;
+	};
+
+	Model model;
+
+	if (!model.load(graphics()->device(), absPath(modelfile).str()))
+	{
+		tserror("unable to import model \"%\"", modelfile);
 		return -1;
 	}
 
-	std::vector<SubmeshInfo> submeshes;
+	unordered_map<String, MaterialCreateInfo> materialInfoMap;
+	vector<Renderable> renderableList;
+	renderableList.reserve(model.meshes().size());
 
-	for (auto it = model.beginSection(); it != model.endSection(); it++)
+	//////////////////////////////////////////////////////////////////////////////
+
+	String matfile(modelfile);
+	matfile.replace(matfile.find_last_of('.'), string::npos, ".mat");
+	INIReader matReader(absPath(matfile));
+
+	vector<String> materialSections;
+	vector<String> materialProperies;
+	String propBuf;
+	matReader.getSections(materialSections);
+
+	//Helper function
+	auto getVectorProperty = [](const String& value) -> Vector
 	{
-		const SMaterial& material = it->material;
+		if (trim(value) == "")
+			return Vector();
 
-		SubmeshInfo info;
+		Vector v;
+		vector<string> tokens = split(value, ',');
 
-		ShaderId program;
-		if (auto status = m_g3D.getContext()->getShaderManager()->load("Standard", program))
+		if (tokens.size() > 0) v.x() = stof(tokens[0]);
+		if (tokens.size() > 1) v.y() = stof(tokens[1]);
+		if (tokens.size() > 2) v.z() = stof(tokens[2]);
+		if (tokens.size() > 3) v.w() = stof(tokens[3]);
+
+		return v;
+	};
+
+	for (const auto& section : materialSections)
+	{
+		MaterialCreateInfo matInfo;
+
+		//Format key helper
+		auto fmtKey = [&section](auto key)
 		{
-			return status;
+			return (String)section + "." + key;
+		};
+
+		float alpha;
+		float shininess;
+		matReader.getProperty(fmtKey("alpha"), alpha);
+		matReader.getProperty(fmtKey("shininess"), shininess);
+
+		if (matReader.getProperty(fmtKey("diffuseColour"), propBuf))
+			matInfo.constants.diffuseColour = getVectorProperty(propBuf);
+		if (matReader.getProperty(fmtKey("ambientColour"), propBuf))
+			matInfo.constants.ambientColour = getVectorProperty(propBuf);
+		if (matReader.getProperty(fmtKey("emissiveColour"), propBuf))
+			matInfo.constants.emissiveColour = getVectorProperty(propBuf);
+
+		for (const char* imageKey : {
+			"diffuseMap",
+			"normalMap",
+			"specularMap",
+			"displacementMap"
+		})
+		{
+			if (matReader.getProperty(fmtKey(imageKey), propBuf))
+			{
+				if (propBuf != "")
+				{
+					//Resolve image path
+					Path a(matReader.getPath().getParent());
+					a.addDirectories(propBuf);
+
+					matInfo.images[imageKey] = a;
+					propBuf.clear();
+				}
+			}
 		}
 
-		//Shader program
-		info.states.setShader(program);
-
-		//Render states
-		info.states.setCullMode(eCullBack);
-		info.states.setFillMode(eFillSolid);
-		info.states.enableAlpha(false);
-		info.states.enableDepth(true);
-		info.states.setSamplerAddressMode(eTextureAddressWrap);
-		info.states.setSamplerFiltering(eTextureFilterAnisotropic16x);
-
-		//Shader constants
-		info.resources.setConstants(material.params);
-
-		//Textures
-		info.resources.setTexture(0, material.diffuseMap);
-		info.resources.setTexture(1, material.normalMap);
-
-		info.submeshView = it->submesh;
-
-		submeshes.push_back(info);
+		materialInfoMap[section] = matInfo;
 	}
 
-	//Attach a graphics component to entity
-	m_g3D.createGraphicsComponent(entity, model.getMeshID(), &submeshes[0], submeshes.size());
+	//////////////////////////////////////////////////////////////////////////////
 
+	for (const auto& mesh : model.meshes())
+	{
+		MeshInfo meshInfo;
+		meshInfo.attributeMap = &model.attributes();
+		meshInfo.data = mesh;
+		meshInfo.topology = VertexTopology::TRIANGLELIST;
+
+		auto it = materialInfoMap.find(mesh.name);
+		MaterialCreateInfo matInfo = (it != materialInfoMap.end()) ? it->second : MaterialCreateInfo();
+
+		renderableList.push_back(m_render.createRenderable(meshInfo, matInfo));
+	}
+	
 	return 0;
 }
 
@@ -159,15 +219,19 @@ void Sandbox::onUpdate(double deltatime)
 	getScene()->getCamera()->setAspectRatio((float)displayOpt.width / displayOpt.height);
 	getScene()->getCamera()->update(deltatime);
 
+	m_render.begin();
+
 	// Submit entities for rendering
 	for (Entity e : m_entities)
 	{
-		m_g3D.submit(e);
+		//m_g3D.submit(e);
 	}
+
+	m_render.end();
 
 	//tsprofile("x:% y:% z:%", m_camera.getPosition().x(), m_camera.getPosition().y(), m_camera.getPosition().z());
 
-	m_g3D.update();
+	//m_g3D.update();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -182,7 +246,7 @@ void Sandbox::onKeyDown(EKeyCode code)
 	{
 		GraphicsDisplayOptions opt;
 		graphics()->getDisplayOptions(opt);
-		graphics()->setDisplayMode((opt.mode == eDisplayBorderless) ? eDisplayWindowed : eDisplayBorderless);
+		graphics()->setDisplayMode((opt.mode == DisplayMode::BORDERLESS) ? DisplayMode::WINDOWED : DisplayMode::BORDERLESS);
 	}
 }
 
