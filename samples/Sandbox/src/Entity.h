@@ -43,15 +43,17 @@ namespace ts
 		struct Entry
 		{
 			//Empty entity is -1
-			Entity key;
+			Entity key = -1;
 			Component_t value;
 
-			Entry() : key(-1) {}
-			Entry(Entity e, Component_t c) : key(e), value(c) {}
+			Entry() {}
+			Entry(Entity e, Component_t c) : key(e), value(std::move(c)) {}
 		};
 
 		EntityManager* m_manager = nullptr;
-		std::vector<Entry> m_components;
+		std::vector<Entry> m_entries;
+
+		Component_t m_default;
 
 	public:
 
@@ -70,8 +72,15 @@ namespace ts
 
 		ComponentMap(ComponentMap&& map)
 		{
-			swap(this->m_manager, map.m_manager);
-			swap(this->m_components, map.m_components);
+			std::swap(this->m_manager, map.m_manager);
+			std::swap(this->m_entries, map.m_entries);
+		}
+
+		ComponentMap& operator=(ComponentMap&& map)
+		{
+			std::swap(this->m_manager, map.m_manager);
+			std::swap(this->m_entries, map.m_entries);
+			return *this;
 		}
 
 		ComponentMap(const ComponentMap& map) = delete;
@@ -83,30 +92,49 @@ namespace ts
 		{
 			const size_t idx = HandleInfo<Entity>(e).index;
 
-			return m_manager && (m_components.at(idx).key != -1);
+			return m_manager && (m_entries.at(idx).key != -1);
 		}
 
 		/*
 			Get a component entry
-		*/
-		bool getComponent(Entity e, Component_t& cmp) const
+		* /
+		Component_t& getComponent(Entity e)
 		{
 			const size_t idx = HandleInfo<Entity>(e).index;
 
 			//If entity index in range and entity is still alive
-			if (m_manager && m_components.size() > idx && m_manager->alive(e))
+			if (m_manager && m_entries.size() > idx && m_manager->alive(e))
 			{
-				const Entry& entry = m_components.at(idx);
+				const Entry& entry = m_entries.at(idx);
 
 				//If entity has this component then it will have an entry in component list
 				if (entry.key != -1)
 				{
-					cmp = entry.value;
-					return true;
+					return entry.value;
 				}
 			}
 
-			return false;
+			return m_default;
+		}
+		//*/
+
+		const Component_t& getComponent(Entity e) const
+		{
+			const size_t idx = HandleInfo<Entity>(e).index;
+
+			//If entity index in range and entity is still alive
+			if (m_manager && m_entries.size() > idx && m_manager->alive(e))
+			{
+				const Entry& entry = m_entries.at(idx);
+
+				//If entity has this component then it will have an entry in component list
+				if (entry.key != -1)
+				{
+					return entry.value;
+				}
+			}
+
+			return m_default;
 		}
 
 		/*
@@ -120,14 +148,33 @@ namespace ts
 				const size_t idx = HandleInfo<Entity>(e).index;
 
 				//If component array is not correct size then resize 
-				if (m_components.size() <= idx)
-					m_components.resize(idx + 1);
+				if (m_entries.size() <= idx)
+					m_entries.resize(idx + 1);
 
-				m_components.at(idx) = Entry(e, cmp);
+				m_entries.at(idx) = Entry(e, cmp);
 
 				return true;
 			}
 			
+			return false;
+		}
+
+		bool setComponent(Entity e, Component_t&& cmp)
+		{
+			//If entity exists
+			if (m_manager && m_manager->alive(e))
+			{
+				const size_t idx = HandleInfo<Entity>(e).index;
+
+				//If component array is not correct size then resize 
+				if (m_entries.size() <= idx)
+					m_entries.resize(idx + 1);
+
+				m_entries.at(idx) = Entry(e, move(cmp));
+
+				return true;
+			}
+
 			return false;
 		}
 	};

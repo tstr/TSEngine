@@ -34,3 +34,5 @@ set_target_properties(
 	DATA_BUILD DATA_CLEAN
 	PROPERTIES FOLDER commands
 )
+
+set_target_properties(DATA_CLEAN PROPERTIES EXCLUDE_FROM_ALL TRUE)

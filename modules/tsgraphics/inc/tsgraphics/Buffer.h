@@ -23,8 +23,11 @@ namespace ts
 		using Base::operator bool;
 
 		Buffer() {}
-		Buffer(Buffer&& rhs) : Base(std::move((Base&&)*this)) {}
+		Buffer(Buffer&& rhs) { *this = std::move(rhs); }
 		Buffer& operator=(Buffer&& rhs) { (Base&)*this = (Base&&)rhs; return *this; }
+
+		Buffer(const Buffer&) = delete;
+		void operator=(const Buffer&) = delete;
 
 		/*
 			Construct an empty staging buffer with a reserved handle

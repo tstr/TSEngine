@@ -78,6 +78,7 @@ bool Image::load(RenderDevice* device, const String& imageFile)
 ImageView Image::getView2D(uint32 index)
 {
 	ImageView img;
+	img.image = handle();
 	img.index = index;
 	img.count = 1;
 	img.type = ImageType::_2D;
@@ -87,6 +88,7 @@ ImageView Image::getView2D(uint32 index)
 ImageView Image::getViewArray(uint32 start, uint32 count)
 {
 	ImageView img;
+	img.image = handle();
 	img.index = start;
 	img.count = count;
 	img.type = ImageType::_2D;

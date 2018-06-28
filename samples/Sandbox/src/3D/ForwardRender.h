@@ -56,17 +56,6 @@ namespace ts
         RPtr<ResourceSetHandle> resources;
 
         RPtr<CommandHandle> draw;
-
-		/*
-		Renderable() {}
-		Renderable(Renderable&& r)
-		{
-			std::swap(mat, r.mat);
-			std::swap(pso, r.pso);
-			std::swap(resources, r.resources);
-			std::swap(draw, r.draw);
-		}
-		*/
     };
 
     class ForwardRenderer

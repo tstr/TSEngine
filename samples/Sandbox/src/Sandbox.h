@@ -6,9 +6,12 @@
 
 #include <tsengine.h>
 
-#include "Scene.h"
-#include "Entity.h"
+#include "Camera.h"
 #include "3D/ForwardRender.h"
+
+#include "Entity.h"
+#include "RenderComponent.h"
+#include "TransformComponent.h"
 
 namespace ts
 {
@@ -18,14 +21,18 @@ namespace ts
 
 		EntityManager m_entityManager;
 
-		Scene m_scene;
-
+		Camera m_camera;
 		ForwardRenderer m_render;
 
-		
+		//Entities + Components
 		std::vector<Entity> m_entities;
-		float m_scale;
+		ComponentMap<RenderComponent> m_renderables;
+		ComponentMap<TransformComponent> m_transforms;
 
+		Model m_sponzaModel;
+		Model m_cubeModel;
+
+		float m_scale;
 
 		int onInit() override;
 		void onExit() override;
@@ -40,8 +47,6 @@ namespace ts
 
 		EntityManager* getEntities() { return &m_entityManager; }
 
-		Scene* getScene() { return &m_scene; }
-
-		int loadModel(Entity e, const String& name);
+		int loadModel(Entity e, Model& model, const String& name);
 	};
 }

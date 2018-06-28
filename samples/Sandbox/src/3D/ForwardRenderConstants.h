@@ -19,9 +19,9 @@ namespace ts
 
 	enum BufferBindings
 	{
-		BIND_SCENE_BUF = 0,
-		BIND_MESH_BUF  = 1,
-		BIND_MAT_BUF   = 2
+		BIND_SCENE_CONSTANTS = 0,
+		BIND_MESH_CONSTANTS  = 1,
+		BIND_MAT_CONSTANTS   = 2
 	};
 
     struct DirectionalLight

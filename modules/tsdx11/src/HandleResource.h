@@ -22,6 +22,7 @@ namespace ts
 	private:
 
 		ComPtr<ID3D11Resource> m_rsc;
+		D3D11_RESOURCE_DIMENSION m_rscType = D3D11_RESOURCE_DIMENSION_UNKNOWN;
 
 		struct SRVKey
 		{
@@ -54,7 +55,15 @@ namespace ts
 
 	public:
 
-		DxResource(ComPtr<ID3D11Resource> rsc) : m_rsc(rsc) {}
+		DxResource(ComPtr<ID3D11Resource> rsc) :
+			m_rsc(rsc)
+		{
+			if (m_rsc.Get() != nullptr)
+			{
+				m_rsc->GetType(&m_rscType);
+			}
+		}
+
 		~DxResource() { reset(); }
 		
 		ID3D11Resource* asResource() const { return m_rsc.Get(); }
@@ -62,14 +71,7 @@ namespace ts
 		bool isImage() const { return !isBuffer(); }
 		bool isBuffer() const { return getType() == D3D11_RESOURCE_DIMENSION_BUFFER; }
 
-		D3D11_RESOURCE_DIMENSION getType() const
-		{
-			if (!m_rsc) return D3D11_RESOURCE_DIMENSION_UNKNOWN;
-
-			D3D11_RESOURCE_DIMENSION type;
-			m_rsc->GetType(&type);
-			return type;
-		}
+		D3D11_RESOURCE_DIMENSION getType() const { return m_rscType; }
 		
 		ID3D11ShaderResourceView* getSRV(uint32 arrayIndex, uint32 arrayCount, ImageType type);
 		ID3D11RenderTargetView* getRTV(uint32 arrayIndex);

@@ -17,8 +17,11 @@ using namespace ts;
 Sandbox::Sandbox(int argc, char** argv) :
 	Application(argc, argv),
 	m_render(graphics()),
-	m_scene(&m_entityManager, input())
-{}
+	m_camera(input())
+{
+	m_renderables = ComponentMap<RenderComponent>(&m_entityManager);
+	m_transforms = ComponentMap<TransformComponent>(&m_entityManager);
+}
 
 Sandbox::~Sandbox() {}
 
@@ -34,8 +37,8 @@ int Sandbox::onInit()
 	tsinfo("OS:   %", sysInfo.osName);
 	tsinfo("User: %", sysInfo.userName);
 
-	getScene()->getCamera()->setPosition(Vector(0, 1.0f, -4.0f));
-	getScene()->getCamera()->setSpeed(15.0f);
+	m_camera.setPosition(Vector(0, 1.0f, -4.0f));
+	m_camera.setSpeed(15.0f);
 	m_scale = 0.1f;
 
 	///////////////////////////////////////////////////////////////////
@@ -61,22 +64,22 @@ int Sandbox::onInit()
 	m_entityManager.create(cube);
 
 	{
-		if (int err = loadModel(sponza, "sponza/sponza.model"))
+		if (int err = loadModel(sponza, m_sponzaModel, "sponza/sponza.model"))
 			return err;
 
 		//Set transforms
-		getScene()->setTransform(sponza, Matrix::scale(m_scale));
+		m_transforms.setComponent(sponza, Matrix::scale(m_scale));
 
 		//Save entities
 		m_entities.push_back(sponza);
 	}
 
 	{
-		if (int err = loadModel(cube, "cube.model"))
+		if (int err = loadModel(cube, m_cubeModel, "cube.model"))
 			return err;
 
 		//Set transforms
-		getScene()->setTransform(cube, Matrix::translation(Vector(0, 1, 0)));
+		m_transforms.setComponent(cube, Matrix::translation(Vector(0, 1, 0)));
 
 		m_entities.push_back(cube);
 	}
@@ -95,7 +98,7 @@ void Sandbox::onExit()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int Sandbox::loadModel(Entity entity, const String& modelfile)
+int Sandbox::loadModel(Entity entity, Model& model, const String& modelfile)
 {
 	auto absPath = [this](auto r) -> Path
 	{
@@ -104,8 +107,6 @@ int Sandbox::loadModel(Entity entity, const String& modelfile)
 		return a;
 	};
 
-	Model model;
-
 	if (!model.load(graphics()->device(), absPath(modelfile).str()))
 	{
 		tserror("unable to import model \"%\"", modelfile);
@@ -113,8 +114,8 @@ int Sandbox::loadModel(Entity entity, const String& modelfile)
 	}
 
 	unordered_map<String, MaterialCreateInfo> materialInfoMap;
-	vector<Renderable> renderableList;
-	renderableList.reserve(model.meshes().size());
+	RenderComponent component;
+	component.items.reserve(model.meshes().size());
 
 	//////////////////////////////////////////////////////////////////////////////
 
@@ -202,9 +203,11 @@ int Sandbox::loadModel(Entity entity, const String& modelfile)
 		auto it = materialInfoMap.find(mesh.name);
 		MaterialCreateInfo matInfo = (it != materialInfoMap.end()) ? it->second : MaterialCreateInfo();
 
-		renderableList.push_back(m_render.createRenderable(meshInfo, matInfo));
+		component.items.push_back(m_render.createRenderable(meshInfo, matInfo));
 	}
 	
+	m_renderables.setComponent(entity, move(component));
+
 	return 0;
 }
 
@@ -216,22 +219,34 @@ void Sandbox::onUpdate(double deltatime)
 	GraphicsDisplayOptions displayOpt;
 	graphics()->getDisplayOptions(displayOpt);
 	
-	getScene()->getCamera()->setAspectRatio((float)displayOpt.width / displayOpt.height);
-	getScene()->getCamera()->update(deltatime);
+	m_camera.setAspectRatio((float)displayOpt.width / displayOpt.height);
+	m_camera.update(deltatime);
 
 	m_render.begin();
 
 	// Submit entities for rendering
 	for (Entity e : m_entities)
 	{
-		//m_g3D.submit(e);
+		if (m_transforms.hasComponent(e))
+		{
+			const TransformComponent& tcomp(m_transforms.getComponent(e));
+
+			//Draw
+			if (m_renderables.hasComponent(e))
+			{
+				const RenderComponent& rcomp(m_renderables.getComponent(e));
+
+				for (const Renderable& item : rcomp.items)
+				{
+					m_render.draw(item, tcomp.getMatrix());
+				}
+			}
+		}
 	}
 
 	m_render.end();
 
-	//tsprofile("x:% y:% z:%", m_camera.getPosition().x(), m_camera.getPosition().y(), m_camera.getPosition().z());
-
-	//m_g3D.update();
+	tsprofile("x:% y:% z:%", m_camera.getPosition().x(), m_camera.getPosition().y(), m_camera.getPosition().z());
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////

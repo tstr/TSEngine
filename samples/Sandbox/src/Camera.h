@@ -10,7 +10,7 @@
 
 namespace ts
 {
-	class SceneCamera : private InputSystem::IListener
+	class Camera : private InputSystem::IListener
 	{
 	private:
 	
@@ -42,9 +42,9 @@ namespace ts
 		
 	public:
 		
-		SceneCamera() = default;
-		SceneCamera(InputSystem* input);
-		~SceneCamera();
+		Camera() = default;
+		Camera(InputSystem* input);
+		~Camera();
 		
 		void setPosition(Vector v) { m_camPosition = v; }
 		Vector getPosition() const { return m_camPosition; }

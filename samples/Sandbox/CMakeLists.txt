@@ -7,12 +7,11 @@ SET(src_list
 	src/main.cpp
 	src/Sandbox.h
 	src/Sandbox.cpp
-	src/SceneCamera.h
-	src/SceneCamera.cpp
-	src/Scene.cpp
-	src/Scene.h
+	src/Camera.h
+	src/Camera.cpp
 	src/Entity.h
 	src/TransformComponent.h
+	src/RenderComponent.h
 	
 	src/util/IniReader.h
 	src/util/IniReader.cpp

@@ -131,6 +131,8 @@ Renderable ForwardRenderer::createRenderable(const MeshInfo& mesh, const Materia
 		cmd.vbase = mesh.data.vertexBase;
 	}
 
+	cmd.mode = mesh.data.mode;
+
 	item.draw = device->createCommand(cmd);
 
 	return move(item);
@@ -177,9 +179,9 @@ RPtr<ResourceSetHandle> ForwardRenderer::makeResourceSet(const Mesh& mesh, const
 
 	//Constant buffer resources
 	BindingSet<ResourceHandle> constantBuffers;
-	constantBuffers[BIND_SCENE_BUF] = m_perScene.handle();
-	constantBuffers[BIND_MESH_BUF] = m_perMesh.handle();
-	constantBuffers[BIND_MAT_BUF] = mat.buffer.handle();
+	constantBuffers[BIND_SCENE_CONSTANTS] = m_perScene.handle();
+	constantBuffers[BIND_MESH_CONSTANTS] = m_perMesh.handle();
+	constantBuffers[BIND_MAT_CONSTANTS] = mat.buffer.handle();
 
 	info.constantBuffers = constantBuffers.data();
 	info.constantBuffersCount = (uint32)constantBuffers.count();
