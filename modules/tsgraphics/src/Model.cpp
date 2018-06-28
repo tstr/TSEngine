@@ -39,7 +39,7 @@ bool Model::load(RenderDevice* device, const String& filePath)
 		m_indices = Buffer::create(
 			device,
 			modelReader.indexData().data(),
-			modelReader.indexData().size(),
+			modelReader.indexData().size() * sizeof(uint32),
 			BufferType::INDEX
 		);
 	}

@@ -64,7 +64,7 @@ HLSLCompiler::~HLSLCompiler()
 		FreeLibrary((HMODULE)m_module);
 }
 
-bool HLSLCompiler::compile(const std::string& code, MemoryBuffer& codebuffer, const char* entrypoint, EShaderStage stage, std::string& errorbuffer)
+bool HLSLCompiler::compile(const std::string& code, MemoryBuffer& codebuffer, const char* entrypoint, EShaderStage stage, std::string& errorbuffer, const char* sourcePath)
 {
 	auto fn_compile = LOAD_FUNC((HMODULE)m_module, D3DCompile);
 
@@ -73,7 +73,12 @@ bool HLSLCompiler::compile(const std::string& code, MemoryBuffer& codebuffer, co
 
 	UINT compileflag = 0;
 
+#ifdef _DEBUG
+	bool debug = true;
+#else
 	bool debug = false;
+#endif
+
 	if (debug)
 	{
 		compileflag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
@@ -115,7 +120,7 @@ bool HLSLCompiler::compile(const std::string& code, MemoryBuffer& codebuffer, co
 	HRESULT hr = fn_compile(
 		code.c_str(),
 		code.size(),
-		nullptr,
+		sourcePath,
 		0,
 		nullptr,
 		entrypoint,

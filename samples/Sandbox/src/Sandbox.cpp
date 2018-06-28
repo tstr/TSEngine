@@ -5,6 +5,7 @@
 #include "Sandbox.h"
 
 #include <tscore/debug/log.h>
+#include <tscore/strings.h>
 
 #include "util/IniReader.h"
 
@@ -125,7 +126,7 @@ int Sandbox::loadModel(Entity entity, Model& model, const String& modelfile)
 
 	vector<String> materialSections;
 	vector<String> materialProperies;
-	String propBuf;
+	String propKey;
 	matReader.getSections(materialSections);
 
 	//Helper function
@@ -160,12 +161,15 @@ int Sandbox::loadModel(Entity entity, Model& model, const String& modelfile)
 		matReader.getProperty(fmtKey("alpha"), alpha);
 		matReader.getProperty(fmtKey("shininess"), shininess);
 
-		if (matReader.getProperty(fmtKey("diffuseColour"), propBuf))
-			matInfo.constants.diffuseColour = getVectorProperty(propBuf);
-		if (matReader.getProperty(fmtKey("ambientColour"), propBuf))
-			matInfo.constants.ambientColour = getVectorProperty(propBuf);
-		if (matReader.getProperty(fmtKey("emissiveColour"), propBuf))
-			matInfo.constants.emissiveColour = getVectorProperty(propBuf);
+		if (matReader.getProperty(fmtKey("diffuseColour"), propKey))
+			matInfo.constants.diffuseColour = getVectorProperty(propKey);
+		propKey.clear();
+		if (matReader.getProperty(fmtKey("ambientColour"), propKey))
+			matInfo.constants.ambientColour = getVectorProperty(propKey);
+		propKey.clear();
+		if (matReader.getProperty(fmtKey("emissiveColour"), propKey))
+			matInfo.constants.emissiveColour = getVectorProperty(propKey);
+		propKey.clear();
 
 		for (const char* imageKey : {
 			"diffuseMap",
@@ -174,21 +178,24 @@ int Sandbox::loadModel(Entity entity, Model& model, const String& modelfile)
 			"displacementMap"
 		})
 		{
-			if (matReader.getProperty(fmtKey(imageKey), propBuf))
+			propKey.clear();
+
+			if (matReader.getProperty(fmtKey(imageKey), propKey))
 			{
-				if (propBuf != "")
+				if (propKey != "")
 				{
 					//Resolve image path
 					Path a(matReader.getPath().getParent());
-					a.addDirectories(propBuf);
+					a.addDirectories(propKey);
 
 					matInfo.images[imageKey] = a;
-					propBuf.clear();
 				}
 			}
 		}
 
-		materialInfoMap[section] = matInfo;
+		String name(section);
+		toLower(name);
+		materialInfoMap[name] = matInfo;
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -200,7 +207,9 @@ int Sandbox::loadModel(Entity entity, Model& model, const String& modelfile)
 		meshInfo.data = mesh;
 		meshInfo.topology = VertexTopology::TRIANGLELIST;
 
-		auto it = materialInfoMap.find(mesh.name);
+		String name(mesh.name);
+		ts::toLower(name);
+		auto it = materialInfoMap.find(name);
 		MaterialCreateInfo matInfo = (it != materialInfoMap.end()) ? it->second : MaterialCreateInfo();
 
 		component.items.push_back(m_render.createRenderable(meshInfo, matInfo));
@@ -221,6 +230,9 @@ void Sandbox::onUpdate(double deltatime)
 	
 	m_camera.setAspectRatio((float)displayOpt.width / displayOpt.height);
 	m_camera.update(deltatime);
+
+	m_render.setCameraView(m_camera.getViewMatrix());
+	m_render.setCameraProjection(m_camera.getProjectionMatrix());
 
 	m_render.begin();
 
@@ -246,7 +258,7 @@ void Sandbox::onUpdate(double deltatime)
 
 	m_render.end();
 
-	tsprofile("x:% y:% z:%", m_camera.getPosition().x(), m_camera.getPosition().y(), m_camera.getPosition().z());
+	//tsprofile("x:% y:% z:%", m_camera.getPosition().x(), m_camera.getPosition().y(), m_camera.getPosition().z());
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////

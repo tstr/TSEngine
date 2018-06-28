@@ -47,8 +47,8 @@ namespace ts
 	{
 		enum Flags : uint8
 		{
-			DEBUG,
-			DEBUG_REPORT
+			DEBUG = 1,
+			DEBUG_REPORT = 2
 		};
 
 		intptr windowHandle = 0;
