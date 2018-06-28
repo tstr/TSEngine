@@ -129,6 +129,8 @@ bool Model::exportModel(std::ostream& outputstream)
 	
 	meshes.reserve(m_scene->mNumMeshes);
 
+	int32 basevertex = 0;
+
 	//Foreach mesh
 	for (uint i = 0; i < m_scene->mNumMeshes; i++)
 	{
@@ -224,8 +226,10 @@ bool Model::exportModel(std::ostream& outputstream)
 		mesh.set_indexOffset(indexoffset);
 		mesh.set_indexCount(indexcount);
 		mesh.set_vertexCount(aimesh->mNumVertices);
-		mesh.set_vertexBase(0);
+		mesh.set_vertexBase(basevertex);
 		mesh.set_materialName(mesh.createString(materialName.C_Str()));
+
+		basevertex += aimesh->mNumVertices;
 
 		meshes.push_back(mesh.build());
 	}

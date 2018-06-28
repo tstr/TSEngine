@@ -73,6 +73,7 @@ ShaderSource::Error ShaderSource::compile(const std::string& outputDir)
 	opt.tesEntry = (m_metadata.isFunction("TE")) ? "TE" : "";
 	opt.gsEntry = (m_metadata.isFunction("GS")) ? "GS" : "";
 	opt.psEntry = (m_metadata.isFunction("PS")) ? "PS" : "";
+	opt.sourcePath = m_shaderSourcePath.c_str();
 
 	//Resolve object filename
 	string objectFileName = m_shaderSourcePath;

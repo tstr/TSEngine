@@ -83,7 +83,7 @@ void DxResourceSet::bind(ID3D11DeviceContext* context)
 	for (const CBV& cbv : m_constantBuffers)
 	{
 		ID3D11Buffer* buf = (cbv == nullptr) ? nullptr : cbv->asBuffer();
-		context->PSSetConstantBuffers(i, 1, &buf);
+		context->VSSetConstantBuffers(i, 1, &buf);
 		context->GSSetConstantBuffers(i, 1, &buf);
 		context->DSSetConstantBuffers(i, 1, &buf);
 		context->HSSetConstantBuffers(i, 1, &buf);

@@ -52,7 +52,8 @@ void ForwardRenderer::loadTargets()
 	depthInfo.height = opt.height;
 	depthInfo.type = ImageType::_2D;
 	depthInfo.usage = ImageUsage::DSV;
-	depthInfo.format = ImageFormat::DEPTH16;
+	depthInfo.format = ImageFormat::DEPTH32;
+	depthInfo.msLevels = opt.multisampleLevel;
 	m_depthBuffer = device->createResourceImage(nullptr, depthInfo);
 
 	ImageView depthView;
@@ -226,8 +227,9 @@ RPtr<PipelineHandle> ForwardRenderer::makePipeline(const MeshInfo& mesh, const M
 
 	//Image samplers
 	BindingSet<SamplerState> samplers;
-	samplers[0].filtering = ImageFilterMode::POINT;
-	samplers[0].addressU = samplers[0].addressV = samplers[0].addressW = ImageAddressMode::CLAMP;
+	samplers[0].filtering = ImageFilterMode::ANISOTROPIC;
+	samplers[0].addressU = samplers[0].addressV = samplers[0].addressW = ImageAddressMode::WRAP;
+	samplers[0].anisotropy = 8;
 
 	PipelineCreateInfo pso;
 	//Samplers
@@ -237,7 +239,10 @@ RPtr<PipelineHandle> ForwardRenderer::makePipeline(const MeshInfo& mesh, const M
 	//States
 	pso.blend.enable = false;
 	pso.depth.enableDepth = true;
+	pso.depth.enableStencil = false;
 	pso.raster.enableScissor = false;
+	pso.raster.cullMode = CullMode::BACK;
+	pso.raster.fillMode = FillMode::SOLID;
 
 	//Vertex layout
 	vector<VertexAttribute> attrib;
@@ -270,7 +275,7 @@ void ForwardRenderer::draw(const Renderable& item, const Matrix& transform)
 	MeshConstants constants;
 	constants.world = transform.transpose();
 	ctx->resourceUpdate(m_perMesh.handle(), &constants);
-
+	
 	ctx->submit(item.draw.handle());
 }
 
@@ -325,8 +330,8 @@ void ForwardRenderer::begin()
 	ctx->resourceUpdate(m_perScene.handle(), &constants);
 
 	//Clear backbuffer
-	ctx->clearDepthTarget(m_target.handle(), 0);
-	ctx->clearColourTarget(m_target.handle(), RGBA(0, 126, 100));
+	ctx->clearDepthTarget(m_target.handle(), 1.0f);
+	ctx->clearColourTarget(m_target.handle(), RGBA(80, 166, 100));
 }
 
 void ForwardRenderer::end()

@@ -26,6 +26,8 @@ namespace ts
 		String gsEntry;	 //geometry stage
 		String tcsEntry; //tessellator control stage
 		String tesEntry; //tessellator evaluation stage
+
+		const char* sourcePath = nullptr;
 	};
 
 	class ShaderCompiler

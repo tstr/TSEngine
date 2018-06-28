@@ -31,6 +31,7 @@ struct ShaderCompiler::Impl
 	HLSLCompiler m_hlsl;
 
 	std::string m_errorString;
+	std::string m_sourcePath;
 
 	bool processStage(tsr::ShaderStageBuilder& stageRsc, const String& source, const String& entryPoint, EShaderStage stage)
 	{
@@ -57,7 +58,7 @@ struct ShaderCompiler::Impl
 		MemoryBuffer bytecode;
 
 		//Compile with hlsl backend
-		if (m_hlsl.compile(source, bytecode, entryPoint.c_str(), stage, m_errorString))
+		if (m_hlsl.compile(source, bytecode, entryPoint.c_str(), stage, m_errorString, m_sourcePath.c_str()))
 		{
 			stageRsc.set_code_hlslSM5(stageRsc.createArray<byte>((const byte*)bytecode.pointer(), bytecode.size()));
 		}
@@ -84,6 +85,8 @@ ShaderCompiler::~ShaderCompiler() { pCompiler.reset(); }
 
 int ShaderCompiler::compile(istream& source, ostream& output, const ShaderCompilerOptions& options)
 {
+	pCompiler->m_sourcePath = options.sourcePath;
+	
 	//Error status
 	uint32 status = 0;
 

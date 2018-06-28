@@ -54,7 +54,7 @@ namespace ts
 			d.memory = ptr;
 			BufferResourceInfo i;
 			i.size = size;
-			i.type;
+			i.type = type;
 
 			return Buffer(device, d, i);
 		}

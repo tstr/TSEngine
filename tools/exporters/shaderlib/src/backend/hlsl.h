@@ -25,7 +25,7 @@ namespace ts
 		~HLSLCompiler();
 
 		EShaderBackend getId() const override { return eBackendHLSL_SM5; }
-		bool compile(const std::string& code, ts::MemoryBuffer& codebuffer, const char* entrypoint, EShaderStage stage, std::string& errors) override;
+		bool compile(const std::string& code, ts::MemoryBuffer& codebuffer, const char* entrypoint, EShaderStage stage, std::string& errors, const char* sourcePath) override;
 	};
 }
 

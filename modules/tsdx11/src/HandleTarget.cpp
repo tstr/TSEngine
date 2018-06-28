@@ -20,9 +20,9 @@ RPtr<TargetHandle> Dx11::createTarget(const TargetCreateInfo& info, TargetHandle
 	target->viewport.TopLeftX = (FLOAT)info.viewport.x;
 	target->viewport.TopLeftY = (FLOAT)info.viewport.y;
 	target->viewport.Width = (FLOAT)info.viewport.w;
-	target->viewport.Height = (FLOAT)info.viewport.w;
+	target->viewport.Height = (FLOAT)info.viewport.h;
 	target->viewport.MaxDepth = 1;
-	target->viewport.MinDepth = -1;
+	target->viewport.MinDepth = 0;
 
 	target->scissor.top = info.scissor.y;
 	target->scissor.left = info.scissor.x;
