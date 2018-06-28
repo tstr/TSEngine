@@ -2,21 +2,21 @@
 	Camera class
 */
 
-#include "SceneCamera.h"
+#include "Camera.h"
 
 using namespace std;
 using namespace ts;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-SceneCamera::SceneCamera(InputSystem* input) :
+Camera::Camera(InputSystem* input) :
 	m_inputSystem(input)
 {
 	m_inputSystem->addListener(this);
 	m_moveMouse = false;
 }
 
-SceneCamera::~SceneCamera()
+Camera::~Camera()
 {
 	m_inputSystem->removeListener(this);
 }
@@ -36,13 +36,13 @@ enum EActionFlags
 	eSpeed   = 0x40,
 };
 
-void SceneCamera::onMouseMove(int dx, int dy)
+void Camera::onMouseMove(int dx, int dy)
 {
 	m_mouseDX += dx;
 	m_mouseDY += dy;
 }
 
-void SceneCamera::onKeyDown(EKeyCode code)
+void Camera::onKeyDown(EKeyCode code)
 {
 	switch (code)
 	{
@@ -62,7 +62,7 @@ void SceneCamera::onKeyDown(EKeyCode code)
 	}
 }
 
-void SceneCamera::onKeyUp(EKeyCode code)
+void Camera::onKeyUp(EKeyCode code)
 {
 	switch (code)
 	{
@@ -84,7 +84,7 @@ void SceneCamera::onKeyUp(EKeyCode code)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void SceneCamera::update(double dt)
+void Camera::update(double dt)
 {
 	//Update position
 	int8 actions = m_actionflags.load();

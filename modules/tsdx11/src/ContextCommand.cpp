@@ -54,9 +54,9 @@ void Dx11Context::submit(CommandHandle command)
 	if (auto cmd = DxDrawCommand::upcast(command))
 	{
 		//Bind input/output resources and pipeline state
+		cmd->outputs->bind(ctx);
 		cmd->pipeline->bind(ctx);
 		cmd->inputs->bind(ctx);
-		cmd->outputs->bind(ctx);
 
 		//Lookup draw call function in table
 		//And call it
