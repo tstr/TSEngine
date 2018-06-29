@@ -7,7 +7,7 @@
 #include <tscore/debug/log.h>
 #include <tscore/strings.h>
 
-#include "util/IniReader.h"
+#include "3D/MaterialReader.h"
 
 using namespace std;
 using namespace ts;
@@ -114,91 +114,12 @@ int Sandbox::loadModel(Entity entity, Model& model, const String& modelfile)
 		return -1;
 	}
 
-	unordered_map<String, MaterialCreateInfo> materialInfoMap;
 	RenderComponent component;
 	component.items.reserve(model.meshes().size());
 
-	//////////////////////////////////////////////////////////////////////////////
-
 	String matfile(modelfile);
 	matfile.replace(matfile.find_last_of('.'), string::npos, ".mat");
-	INIReader matReader(absPath(matfile));
-
-	vector<String> materialSections;
-	vector<String> materialProperies;
-	String propKey;
-	matReader.getSections(materialSections);
-
-	//Helper function
-	auto getVectorProperty = [](const String& value) -> Vector
-	{
-		if (trim(value) == "")
-			return Vector();
-
-		Vector v;
-		vector<string> tokens = split(value, ',');
-
-		if (tokens.size() > 0) v.x() = stof(tokens[0]);
-		if (tokens.size() > 1) v.y() = stof(tokens[1]);
-		if (tokens.size() > 2) v.z() = stof(tokens[2]);
-		if (tokens.size() > 3) v.w() = stof(tokens[3]);
-
-		return v;
-	};
-
-	for (const auto& section : materialSections)
-	{
-		MaterialCreateInfo matInfo;
-
-		//Format key helper
-		auto fmtKey = [&section](auto key)
-		{
-			return (String)section + "." + key;
-		};
-
-		float alpha;
-		float shininess;
-		matReader.getProperty(fmtKey("alpha"), alpha);
-		matReader.getProperty(fmtKey("shininess"), shininess);
-
-		if (matReader.getProperty(fmtKey("diffuseColour"), propKey))
-			matInfo.constants.diffuseColour = getVectorProperty(propKey);
-		propKey.clear();
-		if (matReader.getProperty(fmtKey("ambientColour"), propKey))
-			matInfo.constants.ambientColour = getVectorProperty(propKey);
-		propKey.clear();
-		if (matReader.getProperty(fmtKey("emissiveColour"), propKey))
-			matInfo.constants.emissiveColour = getVectorProperty(propKey);
-		propKey.clear();
-
-		for (const char* imageKey : {
-			"diffuseMap",
-			"normalMap",
-			"specularMap",
-			"displacementMap"
-		})
-		{
-			propKey.clear();
-
-			if (matReader.getProperty(fmtKey(imageKey), propKey))
-			{
-				if (propKey != "")
-				{
-					//Resolve image path
-					Path a(matReader.getPath().getParent());
-					a.addDirectories(propKey);
-
-					matInfo.images[imageKey] = a;
-				}
-			}
-		}
-
-		String name(section);
-		toLower(name);
-		materialInfoMap[name] = matInfo;
-	}
-
-	//////////////////////////////////////////////////////////////////////////////
+	MaterialReader matReader(absPath(matfile));
 
 	for (const auto& mesh : model.meshes())
 	{
@@ -207,12 +128,7 @@ int Sandbox::loadModel(Entity entity, Model& model, const String& modelfile)
 		meshInfo.data = mesh;
 		meshInfo.topology = VertexTopology::TRIANGLELIST;
 
-		String name(mesh.name);
-		ts::toLower(name);
-		auto it = materialInfoMap.find(name);
-		MaterialCreateInfo matInfo = (it != materialInfoMap.end()) ? it->second : MaterialCreateInfo();
-
-		component.items.push_back(m_render.createRenderable(meshInfo, matInfo));
+		component.items.push_back(m_render.createRenderable(meshInfo, matReader.find(mesh.name)));
 	}
 	
 	m_renderables.setComponent(entity, move(component));
