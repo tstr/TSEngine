@@ -24,6 +24,11 @@ namespace ts
 		BIND_MAT_CONSTANTS   = 2
 	};
 
+	enum Ranges
+	{
+		MAX_LIGHTS = 4
+	};
+
     struct DirectionalLight
     {
         Vector colour;
@@ -51,7 +56,7 @@ namespace ts
         Vector ambient;
         //Directional light
         DirectionalLight direct;
-        DynamicLight dynamic[4];
+        DynamicLight dynamic[MAX_LIGHTS];
     };
 
     struct MeshConstants

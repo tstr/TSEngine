@@ -20,11 +20,6 @@ namespace ts
         DxResourceSet* inputs;
         DxTarget* outputs;
 
-		uint32 start = 0;
-		uint32 count = 0;
-		int32 vertexBase = 0;
-		uint32 instances = 1;
-
-		DrawMode mode;
+		DrawCommandParams params;
 	};
 }

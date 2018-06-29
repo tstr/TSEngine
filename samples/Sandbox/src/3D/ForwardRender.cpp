@@ -119,20 +119,20 @@ Renderable ForwardRenderer::createRenderable(const MeshInfo& mesh, const Materia
 	//Command arguments
 	if (mesh.data.mode == DrawMode::VERTEX || mesh.data.mode == DrawMode::INSTANCED)
 	{
-		cmd.start = mesh.data.vertexStart;
-		cmd.count = mesh.data.vertexCount;
-		cmd.instances = 1;
-		cmd.vbase = mesh.data.vertexBase;
+		cmd.params.start = mesh.data.vertexStart;
+		cmd.params.count = mesh.data.vertexCount;
+		cmd.params.instances = 1;
+		cmd.params.vbase = mesh.data.vertexBase;
 	}
 	else //indexed
 	{
-		cmd.start = mesh.data.indexStart;
-		cmd.count = mesh.data.indexCount;
-		cmd.instances = 1;
-		cmd.vbase = mesh.data.vertexBase;
+		cmd.params.start = mesh.data.indexStart;
+		cmd.params.count = mesh.data.indexCount;
+		cmd.params.instances = 1;
+		cmd.params.vbase = mesh.data.vertexBase;
 	}
 
-	cmd.mode = mesh.data.mode;
+	cmd.params.mode = mesh.data.mode;
 
 	item.draw = device->createCommand(cmd);
 

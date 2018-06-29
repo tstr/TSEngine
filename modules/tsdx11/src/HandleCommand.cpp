@@ -21,12 +21,7 @@ RPtr<CommandHandle> Dx11::createCommand(const DrawCommandInfo& info, CommandHand
 	cmd->pipeline = DxPipeline::upcast(info.pipeline);
 	cmd->inputs = DxResourceSet::upcast(info.inputs);
 	cmd->outputs = DxTarget::upcast(info.outputs);
-
-	cmd->count = info.count;
-	cmd->start = info.start;
-	cmd->vertexBase = info.vbase;
-	cmd->instances = info.instances;
-	cmd->mode = info.mode;
+	cmd->params = info.params;
 
 	return RPtr<CommandHandle>(this, DxDrawCommand::downcast(cmd.release()));
 }

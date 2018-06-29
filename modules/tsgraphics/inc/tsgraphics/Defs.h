@@ -379,17 +379,22 @@ namespace ts
 		INDEXEDINSTANCED
 	};
 
-	struct DrawCommandInfo
+	struct DrawCommandParams
 	{
-		TargetHandle outputs;
-		PipelineHandle pipeline;
-		ResourceSetHandle inputs;
-
 		uint32 start = 0; //vertex/index start
 		uint32 count = 0; //vertex/index count
 		int32 vbase = 0;  //vertex base
 		uint32 instances = 1;
 
 		DrawMode mode = DrawMode::VERTEX;
+	};
+
+	struct DrawCommandInfo
+	{
+		TargetHandle outputs;
+		PipelineHandle pipeline;
+		ResourceSetHandle inputs;
+
+		DrawCommandParams params;
 	};
 }

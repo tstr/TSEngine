@@ -15,7 +15,7 @@ using namespace ts;
 	Draw call mapping table
 	Alternative to using switch statement
 */
-static void drawCallSig(ID3D11DeviceContext*, DxDrawCommand*);
+static void drawCallSig(ID3D11DeviceContext*, const DrawCommandParams&);
 using DrawCaller = decltype(drawCallSig)*;
 
 DrawCaller drawFunctions(DrawMode mode)
@@ -24,22 +24,22 @@ DrawCaller drawFunctions(DrawMode mode)
 
 	table[(size_t)DrawMode::VERTEX] = [](auto ctx, auto cmd)
 	{
-		ctx->Draw(cmd->count, cmd->start);
+		ctx->Draw(cmd.count, cmd.start);
 	};
 
 	table[(size_t)DrawMode::INDEXED] = [](auto ctx, auto cmd)
 	{
-		ctx->DrawIndexed(cmd->count, cmd->start, cmd->vertexBase);
+		ctx->DrawIndexed(cmd.count, cmd.start, cmd.vbase);
 	};
 
 	table[(size_t)DrawMode::INSTANCED] = [](auto ctx, auto cmd)
 	{
-		ctx->DrawInstanced(cmd->count, cmd->instances, cmd->start, 0);
+		ctx->DrawInstanced(cmd.count, cmd.instances, cmd.start, 0);
 	};
 
 	table[(size_t)DrawMode::INDEXEDINSTANCED] = [](auto ctx, auto cmd)
 	{
-		ctx->DrawIndexedInstanced(cmd->count, cmd->instances, cmd->start, cmd->vertexBase, 0);
+		ctx->DrawIndexedInstanced(cmd.count, cmd.instances, cmd.start, cmd.vbase, 0);
 	};
 
 	return table[(size_t)mode];
@@ -57,10 +57,10 @@ void Dx11Context::submit(CommandHandle command)
 		cmd->outputs->bind(ctx);
 		cmd->pipeline->bind(ctx);
 		cmd->inputs->bind(ctx);
-
+		
 		//Lookup draw call function in table
 		//And call it
-		drawFunctions(cmd->mode)(ctx, cmd);
+		drawFunctions(cmd->params.mode)(ctx, cmd->params);
 	}
 
 	//For debugging
