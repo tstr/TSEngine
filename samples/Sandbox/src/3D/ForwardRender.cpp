@@ -18,8 +18,8 @@ ForwardRenderer::ForwardRenderer(GraphicsSystem* gfx) :
 
 	RenderDevice* device = m_gfx->device();
 
-	m_perScene = Buffer::create(device, m_perSceneConst, BufferType::CONSTANTS);
-	m_perMesh  = Buffer::create(device, m_perMeshConst,  BufferType::CONSTANTS);
+	m_perScene = Buffer::create(device, SceneConstants(), BufferType::CONSTANTS);
+	m_perMesh  = Buffer::create(device, MeshConstants(),  BufferType::CONSTANTS);
 
 	tsassert(m_perScene);
 	tsassert(m_perMesh);
@@ -78,19 +78,6 @@ void ForwardRenderer::loadTargets()
 
 	m_target = device->createTarget(targetInfo);
 	tsassert(m_target);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void ForwardRenderer::setCameraView(const Matrix& view)
-{
-	m_perSceneConst.view = view;
-	m_perSceneConst.viewPos = view.inverse().getTranslation();
-}
-
-void ForwardRenderer::setCameraProjection(const Matrix& proj)
-{
-	m_perSceneConst.projection = proj;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -285,42 +272,28 @@ void ForwardRenderer::begin()
 	tsassert(m_gfx);
 	auto ctx = m_gfx->device()->context();
 
-	auto constants(m_perSceneConst);
+	SceneConstants constants;
+
 	//Ambient light
-	constants.ambient = Vector(0.16f, 0.16f, 0.16f);
+	constants.ambient = m_ambientColour;
+	constants.view = m_viewMatrix;
+	constants.projection = m_projMatrix;
+	constants.viewPos = constants.view.inverse().getTranslation();
 
 	//Directional light
-	constants.direct.colour = RGBA(174, 183, 190);
-	constants.direct.dir = Vector(1.0f, -1.0f, -1.0f, 0);
+	constants.direct.colour = m_directLightColour;
+	constants.direct.dir = m_directLightDir;
+	constants.direct.dir.w() = 0.0f;
 	constants.direct.dir.normalize();
 	constants.direct.dir = Matrix::transform4D(constants.direct.dir, constants.view);
 	constants.direct.dir.normalize();
 
-	Vector dynamicColours[] =
-	{
-		colours::Green,
-		colours::LightBlue,
-		colours::Gold,
-		colours::Violet
-	};
-
-	Vector dynamicPos[] =
-	{
-		Vector(+10, 5, +10, 1),
-		Vector(+10, 5, -10, 1),
-		Vector(-10, 5, +10, 1),
-		Vector(-10, 5, -10, 1)
-	};
-
 	//Dynamic lighting
 	for (int i = 0; i < 4; i++)
 	{
-		constants.dynamic[i].enabled = 1;
-		constants.dynamic[i].attConstant = 1.0f;
-		constants.dynamic[i].attLinear = 0.1f;
-		constants.dynamic[i].attQuadratic = 0.01f;
-		constants.dynamic[i].pos = Matrix::transform4D(dynamicPos[i], constants.view);
-		constants.dynamic[i].colour = dynamicColours[i];
+		constants.dynamic[i] = m_dynamicLights[i];
+		constants.dynamic[i].pos.w() = 1.0f;
+		constants.dynamic[i].pos = Matrix::transform4D(constants.dynamic[i].pos, constants.view);
 	}
 
 	Matrix::transpose(constants.view);

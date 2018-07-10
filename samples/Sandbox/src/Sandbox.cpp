@@ -58,6 +58,41 @@ int Sandbox::onInit()
 	}
 	//*/
 
+	//////////////////////////////////////////////////////////////////////////////
+	// Configure forward renderer settings
+	//////////////////////////////////////////////////////////////////////////////
+
+	Vector dynamicColours[] =
+	{
+		colours::Green,
+		colours::LightBlue,
+		colours::Gold,
+		colours::Violet
+	};
+
+	Vector dynamicPos[] =
+	{
+		Vector(+10, 5, +10, 1),
+		Vector(+10, 5, -10, 1),
+		Vector(-10, 5, +10, 1),
+		Vector(-10, 5, -10, 1)
+	};
+
+	m_render.setAmbientColour(RGBA(38, 38, 38));
+	m_render.setDirectionalLightColour(RGBA(174, 183, 190));
+	m_render.setDirectionalLightDir(Vector(1.0f, -1.0f, -1.0f, 0));
+
+	//Dynamic lighting
+	for (size_t i = 0; i < 4; i++)
+	{
+		m_render.setLightAttenuation(i, 0.01f, 0.1f, 1.0f);
+		m_render.setLightPosition(i, dynamicPos[i]);
+		m_render.setLightColour(i, dynamicColours[i]);
+		m_render.enableDynamicLight(i);
+	}
+
+	//////////////////////////////////////////////////////////////////////////////
+
 	Entity sponza;
 	Entity cube;
 
@@ -85,7 +120,7 @@ int Sandbox::onInit()
 		m_entities.push_back(cube);
 	}
 
-	///////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////
 
 	return 0;
 }
