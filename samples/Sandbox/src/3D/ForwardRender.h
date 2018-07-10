@@ -67,16 +67,41 @@ namespace ts
 
 		ForwardRenderer(GraphicsSystem* gfx);
 
-		//Set global constants
-		void setCameraView(const Matrix& view);
-		void setCameraProjection(const Matrix& proj);
+		/*
+			Set global constants
+		*/
+
+		void setCameraView(const Matrix& view) { m_viewMatrix = view; }
+		void setCameraProjection(const Matrix& proj) { m_projMatrix = proj; }
+		void setCamera(const Matrix& view, const Matrix& proj) { setCameraView(view); setCameraProjection(proj); }
+		void setAmbientColour(const Vector& ambient) { m_ambientColour = ambient; }
+
+		void setDirectionalLightColour(RGBA colour) { m_directLightColour = colour; }
+		void setDirectionalLightDir(const Vector& dir) { m_directLightDir = dir; }
+
+
+		using LightID = uint32;
+
+		void enableDynamicLight(LightID light) { m_dynamicLights[light].enabled = true; }
+		void disableDynamicLight(LightID light) { m_dynamicLights[light].enabled = false; }
+
+		void setLightColour(LightID light, RGBA colour) { m_dynamicLights[light].colour = Vector(colour); }
+		void setLightPosition(LightID light, const Vector& pos) { m_dynamicLights[light].pos = pos; }
+
+		void setLightAttenuation(LightID light, float quadratic, float linear, float constant)
+		{
+			m_dynamicLights[light].attConstant = constant;
+			m_dynamicLights[light].attLinear = linear;
+			m_dynamicLights[light].attQuadratic = quadratic;
+		}
+
+		///////////////////////////////////////////////////////////////////////////////
 
         //Create renderable item
         Renderable createRenderable(const MeshInfo& mesh, const MaterialCreateInfo&);
 
         //Draw a renderable item
         void draw(const Renderable& item, const Matrix& transform);
-
 
 		void begin();
 		void end();
@@ -87,9 +112,6 @@ namespace ts
 
 		GraphicsSystem* m_gfx = nullptr;
 
-		SceneConstants m_perSceneConst;
-		MeshConstants m_perMeshConst;
-
 		Buffer m_perMesh;
 		Buffer m_perScene;
 
@@ -99,6 +121,19 @@ namespace ts
 		RPtr<TargetHandle> m_target;
 
 		std::vector<Image> m_imageCache;
+
+		///////////////////////////////////////////////////////////////////////////////
+		//	Properties
+		///////////////////////////////////////////////////////////////////////////////
+
+		Vector m_ambientColour;
+		Matrix m_viewMatrix;
+		Matrix m_projMatrix;
+
+		RGBA m_directLightColour;
+		Vector m_directLightDir;
+
+		DynamicLight m_dynamicLights[MAX_LIGHTS];
 
 		///////////////////////////////////////////////////////////////////////////////
 
