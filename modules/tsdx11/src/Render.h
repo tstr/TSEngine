@@ -55,8 +55,6 @@ namespace ts
 		RPtr<PipelineHandle> createPipeline(ShaderHandle program, const PipelineCreateInfo& info) override;
 		//Output target
 		RPtr<TargetHandle> createTarget(const TargetCreateInfo& info, TargetHandle recycle) override;
-		//Commands
-		RPtr<CommandHandle> createCommand(const DrawCommandInfo& cmd, CommandHandle recycle) override;
 
 		//Destroy device objects
 		void destroy(ResourceHandle rsc) override;
@@ -64,7 +62,6 @@ namespace ts
 		void destroy(ShaderHandle shader) override;
 		void destroy(PipelineHandle state) override;
 		void destroy(TargetHandle pass) override;
-		void destroy(CommandHandle cmd) override;
 
 		//Internal methods
 		ComPtr<ID3D11Device> getDevice() const { return m_device; }

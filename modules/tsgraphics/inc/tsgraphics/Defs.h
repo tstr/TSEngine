@@ -23,7 +23,6 @@ namespace ts
 	enum class ShaderHandle : uintptr;
 	enum class PipelineHandle : uintptr;
 	enum class TargetHandle : uintptr;
-	enum class CommandHandle : uintptr;
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//	Device structs
@@ -379,7 +378,7 @@ namespace ts
 		INDEXEDINSTANCED
 	};
 
-	struct DrawCommandParams
+	struct DrawParams
 	{
 		uint32 start = 0; //vertex/index start
 		uint32 count = 0; //vertex/index count
@@ -387,14 +386,5 @@ namespace ts
 		uint32 instances = 1;
 
 		DrawMode mode = DrawMode::VERTEX;
-	};
-
-	struct DrawCommandInfo
-	{
-		TargetHandle outputs;
-		PipelineHandle pipeline;
-		ResourceSetHandle inputs;
-
-		DrawCommandParams params;
 	};
 }

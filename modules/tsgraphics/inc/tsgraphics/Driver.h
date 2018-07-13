@@ -107,16 +107,13 @@ namespace ts
         virtual RPtr<PipelineHandle> createPipeline(ShaderHandle program, const PipelineCreateInfo& info) = 0;
 		//Output target
         virtual RPtr<TargetHandle> createTarget(const TargetCreateInfo& info, TargetHandle recycle = (TargetHandle)0) = 0;
-        //Commands
-        virtual RPtr<CommandHandle> createCommand(const DrawCommandInfo& cmd, CommandHandle recycle = (CommandHandle)0) = 0;
-        
+
         //Destroy device objects
 		virtual void destroy(ResourceHandle rsc) = 0;
 		virtual void destroy(ResourceSetHandle set) = 0;
 		virtual void destroy(ShaderHandle shader) = 0;
 		virtual void destroy(PipelineHandle state) = 0;
 		virtual void destroy(TargetHandle pass) = 0;
-        virtual void destroy(CommandHandle cmd) = 0;
     };
     
     /*
@@ -133,8 +130,8 @@ namespace ts
 		virtual void clearColourTarget(TargetHandle pass, uint32 colour) = 0;
 		virtual void clearDepthTarget(TargetHandle pass, float depth) = 0;
 		
-		virtual void submit(CommandHandle command) = 0;
-		
+		virtual void draw(TargetHandle outputs, PipelineHandle pipeline, ResourceSetHandle inputs, const DrawParams& params) = 0;
+
 		virtual void finish() = 0;
     };
 }

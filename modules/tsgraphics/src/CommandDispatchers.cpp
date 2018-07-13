@@ -14,7 +14,7 @@ using namespace ts;
 
 void CommandDraw::dispatch(RenderContext* context, CommandPtr data)
 {
-	context->submit(hCmd);
+	context->draw(outputs, pipeline, inputs, params);
 }
 
 void CommandBufferUpdate::dispatch(RenderContext* context, CommandPtr data)

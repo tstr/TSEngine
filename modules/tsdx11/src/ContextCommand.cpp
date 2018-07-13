@@ -5,7 +5,10 @@
 */
 
 #include "Context.h"
-#include "HandleCommand.h"
+
+#include "HandleTarget.h"
+#include "HandleResourceSet.h"
+#include "HandlePipeline.h"
 
 using namespace ts;
 
@@ -15,7 +18,7 @@ using namespace ts;
 	Draw call mapping table
 	Alternative to using switch statement
 */
-static void drawCallSig(ID3D11DeviceContext*, const DrawCommandParams&);
+static void drawCallSig(ID3D11DeviceContext*, const DrawParams&);
 using DrawCaller = decltype(drawCallSig)*;
 
 DrawCaller drawFunctions(DrawMode mode)
@@ -47,21 +50,18 @@ DrawCaller drawFunctions(DrawMode mode)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Dx11Context::submit(CommandHandle command)
+void Dx11Context::draw(TargetHandle outputs, PipelineHandle pipeline, ResourceSetHandle inputs, const DrawParams& params)
 {
 	auto ctx = m_context.Get();
 
-	if (auto cmd = DxDrawCommand::upcast(command))
-	{
-		//Bind input/output resources and pipeline state
-		cmd->outputs->bind(ctx);
-		cmd->pipeline->bind(ctx);
-		cmd->inputs->bind(ctx);
-		
-		//Lookup draw call function in table
-		//And call it
-		drawFunctions(cmd->params.mode)(ctx, cmd->params);
-	}
+	//Bind input/output resources and pipeline state
+	DxPipeline::upcast(pipeline)->bind(ctx);
+	DxTarget::upcast(outputs)->bind(ctx);
+	DxResourceSet::upcast(inputs)->bind(ctx);
+
+	//Lookup draw call function in table
+	//And call it
+	drawFunctions(params.mode)(ctx, params);
 
 	//For debugging
 	m_driver->incrementDrawCallCounter();

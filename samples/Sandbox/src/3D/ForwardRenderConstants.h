@@ -52,7 +52,7 @@ namespace ts
     {
         Matrix view;
         Matrix projection;
-        Vector viewPos;
+        //Vector viewPos;
         Vector ambient;
         //Directional light
         DirectionalLight direct;
