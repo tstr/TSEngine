@@ -27,8 +27,6 @@ SET(tsdx11_src
 	src/HandleShader.cpp
 	src/HandlePipeline.h
 	src/HandlePipeline.cpp
-	src/HandleCommand.h
-	src/HandleCommand.cpp
 	
 	src/Context.h
 	src/Context.cpp

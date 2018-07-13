@@ -97,31 +97,23 @@ Renderable ForwardRenderer::createRenderable(const MeshInfo& mesh, const Materia
 	item.resources = makeResourceSet(mesh.data, item.mat);
 	item.pso = makePipeline(mesh, item.mat);
 
-	//Construct command
-	DrawCommandInfo cmd;
-	cmd.inputs = item.resources.handle();
-	cmd.pipeline = item.pso.handle();
-	cmd.outputs = m_target.handle();
-
 	//Command arguments
 	if (mesh.data.mode == DrawMode::VERTEX || mesh.data.mode == DrawMode::INSTANCED)
 	{
-		cmd.params.start = mesh.data.vertexStart;
-		cmd.params.count = mesh.data.vertexCount;
-		cmd.params.instances = 1;
-		cmd.params.vbase = mesh.data.vertexBase;
+		item.params.start = mesh.data.vertexStart;
+		item.params.count = mesh.data.vertexCount;
+		item.params.instances = 1;
+		item.params.vbase = mesh.data.vertexBase;
 	}
 	else //indexed
 	{
-		cmd.params.start = mesh.data.indexStart;
-		cmd.params.count = mesh.data.indexCount;
-		cmd.params.instances = 1;
-		cmd.params.vbase = mesh.data.vertexBase;
+		item.params.start = mesh.data.indexStart;
+		item.params.count = mesh.data.indexCount;
+		item.params.instances = 1;
+		item.params.vbase = mesh.data.vertexBase;
 	}
 
-	cmd.params.mode = mesh.data.mode;
-
-	item.draw = device->createCommand(cmd);
+	item.params.mode = mesh.data.mode;
 
 	return move(item);
 }
@@ -263,7 +255,12 @@ void ForwardRenderer::draw(const Renderable& item, const Matrix& transform)
 	constants.world = transform.transpose();
 	ctx->resourceUpdate(m_perMesh.handle(), &constants);
 	
-	ctx->submit(item.draw.handle());
+	ctx->draw(
+		m_target.handle(),
+		item.pso.handle(),
+		item.resources.handle(),
+		item.params
+	);
 }
 
 
@@ -278,7 +275,7 @@ void ForwardRenderer::begin()
 	constants.ambient = m_ambientColour;
 	constants.view = m_viewMatrix;
 	constants.projection = m_projMatrix;
-	constants.viewPos = constants.view.inverse().getTranslation();
+	//constants.viewPos = constants.view.inverse().getTranslation();
 
 	//Directional light
 	constants.direct.colour = m_directLightColour;

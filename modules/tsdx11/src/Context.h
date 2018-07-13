@@ -35,7 +35,7 @@ namespace ts
 		void clearColourTarget(TargetHandle pass, uint32 colour) override;
 		void clearDepthTarget(TargetHandle pass, float depth) override;
 
-		void submit(CommandHandle command) override;
+		void draw(TargetHandle outputs, PipelineHandle pipeline, ResourceSetHandle inputs, const DrawParams& params) override;
 
 		void finish() override;
 

@@ -55,7 +55,7 @@ namespace ts
         RPtr<PipelineHandle> pso;
         RPtr<ResourceSetHandle> resources;
 
-        RPtr<CommandHandle> draw;
+		DrawParams params;
     };
 
     class ForwardRenderer

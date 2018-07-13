@@ -137,10 +137,12 @@ namespace ts
 	//Executes a draw call on a given context
 	struct CommandDraw
 	{
-		CommandHandle hCmd;
+		TargetHandle outputs;
+		PipelineHandle pipeline;
+		ResourceSetHandle inputs;
+		DrawParams params;
 
 		CommandDraw() {}
-		CommandDraw(CommandHandle c) : hCmd(c) {}
 
 		TSGRAPHICS_API void dispatch(RenderContext* context, CommandPtr extra);
 	};
