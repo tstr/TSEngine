@@ -122,6 +122,13 @@ RPtr<ResourceHandle> Dx11::createResourceImage(const ResourceData* data, const I
 		bindFlags |= D3D11_BIND_DEPTH_STENCIL;
 	}
 
+	//Check depth
+	if (bindFlags & D3D11_BIND_DEPTH_STENCIL && bindFlags & D3D11_BIND_SHADER_RESOURCE)
+	{
+		//For now just disallow using dsvs as srvs
+		return RPtr<ResourceHandle>();
+	}
+
 	//Create texture resource
 	switch (info.type)
 	{
