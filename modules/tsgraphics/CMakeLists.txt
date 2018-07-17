@@ -20,6 +20,7 @@ set(tsgraphics_inc
 	inc/tsgraphics/Driver.h
 	inc/tsgraphics/Graphics.h
     
+	inc/tsgraphics/RenderTarget.h
 	inc/tsgraphics/Buffer.h
 	inc/tsgraphics/Shader.h
     inc/tsgraphics/Image.h
@@ -37,6 +38,7 @@ SET(tsgraphics_src
     src/Shader.cpp
 	src/Image.cpp
 	src/Model.cpp
+	src/RenderTarget.cpp
 )
 
 add_engine_module(

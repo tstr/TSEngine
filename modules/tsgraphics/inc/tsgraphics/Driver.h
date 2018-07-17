@@ -24,19 +24,9 @@ namespace ts
         RPtr(RenderDevice* d, Handle h) : m_d(d), m_h(h) {}
         ~RPtr() { reset(); }
         
-		//Moveable
-        RPtr(RPtr<Handle>&& rhs)
-		{
-			std::swap(m_d, rhs.m_d);
-			std::swap(m_h, rhs.m_h);
-		}
-
-        RPtr<Handle>& operator=(RPtr<Handle>&& rhs)
-        {
-            std::swap(m_d, rhs.m_d);
-            std::swap(m_h, rhs.m_h);
-            return *this;
-        }
+		//Moveable constructible/assignable
+        RPtr(RPtr<Handle>&& rhs) { this->swap(rhs); }
+        RPtr<Handle>& operator=(RPtr<Handle>&& rhs) { this->swap(rhs); return *this; }
 
 		//no copy
 		RPtr(const RPtr<Handle>&) = delete;
@@ -48,6 +38,12 @@ namespace ts
 
 		bool null() const { return (m_d == nullptr) || (m_h == Handle()); }
 		operator bool() const { return !null(); }
+
+		void swap(RPtr<Handle>& rhs)
+		{
+			std::swap(m_d, rhs.m_d);
+			std::swap(m_h, rhs.m_h);
+		}
 
 		void reset(RenderDevice* d = nullptr, Handle h = Handle())
 		{
