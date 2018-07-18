@@ -55,14 +55,7 @@ namespace ts
 
 	public:
 
-		DxResource(ComPtr<ID3D11Resource> rsc) :
-			m_rsc(rsc)
-		{
-			if (m_rsc.Get() != nullptr)
-			{
-				m_rsc->GetType(&m_rscType);
-			}
-		}
+		DxResource(ComPtr<ID3D11Resource> rsc) { init(rsc); }
 
 		~DxResource() { reset(); }
 		
@@ -76,6 +69,16 @@ namespace ts
 		ID3D11ShaderResourceView* getSRV(uint32 arrayIndex, uint32 arrayCount, ImageType type);
 		ID3D11RenderTargetView* getRTV(uint32 arrayIndex);
 		ID3D11DepthStencilView* getDSV(uint32 arrayIndex);
+
+		void init(ComPtr<ID3D11Resource> rsc)
+		{
+			m_rsc = rsc;
+
+			if (m_rsc.Get() != nullptr)
+			{
+				m_rsc->GetType(&m_rscType);
+			}
+		}
 
 		void reset()
 		{
