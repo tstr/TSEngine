@@ -8,6 +8,11 @@
     * Improve databuild system
 * General
     * Rewrite tscore module
+        * IO System
+        * IntrusivePtr
+        * ErrorOr
+        * StringRef
+        * Ranges + Iterator tools (facade/adapter)
 * Graphics
     * Create Frame Graph (will help fix resizing issue)
     * Create asset loader cache system for images, models, shaders, materials (with reference counting)
