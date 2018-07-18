@@ -20,11 +20,12 @@ set(tsgraphics_inc
 	inc/tsgraphics/Driver.h
 	inc/tsgraphics/Graphics.h
     
-	inc/tsgraphics/RenderTarget.h
 	inc/tsgraphics/Buffer.h
 	inc/tsgraphics/Shader.h
     inc/tsgraphics/Image.h
     inc/tsgraphics/Model.h
+	inc/tsgraphics/RenderTarget.h
+	inc/tsgraphics/RenderTargetPool.h
 )
 
 SET(tsgraphics_src

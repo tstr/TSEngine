@@ -1,5 +1,5 @@
 /*
-    Rendering component
+    High level graphics components
 */
 
 #pragma once
@@ -10,6 +10,11 @@
 
 namespace ts
 {
+    /*
+        Render component
+
+        Encapsulates an entity that can be drawn
+    */
     struct RenderComponent
     {
         std::vector<Renderable> items;
@@ -27,6 +32,24 @@ namespace ts
 			return *this;
 		}
     };
+
+    /*
+        Light source component
+
+        Encapsulates a simple light source
+    */
+    struct LightSourceComponent
+    {
+
+    };
+
+    /*
+        Probe component
+
+        Encapsulates an entity that can collect visible entities
+    */
+    struct ProbeComponent
+    {
+        
+    };
 }
-
-

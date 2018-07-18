@@ -14,11 +14,14 @@
 #include <tsgraphics/Shader.h>
 #include <tsgraphics/Model.h>
 #include <tsgraphics/Image.h>
+#include <tsgraphics/RenderTarget.h>
 
 #include "ForwardRenderConstants.h"
 
 namespace ts
 {
+	using ForwardRenderTarget = RenderTargets<1>;
+
     /*
         Material info:
         
@@ -40,7 +43,6 @@ namespace ts
 		VertexTopology topology;
 		const VertexAttributeMap* attributeMap;
 	};
-
 
     struct MaterialInstance
     {
@@ -79,7 +81,6 @@ namespace ts
 		void setDirectionalLightColour(RGBA colour) { m_directLightColour = colour; }
 		void setDirectionalLightDir(const Vector& dir) { m_directLightDir = dir; }
 
-
 		using LightID = uint32;
 
 		void enableDynamicLight(LightID light) { m_dynamicLights[light].enabled = true; }
@@ -103,7 +104,7 @@ namespace ts
         //Draw a renderable item
         void draw(const Renderable& item, const Matrix& transform);
 
-		void begin();
+		void begin(ForwardRenderTarget& target);
 		void end();
 
     private:
@@ -112,13 +113,12 @@ namespace ts
 
 		GraphicsSystem* m_gfx = nullptr;
 
+		TargetHandle m_targets;
+
 		Buffer m_perMesh;
 		Buffer m_perScene;
 
 		ShaderProgram m_shader;
-
-		RPtr<ResourceHandle> m_depthBuffer;
-		RPtr<TargetHandle> m_target;
 
 		std::vector<Image> m_imageCache;
 
@@ -138,7 +138,6 @@ namespace ts
 		///////////////////////////////////////////////////////////////////////////////
 
 		void preloadShaders();
-		void loadTargets();
 		void loadMaterial(MaterialInstance& mat, const MaterialCreateInfo& info);
 
         RPtr<ResourceSetHandle> makeResourceSet(const Mesh& mesh, const MaterialInstance& mat);

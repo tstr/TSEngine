@@ -25,7 +25,6 @@ ForwardRenderer::ForwardRenderer(GraphicsSystem* gfx) :
 	tsassert(m_perMesh);
 
 	preloadShaders();
-	loadTargets();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -38,46 +37,6 @@ void ForwardRenderer::preloadShaders()
 	standard.addDirectories("shaderbin/Standard.shader");
 
 	tsassert(m_shader.load(device, standard.str()));
-}
-
-void ForwardRenderer::loadTargets()
-{
-	GraphicsDisplayOptions opt;
-	m_gfx->getDisplayOptions(opt);
-
-	auto device = m_gfx->device();
-
-	ImageResourceInfo depthInfo;
-	depthInfo.width = opt.width;
-	depthInfo.height = opt.height;
-	depthInfo.type = ImageType::_2D;
-	depthInfo.usage = ImageUsage::DSV;
-	depthInfo.format = ImageFormat::DEPTH32;
-	depthInfo.msLevels = opt.multisampleLevel;
-	m_depthBuffer = device->createResourceImage(nullptr, depthInfo);
-
-	ImageView depthView;
-	depthView.image = m_depthBuffer.handle();
-	depthView.count = 1;
-	depthView.index = 0;
-	depthView.type = ImageType::_2D;
-
-	ImageView displayView;
-	displayView.image = device->getDisplayTarget();
-	displayView.count = 1;
-	displayView.index = 0;
-	displayView.type = ImageType::_2D;
-
-	TargetCreateInfo targetInfo;
-	targetInfo.viewport.h = opt.height;
-	targetInfo.viewport.w = opt.width;
-	targetInfo.scissor = targetInfo.viewport;
-	targetInfo.attachments = &displayView;
-	targetInfo.attachmentCount = 1;
-	targetInfo.depth = depthView;
-
-	m_target = device->createTarget(targetInfo);
-	tsassert(m_target);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -256,7 +215,7 @@ void ForwardRenderer::draw(const Renderable& item, const Matrix& transform)
 	ctx->resourceUpdate(m_perMesh.handle(), &constants);
 	
 	ctx->draw(
-		m_target.handle(),
+		m_targets,
 		item.pso.handle(),
 		item.resources.handle(),
 		item.params
@@ -264,9 +223,13 @@ void ForwardRenderer::draw(const Renderable& item, const Matrix& transform)
 }
 
 
-void ForwardRenderer::begin()
+void ForwardRenderer::begin(ForwardRenderTarget& targets)
 {
+	m_targets = targets.handle();
+
 	tsassert(m_gfx);
+	tsassert(m_targets != TargetHandle());
+
 	auto ctx = m_gfx->device()->context();
 
 	SceneConstants constants;
@@ -300,8 +263,8 @@ void ForwardRenderer::begin()
 	ctx->resourceUpdate(m_perScene.handle(), &constants);
 
 	//Clear backbuffer
-	ctx->clearDepthTarget(m_target.handle(), 1.0f);
-	ctx->clearColourTarget(m_target.handle(), RGBA(80, 166, 100));
+	ctx->clearDepthTarget(m_targets, 1.0f);
+	ctx->clearColourTarget(m_targets, RGBA(80, 166, 100));
 }
 
 void ForwardRenderer::end()
