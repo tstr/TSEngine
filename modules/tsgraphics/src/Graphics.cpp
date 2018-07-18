@@ -23,9 +23,12 @@ typedef std::lock_guard<Lock> Guard;
 /////////////////////////////////////////////////////////////////////////////////////////////////
 struct GraphicsSystem::System : public GraphicsConfig
 {
-	GraphicsSystem* system;
+	GraphicsSystem* system = nullptr;
 	//Primary rendering context
-	RenderContext* context;
+	RenderContext* context = nullptr;
+	
+	//Render target pool
+	ImageTargetPool displayTargets;
 
 	Lock displayLock;
 	std::atomic<bool> displayNeedRebuild;
@@ -35,7 +38,6 @@ struct GraphicsSystem::System : public GraphicsConfig
 	*/
 	System(GraphicsSystem* system, const GraphicsConfig& cfg) :
 		system(system),
-		context(nullptr),
 		GraphicsConfig(cfg)
 	{}
 
@@ -80,6 +82,12 @@ GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
 
 	//Create main render context
 	pSystem->context = pDevice->context();
+
+	//Prepare image target pool
+	pSystem->displayTargets = ImageTargetPool(device(), cfg.display.width, cfg.display.height, cfg.display.multisampleLevel);
+
+	//Register display change signal handler
+	onDisplayChange += DisplayEvent::CallbackType::fromMethod<ImageTargetPool, &ImageTargetPool::resize>(getDisplayTargetPool());
 }
 
 GraphicsSystem::~GraphicsSystem()
@@ -283,6 +291,22 @@ void GraphicsSystem::getDisplayOptions(GraphicsDisplayOptions& opt)
 Path GraphicsSystem::getRootPath() const
 {
 	return pSystem->rootpath;
+}
+
+ImageTargetPool* GraphicsSystem::getDisplayTargetPool() const
+{
+	return &pSystem->displayTargets;
+}
+
+ImageView GraphicsSystem::getDisplayView() const
+{
+	ImageView view;
+	view.image = device()->getDisplayTarget();
+	view.count = 1;
+	view.index = 0;
+	view.type = ImageType::_2D;
+
+	return view;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

@@ -13,9 +13,10 @@
 #include <tscore/path.h>
 #include <tscore/signal.h>
 
+#include "Driver.h"
 #include "CommandQueue.h"
 #include "Surface.h"
-#include "Driver.h"
+#include "RenderTargetPool.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -98,6 +99,11 @@ namespace ts
 		TSGRAPHICS_API void getDisplayOptions(GraphicsDisplayOptions& opt);
 
 		TSGRAPHICS_API Path getRootPath() const;
+
+		TSGRAPHICS_API ImageView getDisplayView() const;
+
+		TSGRAPHICS_API ImageTargetPool* getDisplayTargetPool() const;
+		Viewport getDisplayViewport() const { return getDisplayTargetPool()->getViewport(); }
 
 		/*
 			Pipeline methods

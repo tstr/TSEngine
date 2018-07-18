@@ -23,6 +23,7 @@ namespace ts
 
 		Camera m_camera;
 		ForwardRenderer m_render;
+		RenderTargets<> m_renderTarget;
 
 		//Entities + Components
 		std::vector<Entity> m_entities;

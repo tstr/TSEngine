@@ -91,6 +91,12 @@ int Sandbox::onInit()
 		m_render.enableDynamicLight(i);
 	}
 
+	//Initialize render target
+	m_renderTarget = RenderTargets<>(graphics()->device());
+	m_renderTarget.attach(0, graphics()->getDisplayView());
+	m_renderTarget.attachDepth(graphics()->getDisplayTargetPool()->newDepthTarget(true));
+	m_renderTarget.setViewport(graphics()->getDisplayViewport());
+
 	//////////////////////////////////////////////////////////////////////////////
 
 	Entity sponza;
@@ -176,16 +182,20 @@ int Sandbox::loadModel(Entity entity, Model& model, const String& modelfile)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 void Sandbox::onUpdate(double deltatime)
 {
-	GraphicsDisplayOptions displayOpt;
-	graphics()->getDisplayOptions(displayOpt);
-	
-	m_camera.setAspectRatio((float)displayOpt.width / displayOpt.height);
+	//Get display dimensions
+	Viewport dviewport(graphics()->getDisplayViewport());
+
+	m_camera.setAspectRatio((float)dviewport.w / dviewport.h);
 	m_camera.update(deltatime);
 
 	m_render.setCameraView(m_camera.getViewMatrix());
 	m_render.setCameraProjection(m_camera.getProjectionMatrix());
 
-	m_render.begin();
+	//Update render target viewport
+	m_renderTarget.setViewport(dviewport);
+
+	//Begin rendering
+	m_render.begin(m_renderTarget);
 
 	// Submit entities for rendering
 	for (Entity e : m_entities)
@@ -207,6 +217,7 @@ void Sandbox::onUpdate(double deltatime)
 		}
 	}
 
+	//Finish rendering
 	m_render.end();
 
 	//tsprofile("x:% y:% z:%", m_camera.getPosition().x(), m_camera.getPosition().y(), m_camera.getPosition().z());
