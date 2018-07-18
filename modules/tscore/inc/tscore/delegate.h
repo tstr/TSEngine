@@ -15,9 +15,11 @@ namespace ts
 	{
 	private:
 		
-		typedef ret_t(*stubptr_t)(void*, args_t...);
+		using signature_t = ret_t(*)(args_t...);
+		using stubptr_t = ret_t(*)(void*, args_t...);
+		using storage_t = void*;
 		
-		void* m_objectPtr = nullptr;
+		storage_t m_objectPtr = nullptr;
 		stubptr_t m_stubPtr = nullptr;
 		
 		template<typename object_t, ret_t(object_t::*object_method)(args_t...)>
@@ -26,6 +28,13 @@ namespace ts
 			object_t* object = static_cast<object_t*>(objectptr);
 			return (object->*object_method)(args...);
 		};
+
+		template<typename functor_t>
+		static ret_t functorStub(void* funcptr, args_t ... args)
+		{
+			auto& functor = *static_cast<functor_t*>(funcptr);
+			functor(args...);
+		}
 		
 	public:
 		
@@ -41,8 +50,16 @@ namespace ts
 		//Construct delegate from free function pointer
 		Delegate(ret_t(*funcptr)(args_t...))
 		{
-			m_objectPtr = nullptr;
-			m_stubPtr = &Delegate::methodStub<void*, funcptr>;
+			m_objectPtr = static_cast<void*>(funcptr);
+			m_stubPtr = [](void* ptr, args_t... args) { static_cast<signature_t>(ptr)(args...); };
+		}
+
+		//Construct a delegate from a functor
+		template<typename functor_t>
+		explicit Delegate(functor_t& functor)
+		{
+			m_objectPtr = static_cast<void*>(&functor);
+			m_stubPtr = &functorStub<functor_t>;
 		}
 		
 		//Call the delegate

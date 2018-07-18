@@ -42,7 +42,8 @@ namespace ts
 			uint32 width,
 			uint32 height,
 			ImageFormat format,
-			uint32 multisampleLevel = 1
+			uint32 multisampleLevel = 1,
+			bool shaderVisible = false
 		);
 
 		//Create a depth target
@@ -139,7 +140,7 @@ namespace ts
 				info.scissor = m_scissor;
 				info.viewport = m_viewport;
 
-				Base::swap(Base::device()->createTarget(info, Base::handle()));
+				Base::swap(Base::device()->createTarget(info, Base::release()));
 
 				m_dirty = false;
 			}

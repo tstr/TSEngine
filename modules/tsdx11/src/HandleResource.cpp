@@ -39,6 +39,12 @@ RPtr<ResourceHandle> Dx11::createEmptyResource(ResourceHandle recycle)
 
 RPtr<ResourceHandle> Dx11::createResourceImage(const ResourceData* data, const ImageResourceInfo& info, ResourceHandle recycle)
 {
+	UPtr<DxResource> rsc(DxResource::upcast(recycle));
+	if (rsc == nullptr)
+		rsc.reset(new DxResource(nullptr));
+	else
+		rsc->reset();
+
 	DXGI_FORMAT format = ImageFormatToDXGIFormat(info.format);
 	D3D11_USAGE usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
 	D3D11_CPU_ACCESS_FLAG access = D3D11_CPU_ACCESS_READ;
@@ -241,16 +247,8 @@ RPtr<ResourceHandle> Dx11::createResourceImage(const ResourceData* data, const I
 		return RPtr<ResourceHandle>();
 	}
 
-	if (recycle != (ResourceHandle)0)
-	{
-		auto rsc = DxResource::upcast(recycle);
-		rsc->reset();
-		return RPtr<ResourceHandle>(this, DxResource::downcast(new(rsc) DxResource(resource)));
-	}
-	else
-	{
-		return RPtr<ResourceHandle>(this, DxResource::downcast(new DxResource(resource)));
-	}
+	rsc->init(resource);
+	return RPtr<ResourceHandle>(this, DxResource::downcast(rsc.release()));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -39,6 +39,7 @@ set(tscore_inc
 	inc/tscore/delegate.h
 	inc/tscore/ptr.h
 	inc/tscore/table.h
+	inc/tscore/signal.h
 )
 
 SET(tscore_src

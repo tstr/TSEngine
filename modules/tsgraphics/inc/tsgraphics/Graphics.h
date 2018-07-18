@@ -11,6 +11,7 @@
 #include <tscore/ptr.h>
 #include <tscore/system/memory.h>
 #include <tscore/path.h>
+#include <tscore/signal.h>
 
 #include "CommandQueue.h"
 #include "Surface.h"
@@ -20,6 +21,8 @@
 
 namespace ts
 {
+	using DisplayEvent = Signal<DisplayConfig>;
+
 	enum class DisplayMode
 	{
 		WINDOWED,
@@ -106,6 +109,12 @@ namespace ts
 		TSGRAPHICS_API void execute(CommandQueue* queue);
 		//Signal draw end
 		TSGRAPHICS_API void end();
+
+		/*
+			Events
+		*/
+
+		DisplayEvent onDisplayChange;
 	};
 }
 

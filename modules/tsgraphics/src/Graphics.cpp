@@ -172,6 +172,7 @@ void GraphicsSystem::System::doRebuildDisplay()
 	{
 		config.multisampleLevel = display.multisampleLevel;
 		system->device()->setDisplayConfiguration(config);
+		system->onDisplayChange(config);
 	}
 
 	/*
@@ -209,6 +210,7 @@ void GraphicsSystem::System::doRebuildDisplay()
 						//Enter fullscreen
 						config.fullscreen = true;
 						system->device()->setDisplayConfiguration(config);
+						system->onDisplayChange(config);
 					}
 
 					curMode = mode;
@@ -231,6 +233,7 @@ void GraphicsSystem::System::doRebuildDisplay()
 					//Exit fullscreen
 					config.fullscreen = false;
 					system->device()->setDisplayConfiguration(config);
+					system->onDisplayChange(config);
 					break;
 				}
 			}
@@ -260,6 +263,7 @@ void GraphicsSystem::System::doRebuildDisplay()
 		config.fullscreen = display.mode == DisplayMode::FULLSCREEN;
 
 		system->device()->setDisplayConfiguration(config);
+		system->onDisplayChange(config);
 	}
 }
 

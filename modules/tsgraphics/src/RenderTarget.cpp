@@ -11,7 +11,7 @@ using namespace ts;
 // ImageTarget creation functions
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ImageTarget ImageTarget::createColourTarget(RenderDevice* device, uint32 width, uint32 height, ImageFormat format, uint32 multisampleLevel)
+ImageTarget ImageTarget::createColourTarget(RenderDevice* device, uint32 width, uint32 height, ImageFormat format, uint32 multisampleLevel, bool shaderVisible)
 {
 	tsassert(device);
 
@@ -21,9 +21,12 @@ ImageTarget ImageTarget::createColourTarget(RenderDevice* device, uint32 width, 
 	info.width = width;
 	info.height = height;
 	info.type = ImageType::_2D;
-	info.usage = ImageUsage::RTV | ImageUsage::SRV;
+	info.usage = ImageUsage::RTV;
 	info.format = format;
 	info.msLevels = multisampleLevel;
+
+	if (shaderVisible)
+		info.usage |= ImageUsage::SRV;
 
 	target.swap(device->createResourceImage(nullptr, info));
 	return std::move(target);
@@ -58,7 +61,7 @@ void ImageTarget::resize(uint32 width, uint32 height)
 	m_info.width = width;
 	m_info.height = height;
 
-	Base::swap(Base::device()->createResourceImage(nullptr, m_info, Base::handle()));
+	Base::swap(Base::device()->createResourceImage(nullptr, m_info, Base::release()));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
