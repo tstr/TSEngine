@@ -13,29 +13,15 @@
 #include <tsgraphics/Buffer.h>
 #include <tsgraphics/Shader.h>
 #include <tsgraphics/Model.h>
-#include <tsgraphics/Image.h>
 #include <tsgraphics/RenderTarget.h>
+
+#include "Material.h"
 
 #include "ForwardRenderConstants.h"
 
 namespace ts
 {
 	using ForwardRenderTarget = RenderTargets<1>;
-
-    /*
-        Material info:
-        
-        - Properties (ambient/diffuse/specular etc.)
-        - Images
-		- Mesh attribute layout
-    */
-    struct MaterialCreateInfo
-    {
-        using PathMap = std::unordered_map<String, Path>;
-        PathMap images;
-        
-		MaterialConstants constants;
-    };
 
 	struct MeshInfo
 	{
@@ -99,7 +85,7 @@ namespace ts
 		///////////////////////////////////////////////////////////////////////////////
 
         //Create renderable item
-        Renderable createRenderable(const MeshInfo& mesh, const MaterialCreateInfo&);
+        Renderable createRenderable(const MeshInfo& mesh, const PhongMaterial&);
 
         //Draw a renderable item
         void draw(const Renderable& item, const Matrix& transform);
@@ -120,8 +106,6 @@ namespace ts
 
 		ShaderProgram m_shader;
 
-		std::vector<Image> m_imageCache;
-
 		///////////////////////////////////////////////////////////////////////////////
 		//	Properties
 		///////////////////////////////////////////////////////////////////////////////
@@ -138,7 +122,6 @@ namespace ts
 		///////////////////////////////////////////////////////////////////////////////
 
 		void preloadShaders();
-		void loadMaterial(MaterialInstance& mat, const MaterialCreateInfo& info);
 
         RPtr<ResourceSetHandle> makeResourceSet(const Mesh& mesh, const MaterialInstance& mat);
         RPtr<PipelineHandle> makePipeline(const MeshInfo& mesh, const MaterialInstance& mat);

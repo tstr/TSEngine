@@ -41,7 +41,7 @@ void ForwardRenderer::preloadShaders()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Renderable ForwardRenderer::createRenderable(const MeshInfo& mesh, const MaterialCreateInfo& info)
+Renderable ForwardRenderer::createRenderable(const MeshInfo& mesh, const PhongMaterial& phong)
 {
 	tsassert(m_gfx);
 
@@ -49,8 +49,32 @@ Renderable ForwardRenderer::createRenderable(const MeshInfo& mesh, const Materia
 
 	Renderable item;
 
-	//Create material 
-	loadMaterial(item.mat, info);
+	/*
+		Setup material parameters
+	*/
+
+	//Set image binding if the given view is not null
+	auto bindIf = [&](ImageBindings binding, const ImageView& view)
+	{
+		if (view.image != ResourceHandle())
+			item.mat.images[binding] = view;
+	};
+
+	//Material shader resources
+	bindIf(BIND_DIFFUSE_MAP, phong.diffuseMap);
+	bindIf(BIND_NORMAL_MAP, phong.diffuseMap);
+	bindIf(BIND_SPECULAR_MAP, phong.diffuseMap);
+	bindIf(BIND_DISPLACEMENT_MAP, phong.displacementMap);
+
+	//Material shader constants
+	MaterialConstants matConstants;
+	matConstants.ambientColour = phong.ambientColour;
+	matConstants.diffuseColour = phong.diffuseColour;
+	matConstants.emissiveColour = phong.emissiveColour;
+	matConstants.specularColour = phong.specularColour;
+	matConstants.specularPower = phong.specularPower;
+
+	item.mat.buffer = Buffer::create(device, matConstants, BufferType::CONSTANTS);
 
 	//Item parameters
 	item.resources = makeResourceSet(mesh.data, item.mat);
@@ -75,39 +99,6 @@ Renderable ForwardRenderer::createRenderable(const MeshInfo& mesh, const Materia
 	item.params.mode = mesh.data.mode;
 
 	return move(item);
-}
-
-void ForwardRenderer::loadMaterial(MaterialInstance& mat, const MaterialCreateInfo& info)
-{
-	RenderDevice* device = m_gfx->device();
-
-	//Create material buffer
-	mat.buffer = Buffer::create(device, info.constants, BufferType::CONSTANTS);
-
-	//Load material images
-	for (const auto& e : {
-		make_pair(BIND_DIFFUSE_MAP,      "diffuseMap"),
-		make_pair(BIND_NORMAL_MAP,       "normalMap"),
-		make_pair(BIND_SPECULAR_MAP,     "specularMap"),
-		make_pair(BIND_DISPLACEMENT_MAP, "displacementMap")
-	})
-	{
-		ImageBindings imgBinding = e.first;
-		const char*   imgMapping = e.second;
-
-		auto it = info.images.find(imgMapping);
-		
-		//If an imagepath has been specified for this mapping
-		if (it != info.images.end())
-		{
-			//Load it
-			Image img(device, it->second.str());
-
-			mat.images[imgBinding] = img.getView2D(0);
-
-			m_imageCache.push_back(move(img));
-		}
-	}
 }
 
 RPtr<ResourceSetHandle> ForwardRenderer::makeResourceSet(const Mesh& mesh, const MaterialInstance& mat)
