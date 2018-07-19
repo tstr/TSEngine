@@ -12,6 +12,7 @@ set(tsgraphics_inc
 	
 	inc/tsgraphics/Colour.h
 	inc/tsgraphics/Surface.h
+	inc/tsgraphics/AssetCache.h
 	inc/tsgraphics/CommandQueue.h
 	inc/tsgraphics/FrameGraph.h
 	inc/tsgraphics/BindingSet.h

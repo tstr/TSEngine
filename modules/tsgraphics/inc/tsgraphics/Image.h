@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Driver.h"
+#include "AssetCache.h"
 
 namespace ts
 {
@@ -33,8 +34,8 @@ namespace ts
 
 		ResourceHandle handle() const { return m_img.handle(); }
 
-		ImageView getView2D(uint32 index);
-		ImageView getViewArray(uint32 start, uint32 count);
+		ImageView getView2D(uint32 index) const;
+		ImageView getViewArray(uint32 start, uint32 count) const;
 
     private:
 
@@ -44,4 +45,25 @@ namespace ts
         RPtr<ResourceHandle> m_img;
 		ImageResourceInfo m_imgInfo;
     };
+
+	/*
+		Image loader cache
+	*/
+	class ImageCache : public AssetCache<ImageCache, Image>
+	{
+	public:
+
+		ImageCache(RenderDevice* device = nullptr) : m_device(device) {}
+
+		Image load(const Path& filePath)
+		{
+			Image img;
+			img.load(m_device, filePath.str());
+			return std::move(img);
+		}
+
+	private:
+
+		RenderDevice * m_device;
+	};
 }
