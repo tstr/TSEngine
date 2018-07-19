@@ -160,7 +160,7 @@ int Sandbox::loadModel(Entity entity, Model& model, const String& modelfile)
 
 	String matfile(modelfile);
 	matfile.replace(matfile.find_last_of('.'), string::npos, ".mat");
-	MaterialReader matReader(absPath(matfile));
+	MaterialReader matReader(graphics(), absPath(matfile));
 
 	for (const auto& mesh : model.meshes())
 	{

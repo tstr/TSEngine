@@ -2,6 +2,8 @@
     Material reader
 */
 
+#include <tscore/pathutil.h>
+
 #include "../util/INIReader.h"
 #include "MaterialReader.h"
 
@@ -10,14 +12,16 @@ using namespace ts;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-MaterialReader::MaterialReader(const Path& fileName)
+MaterialReader::MaterialReader(GraphicsSystem* gfx, const Path& fileName)
 {
 	INIReader matReader(fileName);
 
 	vector<String> materialSections;
 	vector<String> materialProperies;
-	String propKey;
+	String propValue;
 	matReader.getSections(materialSections);
+
+	Path root = fileName.getParent();
 
 	//Helper function
 	auto getVectorProperty = [](const String& value) -> Vector
@@ -36,9 +40,25 @@ MaterialReader::MaterialReader(const Path& fileName)
 		return v;
 	};
 
+	auto getImageProperty = [&](const String& value) -> ImageView
+	{
+		if (trim(value) == "")
+			return ImageView();
+
+		Path imgPath(root);
+		imgPath.addDirectories(value);
+
+		if (isFile(imgPath))
+		{
+			return gfx->loadImage(imgPath).getView2D(0);
+		}
+
+		return ImageView();
+	};
+
 	for (const auto& section : materialSections)
 	{
-		MaterialCreateInfo matInfo;
+		PhongMaterial matInfo;
 
 		//Format key helper
 		auto fmtKey = [&section](auto key)
@@ -46,42 +66,44 @@ MaterialReader::MaterialReader(const Path& fileName)
 			return (String)section + "." + key;
 		};
 
+		/*
+			Properties
+		*/
+
 		float alpha;
 		float shininess;
 		matReader.getProperty(fmtKey("alpha"), alpha);
 		matReader.getProperty(fmtKey("shininess"), shininess);
 
-		if (matReader.getProperty(fmtKey("diffuseColour"), propKey))
-			matInfo.constants.diffuseColour = getVectorProperty(propKey);
-		propKey.clear();
-		if (matReader.getProperty(fmtKey("ambientColour"), propKey))
-			matInfo.constants.ambientColour = getVectorProperty(propKey);
-		propKey.clear();
-		if (matReader.getProperty(fmtKey("emissiveColour"), propKey))
-			matInfo.constants.emissiveColour = getVectorProperty(propKey);
-		propKey.clear();
+		if (matReader.getProperty(fmtKey("diffuseColour"), propValue))
+			matInfo.diffuseColour = getVectorProperty(propValue);
+		propValue.clear();
+		if (matReader.getProperty(fmtKey("ambientColour"), propValue))
+			matInfo.ambientColour = getVectorProperty(propValue);
+		propValue.clear();
+		if (matReader.getProperty(fmtKey("emissiveColour"), propValue))
+			matInfo.emissiveColour = getVectorProperty(propValue);
+		propValue.clear();
 
-		for (const char* imageKey : {
-			"diffuseMap",
-			"normalMap",
-			"specularMap",
-			"displacementMap"
-		})
-		{
-			propKey.clear();
+		/*
+			Images
+		*/
 
-			if (matReader.getProperty(fmtKey(imageKey), propKey))
-			{
-				if (propKey != "")
-				{
-					//Resolve image path
-					Path a(matReader.getPath().getParent());
-					a.addDirectories(propKey);
+		if (matReader.getProperty(fmtKey("diffuseMap"), propValue))
+			matInfo.diffuseMap = getImageProperty(propValue);
+		propValue.clear();
 
-					matInfo.images[imageKey] = a;
-				}
-			}
-		}
+		if (matReader.getProperty(fmtKey("normalMap"), propValue))
+			matInfo.normalMap = getImageProperty(propValue);
+		propValue.clear();
+
+		if (matReader.getProperty(fmtKey("specularMap"), propValue))
+			matInfo.specularMap = getImageProperty(propValue);
+		propValue.clear();
+
+		if (matReader.getProperty(fmtKey("displacementMap"), propValue))
+			matInfo.displacementMap = getImageProperty(propValue);
+		propValue.clear();
 
 		String name(section);
 		toLower(name);
@@ -89,14 +111,14 @@ MaterialReader::MaterialReader(const Path& fileName)
 	}
 }
 
-MaterialCreateInfo MaterialReader::find(const String& name) const
+PhongMaterial MaterialReader::find(const String& name) const
 {
     String _name(name);
     toLower(_name);
     
     auto it = m_infoMap.find(_name);
     
-    return (it != m_infoMap.end()) ? it->second : MaterialCreateInfo();
+    return (it != m_infoMap.end()) ? it->second : PhongMaterial();
 }
 
 bool MaterialReader::has(const String& name) const

@@ -16,6 +16,10 @@ SET(src_list
 	src/util/IniReader.h
 	src/util/IniReader.cpp
 
+	src/2D/Painter.h
+	src/2D/Painter.cpp
+
+	src/3D/Material.h
 	src/3D/MaterialReader.h
 	src/3D/MaterialReader.cpp
 	src/3D/ForwardRender.h

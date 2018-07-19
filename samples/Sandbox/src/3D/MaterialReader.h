@@ -13,11 +13,11 @@ namespace ts
     {
     public:
         
-		using MaterialMap = std::unordered_map<String, MaterialCreateInfo>;
+		using MaterialMap = std::unordered_map<String, PhongMaterial>;
         
-        MaterialReader(const Path& fileName);
+        MaterialReader(GraphicsSystem* gfx, const Path& fileName);
         
-        MaterialCreateInfo find(const String& name) const;
+		PhongMaterial find(const String& name) const;
         bool has(const String& name) const;
         
         MaterialMap::const_iterator begin() const { return m_infoMap.begin(); }
