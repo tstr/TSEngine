@@ -10,6 +10,7 @@
 
 #include "Driver.h"
 #include "Buffer.h"
+#include "AssetCache.h"
 
 namespace ts
 {
@@ -64,5 +65,27 @@ namespace ts
 
 		VertexAttributeMap m_attributes;
 		std::vector<Mesh> m_meshes;
+	};
+
+
+	/*
+		Model loader cache
+	*/
+	class ModelCache : public AssetCache<ModelCache, Model>
+	{
+	public:
+
+		ModelCache(RenderDevice* device = nullptr) : m_device(device) {}
+
+		Model load(const Path& filePath)
+		{
+			Model model;
+			model.load(m_device, filePath.str());
+			return std::move(model);
+		}
+
+	private:
+
+		RenderDevice * m_device;
 	};
 }

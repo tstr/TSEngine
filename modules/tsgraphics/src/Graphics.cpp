@@ -33,6 +33,10 @@ struct GraphicsSystem::System : public GraphicsConfig
 	Lock displayLock;
 	std::atomic<bool> displayNeedRebuild;
 
+	//Resource loader caches
+	ImageCache imageCache;
+	ModelCache modelCache;
+
 	/*
 		Construct system
 	*/
@@ -85,6 +89,10 @@ GraphicsSystem::GraphicsSystem(const GraphicsConfig& cfg) :
 
 	//Prepare image target pool
 	pSystem->displayTargets = ImageTargetPool(device(), cfg.display.width, cfg.display.height, cfg.display.multisampleLevel);
+
+	//Initialize caches
+	pSystem->imageCache = ImageCache(device());
+	pSystem->modelCache = ModelCache(device());
 
 	//Register display change signal handler
 	onDisplayChange += DisplayEvent::CallbackType::fromMethod<ImageTargetPool, &ImageTargetPool::resize>(getDisplayTargetPool());
@@ -307,6 +315,16 @@ ImageView GraphicsSystem::getDisplayView() const
 	view.type = ImageType::_2D;
 
 	return view;
+}
+
+const Image& GraphicsSystem::loadImage(const Path& path)
+{
+	return pSystem->imageCache.get(path);
+}
+
+const Model& GraphicsSystem::loadModel(const Path& path)
+{
+	return pSystem->modelCache.get(path);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

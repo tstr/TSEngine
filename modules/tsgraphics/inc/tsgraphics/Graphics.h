@@ -17,6 +17,8 @@
 #include "CommandQueue.h"
 #include "Surface.h"
 #include "RenderTargetPool.h"
+#include "Image.h"
+#include "Model.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -75,7 +77,7 @@ namespace ts
 		OpaquePtr<System> pSystem;
 
 		RenderDevice::Ptr pDevice;
-
+		
 	public:
 
 		OPAQUE_PTR(GraphicsSystem, pSystem)
@@ -104,6 +106,13 @@ namespace ts
 
 		TSGRAPHICS_API ImageTargetPool* getDisplayTargetPool() const;
 		Viewport getDisplayViewport() const { return getDisplayTargetPool()->getViewport(); }
+
+		/*
+			Load resources
+		*/
+		TSGRAPHICS_API const Image& loadImage(const Path& path);
+
+		TSGRAPHICS_API const Model& loadModel(const Path& path);
 
 		/*
 			Pipeline methods
