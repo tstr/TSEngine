@@ -41,7 +41,7 @@ void ForwardRenderer::preloadShaders()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Renderable ForwardRenderer::createRenderable(const MeshInfo& mesh, const PhongMaterial& phong)
+Renderable ForwardRenderer::createRenderable(const Mesh& mesh, const PhongMaterial& phong)
 {
 	tsassert(m_gfx);
 
@@ -76,27 +76,12 @@ Renderable ForwardRenderer::createRenderable(const MeshInfo& mesh, const PhongMa
 
 	item.mat.buffer = Buffer::create(device, matConstants, BufferType::CONSTANTS);
 
-	//Item parameters
-	item.resources = makeResourceSet(mesh.data, item.mat);
+	/*
+		Renderable item parameters
+	*/
+	item.resources = makeResourceSet(mesh, item.mat);
 	item.pso = makePipeline(mesh, item.mat);
-
-	//Command arguments
-	if (mesh.data.mode == DrawMode::VERTEX || mesh.data.mode == DrawMode::INSTANCED)
-	{
-		item.params.start = mesh.data.vertexStart;
-		item.params.count = mesh.data.vertexCount;
-		item.params.instances = 1;
-		item.params.vbase = mesh.data.vertexBase;
-	}
-	else //indexed
-	{
-		item.params.start = mesh.data.indexStart;
-		item.params.count = mesh.data.indexCount;
-		item.params.instances = 1;
-		item.params.vbase = mesh.data.vertexBase;
-	}
-
-	item.params.mode = mesh.data.mode;
+	item.params = mesh.getParams();
 
 	return move(item);
 }
@@ -121,21 +106,17 @@ RPtr<ResourceSetHandle> ForwardRenderer::makeResourceSet(const Mesh& mesh, const
 	info.resourceCount = (uint32)mat.images.count();
 
 	//Mesh resources
-	VertexBufferView vbv;
-	vbv.buffer = mesh.vertices;
-	vbv.offset = 0;
-	vbv.stride = mesh.vertexStride;
-	info.vertexBuffers = &vbv;
+	info.vertexBuffers = &mesh.getBufferView();
 	info.vertexBufferCount = 1;
 	info.indexBuffer = mesh.indices;
 
 	return device->createResourceSet(info);
 }
 
-void findAttribute(const char* semantic, VertexAttributeType type, const VertexAttributeMap* attribMap, vector<VertexAttribute>& attribs)
+void findAttribute(const char* semantic, VertexAttributeType type, const VertexAttributeMap& attribMap, vector<VertexAttribute>& attribs)
 {
-	auto it = attribMap->find(semantic);
-	if (it != attribMap->end())
+	auto it = attribMap.find(semantic);
+	if (it != attribMap.end())
 	{
 		if ((string)semantic == "TEXCOORD0") semantic = "TEXCOORD";
 		if ((string)semantic == "COLOUR0") semantic = "COLOUR";
@@ -150,7 +131,7 @@ void findAttribute(const char* semantic, VertexAttributeType type, const VertexA
 	}
 }
 
-RPtr<PipelineHandle> ForwardRenderer::makePipeline(const MeshInfo& mesh, const MaterialInstance& mat)
+RPtr<PipelineHandle> ForwardRenderer::makePipeline(const Mesh& mesh, const MaterialInstance& mat)
 {
 	RenderDevice* device = m_gfx->device();
 
@@ -176,18 +157,18 @@ RPtr<PipelineHandle> ForwardRenderer::makePipeline(const MeshInfo& mesh, const M
 	//Vertex layout
 	vector<VertexAttribute> attrib;
 
-	findAttribute("POSITION",  VertexAttributeType::FLOAT4, mesh.attributeMap, attrib);
-	findAttribute("TEXCOORD0", VertexAttributeType::FLOAT2, mesh.attributeMap, attrib);
-	findAttribute("COLOUR0",   VertexAttributeType::FLOAT4, mesh.attributeMap, attrib);
-	findAttribute("NORMAL",    VertexAttributeType::FLOAT3, mesh.attributeMap, attrib);
-	findAttribute("TANGENT",   VertexAttributeType::FLOAT3, mesh.attributeMap, attrib);
-	findAttribute("BITANGENT", VertexAttributeType::FLOAT3, mesh.attributeMap, attrib);
+	findAttribute("POSITION",  VertexAttributeType::FLOAT4, mesh.vertexAttributes, attrib);
+	findAttribute("TEXCOORD0", VertexAttributeType::FLOAT2, mesh.vertexAttributes, attrib);
+	findAttribute("COLOUR0",   VertexAttributeType::FLOAT4, mesh.vertexAttributes, attrib);
+	findAttribute("NORMAL",    VertexAttributeType::FLOAT3, mesh.vertexAttributes, attrib);
+	findAttribute("TANGENT",   VertexAttributeType::FLOAT3, mesh.vertexAttributes, attrib);
+	findAttribute("BITANGENT", VertexAttributeType::FLOAT3, mesh.vertexAttributes, attrib);
 
 	pso.vertexAttributeCount = attrib.size();
 	pso.vertexAttributeList = attrib.data();
 	
 	//Vertex topology
-	pso.topology = mesh.topology;
+	pso.topology = mesh.vertexTopology;
 
 	return device->createPipeline(m_shader.handle(), pso);
 }

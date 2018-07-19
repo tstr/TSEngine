@@ -34,8 +34,12 @@ namespace ts
 
 		DrawMode mode;
 
+		VertexAttributeMap vertexAttributes;
+		VertexTopology vertexTopology;
 
-
+		//Helper methods
+		VertexBufferView getBufferView() const;
+		DrawParams getParams() const;
 	};
 
 	class Model
@@ -44,10 +48,16 @@ namespace ts
 
 		Model() {}
 		Model(const Model&) = delete;
+		void operator=(const Model&) = delete;
 
 		Model(Model&& rhs) :
 			m_attributes(std::move(rhs.m_attributes)),
-			m_meshes(std::move(rhs.m_meshes))
+			m_meshes(std::move(rhs.m_meshes)), 
+			m_materialFilePath(rhs.m_materialFilePath),
+			m_modelFilePath(rhs.m_modelFilePath),
+			m_vertices(std::move(rhs.m_vertices)),
+			m_indices(std::move(rhs.m_indices)),
+			m_error(rhs.m_error)
 		{}
 
 		Model(RenderDevice* device, const String& filePath) { load(device, filePath); }
@@ -58,13 +68,28 @@ namespace ts
 
 		const std::vector<Mesh>& meshes() const { return m_meshes; }
 
+		// File path properties
+		const Path& modelFile() const { return m_modelFilePath; }
+		const Path& materialFile() const { return m_materialFilePath; }
+		bool hasMaterialFile() const { return m_materialFilePath != ""; }
+
+		// True if there was an error creating the model
+		bool error() const { return m_error; }
+
 	private:
+
+		bool setError(bool err) { m_error = err; return m_error; }
+
+		bool m_error = false;
 
 		Buffer m_vertices;
 		Buffer m_indices;
 
 		VertexAttributeMap m_attributes;
 		std::vector<Mesh> m_meshes;
+
+		Path m_materialFilePath;
+		Path m_modelFilePath;
 	};
 
 

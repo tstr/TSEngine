@@ -110,9 +110,9 @@ namespace ts
 		/*
 			Load resources
 		*/
-		TSGRAPHICS_API const Image& loadImage(const Path& path);
+		TSGRAPHICS_API const Image& getImage(const Path& path);
 
-		TSGRAPHICS_API const Model& loadModel(const Path& path);
+		TSGRAPHICS_API const Model& getModel(const Path& path);
 
 		/*
 			Pipeline methods

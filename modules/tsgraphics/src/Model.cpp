@@ -18,13 +18,13 @@ bool Model::load(RenderDevice* device, const String& filePath)
 
 	if (loader.fail())
 	{
-		return false;
+		return !setError(true);
 	}
 
 	//There must be vertex data
 	if (!modelReader.has_vertexData())
 	{
-		return false;
+		return !setError(true);
 	}
 
 	m_vertices = Buffer::create(
@@ -74,10 +74,59 @@ bool Model::load(RenderDevice* device, const String& filePath)
 
 		mesh.mode = (mesh.indexCount > 0) ? DrawMode::INDEXED : DrawMode::VERTEX;
 
+		mesh.vertexAttributes = m_attributes;
+		mesh.vertexTopology = VertexTopology::TRIANGLELIST;
+
 		m_meshes.push_back(mesh);
 	}
 
-	return true;
+	//Resolve material path
+	String matfile(filePath);
+	matfile.replace(matfile.find_last_of('.'), std::string::npos, ".mat");
+	//m_materialFilePath = isFile(matfile) ? matfile : "";
+	m_materialFilePath = matfile;
+
+	m_modelFilePath = filePath;
+
+	return !setError(false);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Mesh helper methods
+///////////////////////////////////////////////////////////////////////////////
+
+VertexBufferView Mesh::getBufferView() const
+{
+	VertexBufferView vbv;
+	vbv.buffer = vertices;
+	vbv.offset = 0;
+	vbv.stride = vertexStride;
+
+	return vbv;
+}
+
+DrawParams Mesh::getParams() const
+{
+	DrawParams params;
+	//Command arguments
+	if (mode == DrawMode::VERTEX || mode == DrawMode::INSTANCED)
+	{
+		params.start = vertexStart;
+		params.count = vertexCount;
+		params.instances = 1;
+		params.vbase = vertexBase;
+	}
+	else //indexed
+	{
+		params.start = indexStart;
+		params.count = indexCount;
+		params.instances = 1;
+		params.vbase = vertexBase;
+	}
+
+	params.mode = mode;
+
+	return params;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

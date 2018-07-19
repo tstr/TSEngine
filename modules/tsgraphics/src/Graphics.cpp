@@ -4,6 +4,7 @@
 	todo: fix resizing display in fullscreen mode
 */
 
+#include <tscore/pathutil.h>
 #include <tscore/debug/log.h>
 #include <tscore/debug/assert.h>
 
@@ -317,14 +318,36 @@ ImageView GraphicsSystem::getDisplayView() const
 	return view;
 }
 
-const Image& GraphicsSystem::loadImage(const Path& path)
+const Image& GraphicsSystem::getImage(const Path& path)
 {
-	return pSystem->imageCache.get(path);
+	Path p(getRootPath());
+
+	if (isAbsolutePath(path))
+	{
+		p = path;
+	}
+	else
+	{
+		p.addDirectories(path);
+	}
+
+	return pSystem->imageCache.get(p);
 }
 
-const Model& GraphicsSystem::loadModel(const Path& path)
+const Model& GraphicsSystem::getModel(const Path& path)
 {
-	return pSystem->modelCache.get(path);
+	Path p(getRootPath());
+
+	if (isAbsolutePath(path))
+	{
+		p = path;
+	}
+	else
+	{
+		p.addDirectories(path);
+	}
+
+	return pSystem->modelCache.get(p);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

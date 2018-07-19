@@ -26,16 +26,28 @@ namespace ts
 			std::swap(m_imgInfo, rhs.m_imgInfo);
 		}
 
+		// Loading methods
 		void loadEmpty(RenderDevice* device);
 		bool load(RenderDevice* device, const String& imageFile);
 
+		// Check status
 		bool loaded() const { return !m_img.null(); }
 		bool error() const { return m_error; }
 
 		ResourceHandle handle() const { return m_img.handle(); }
 
-		ImageView getView2D(uint32 index) const;
-		ImageView getViewArray(uint32 start, uint32 count) const;
+		ImageView getView() const;
+
+		// Image properties
+		uint32 width() const { return m_imgInfo.width; }
+		uint32 height() const { return m_imgInfo.height; }
+		uint32 length() const { return m_imgInfo.length; }
+		ImageFormat format() const { return m_imgInfo.format; }
+		bool hasMIPs() const { return m_imgInfo.useMips; }
+
+		bool isCubeMap() const { return m_imgInfo.type == ImageType::CUBE; }
+		bool isVolumeMap() const { return m_imgInfo.type == ImageType::_3D; }
+		bool isArray() const { return length() > 1 && isCubeMap(); }
 
     private:
 
