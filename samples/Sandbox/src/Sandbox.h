@@ -19,19 +19,17 @@ namespace ts
 	{
 	private:
 
-		EntityManager m_entityManager;
 
 		Camera m_camera;
 		ForwardRenderer m_render;
 		RenderTargets<> m_renderTarget;
 
 		//Entities + Components
-		std::vector<Entity> m_entities;
+		EntityManager m_entityManager;
 		ComponentMap<RenderComponent> m_renderables;
 		ComponentMap<TransformComponent> m_transforms;
 
-		Model m_sponzaModel;
-		Model m_cubeModel;
+		Entity m_modelEntity, m_boxEntity;
 
 		float m_scale;
 
@@ -48,6 +46,6 @@ namespace ts
 
 		EntityManager* getEntities() { return &m_entityManager; }
 
-		int loadModel(Entity e, Model& model, const String& name);
+		bool addModelRenderComponent(Entity e, const String& modelFile);
 	};
 }

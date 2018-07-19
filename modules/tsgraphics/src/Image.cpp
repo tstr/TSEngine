@@ -75,22 +75,12 @@ bool Image::load(RenderDevice* device, const String& imageFile)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ImageView Image::getView2D(uint32 index) const
+ImageView Image::getView() const
 {
 	ImageView img;
 	img.image = handle();
-	img.index = index;
-	img.count = 1;
-	img.type = ImageType::_2D;
-	return img;
-}
-
-ImageView Image::getViewArray(uint32 start, uint32 count) const
-{
-	ImageView img;
-	img.image = handle();
-	img.index = start;
-	img.count = count;
+	img.index = 0;
+	img.count = m_imgInfo.length;
 	img.type = ImageType::_2D;
 	return img;
 }

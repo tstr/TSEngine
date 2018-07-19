@@ -50,7 +50,7 @@ MaterialReader::MaterialReader(GraphicsSystem* gfx, const Path& fileName)
 
 		if (isFile(imgPath))
 		{
-			return gfx->loadImage(imgPath).getView2D(0);
+			return gfx->getImage(imgPath).getView();
 		}
 
 		return ImageView();

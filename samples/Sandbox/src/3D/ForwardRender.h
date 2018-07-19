@@ -23,13 +23,6 @@ namespace ts
 {
 	using ForwardRenderTarget = RenderTargets<1>;
 
-	struct MeshInfo
-	{
-		Mesh data;
-		VertexTopology topology;
-		const VertexAttributeMap* attributeMap;
-	};
-
     struct MaterialInstance
     {
         BindingSet<ImageView> images;
@@ -85,7 +78,7 @@ namespace ts
 		///////////////////////////////////////////////////////////////////////////////
 
         //Create renderable item
-        Renderable createRenderable(const MeshInfo& mesh, const PhongMaterial&);
+        Renderable createRenderable(const Mesh& mesh, const PhongMaterial&);
 
         //Draw a renderable item
         void draw(const Renderable& item, const Matrix& transform);
@@ -124,6 +117,6 @@ namespace ts
 		void preloadShaders();
 
         RPtr<ResourceSetHandle> makeResourceSet(const Mesh& mesh, const MaterialInstance& mat);
-        RPtr<PipelineHandle> makePipeline(const MeshInfo& mesh, const MaterialInstance& mat);
+        RPtr<PipelineHandle> makePipeline(const Mesh& mesh, const MaterialInstance& mat);
     };
 }

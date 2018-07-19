@@ -99,31 +99,23 @@ int Sandbox::onInit()
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	Entity sponza;
-	Entity cube;
-
-	m_entityManager.create(sponza);
-	m_entityManager.create(cube);
+	m_entityManager.create(m_modelEntity);
+	m_entityManager.create(m_boxEntity);
 
 	{
-		if (int err = loadModel(sponza, m_sponzaModel, "sponza/sponza.model"))
-			return err;
+		if (!addModelRenderComponent(m_modelEntity, "sponza/sponza.model"))
+			return -1;
 
 		//Set transforms
-		m_transforms.setComponent(sponza, Matrix::scale(m_scale));
-
-		//Save entities
-		m_entities.push_back(sponza);
+		m_transforms.setComponent(m_modelEntity, Matrix::scale(m_scale));
 	}
 
 	{
-		if (int err = loadModel(cube, m_cubeModel, "cube.model"))
-			return err;
+		if (!addModelRenderComponent(m_boxEntity, "cube.model"))
+			return -1;
 
 		//Set transforms
-		m_transforms.setComponent(cube, Matrix::translation(Vector(0, 1, 0)));
-
-		m_entities.push_back(cube);
+		m_transforms.setComponent(m_boxEntity, Matrix::translation(Vector(0, 1, 0)));
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -140,41 +132,29 @@ void Sandbox::onExit()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int Sandbox::loadModel(Entity entity, Model& model, const String& modelfile)
+bool Sandbox::addModelRenderComponent(Entity entity, const String& modelfile)
 {
-	auto absPath = [this](auto r) -> Path
-	{
-		Path a(graphics()->getRootPath());
-		a.addDirectories(r);
-		return a;
-	};
+	const Model& model = graphics()->getModel(modelfile);
 
-	if (!model.load(graphics()->device(), absPath(modelfile).str()))
+	if (model.error())
 	{
 		tserror("unable to import model \"%\"", modelfile);
-		return -1;
+		return false;
 	}
 
 	RenderComponent component;
 	component.items.reserve(model.meshes().size());
 
-	String matfile(modelfile);
-	matfile.replace(matfile.find_last_of('.'), string::npos, ".mat");
-	MaterialReader matReader(graphics(), absPath(matfile));
+	MaterialReader matReader(graphics(), model.materialFile());
 
 	for (const auto& mesh : model.meshes())
 	{
-		MeshInfo meshInfo;
-		meshInfo.attributeMap = &model.attributes();
-		meshInfo.data = mesh;
-		meshInfo.topology = VertexTopology::TRIANGLELIST;
-
-		component.items.push_back(m_render.createRenderable(meshInfo, matReader.find(mesh.name)));
+		component.items.push_back(m_render.createRenderable(mesh, matReader.find(mesh.name)));
 	}
 	
 	m_renderables.setComponent(entity, move(component));
 
-	return 0;
+	return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -198,7 +178,7 @@ void Sandbox::onUpdate(double deltatime)
 	m_render.begin(m_renderTarget);
 
 	// Submit entities for rendering
-	for (Entity e : m_entities)
+	for (Entity e : { m_modelEntity, m_boxEntity })
 	{
 		if (m_transforms.hasComponent(e))
 		{
