@@ -149,7 +149,9 @@ bool Sandbox::addModelRenderComponent(Entity entity, const String& modelfile)
 
 	for (const auto& mesh : model.meshes())
 	{
-		component.items.push_back(m_render.createRenderable(mesh, matReader.find(mesh.name)));
+		PhongMaterial mat(matReader.find(mesh.name));
+		mat.enableAlpha = false;
+		component.items.push_back(m_render.createRenderable(mesh, mat));
 	}
 	
 	m_renderables.setComponent(entity, move(component));

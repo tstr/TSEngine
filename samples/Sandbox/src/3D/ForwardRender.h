@@ -98,6 +98,7 @@ namespace ts
 		Buffer m_perScene;
 
 		ShaderProgram m_shader;
+		ShaderProgram m_shaderNormMap;
 
 		///////////////////////////////////////////////////////////////////////////////
 		//	Properties
@@ -115,8 +116,9 @@ namespace ts
 		///////////////////////////////////////////////////////////////////////////////
 
 		void preloadShaders();
-
-        RPtr<ResourceSetHandle> makeResourceSet(const Mesh& mesh, const MaterialInstance& mat);
-        RPtr<PipelineHandle> makePipeline(const Mesh& mesh, const MaterialInstance& mat);
+		
+		ShaderHandle selectShader(const Mesh& mesh, const PhongMaterial& mat);
+        RPtr<PipelineHandle> makePipeline(const Mesh& mesh, const PhongMaterial& mat);
+		RPtr<ResourceSetHandle> makeResourceSet(const Mesh& mesh, const MaterialInstance& mat);
     };
 }

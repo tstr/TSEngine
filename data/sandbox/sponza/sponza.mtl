@@ -92,8 +92,7 @@ newmtl bricks
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\spnza_bricks_a_diff.tga
 	map_Kd textures\spnza_bricks_a_diff.tga
-	map_bump textures\spnza_bricks_a_diff.tga
-	bump textures\spnza_bricks_a_diff.tga
+	map_bump textures\spnza_bricks_a_norm.png
 
 newmtl arch
 	Ns 10.0000
@@ -108,6 +107,7 @@ newmtl arch
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\sponza_arch_diff.tga
 	map_Kd textures\sponza_arch_diff.tga
+	map_bump textures\sponza_arch_norm.png
 
 newmtl ceiling
 	Ns 10.0000
@@ -136,8 +136,7 @@ newmtl column_a
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\sponza_column_a_diff.tga
 	map_Kd textures\sponza_column_a_diff.tga
-	map_bump textures\sponza_column_a_ddn.tga
-	bump textures\sponza_column_a_ddn.tga
+	map_bump textures\sponza_column_a_norm.png
 
 newmtl floor
 	Ns 10.0000
@@ -152,6 +151,7 @@ newmtl floor
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\sponza_floor_a_diff.tga
 	map_Kd textures\sponza_floor_a_diff.tga
+	map_bump textures\sponza_floor_a_norm.png
 
 newmtl column_c
 	Ns 10.0000
@@ -166,8 +166,7 @@ newmtl column_c
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\sponza_column_c_diff.tga
 	map_Kd textures\sponza_column_c_diff.tga
-	map_bump textures\sponza_column_c_ddn.tga
-	bump textures\sponza_column_c_ddn.tga
+	map_bump textures\sponza_column_c_norm.png
 
 newmtl details
 	Ns 10.0000
@@ -196,8 +195,7 @@ newmtl column_b
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\sponza_column_b_diff.tga
 	map_Kd textures\sponza_column_b_diff.tga
-	map_bump textures\sponza_column_b_ddn.tga
-	bump textures\sponza_column_b_ddn.tga
+	map_bump textures\sponza_column_b_norm.png
 
 newmtl Material__47
 	Ns 10.0000
@@ -353,6 +351,7 @@ newmtl vase
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\vase_dif.tga
 	map_Kd textures\vase_dif.tga
+	map_bump textures\vase_norm.png
 
 newmtl Material__25
 	Ns 10.0000
@@ -367,8 +366,7 @@ newmtl Material__25
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\lion.tga
 	map_Kd textures\lion.tga
-	map_bump textures\lion_ddn.tga
-	bump textures\lion_ddn.tga
+	map_Bump textures\lion_norm.png
 
 newmtl roof
 	Ns 10.0000

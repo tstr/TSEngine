@@ -32,11 +32,34 @@ ForwardRenderer::ForwardRenderer(GraphicsSystem* gfx) :
 void ForwardRenderer::preloadShaders()
 {
 	RenderDevice* device = m_gfx->device();
-	
-	Path standard(m_gfx->getRootPath());
-	standard.addDirectories("shaderbin/Standard.shader");
 
-	tsassert(m_shader.load(device, standard.str()));
+	auto load = [this, device](ShaderProgram& program, const char* path) {
+		Path standard(m_gfx->getRootPath());
+		standard.addDirectories(path);
+		tsassert(program.load(device, standard.str()));
+	};
+
+	load(m_shader,        "shaderbin/Standard.shader");
+	load(m_shaderNormMap, "shaderbin/StandardNormalMapped.shader");
+}
+
+ShaderHandle ForwardRenderer::selectShader(const Mesh& mesh, const PhongMaterial& mat)
+{
+	//If material specifies a normal map
+	if (mat.normalMap.image != ResourceHandle())
+	{
+		tsassert(mesh.vertexAttributes.find("TEXCOORD0") != mesh.vertexAttributes.end());
+		tsassert(mesh.vertexAttributes.find("TANGENT") != mesh.vertexAttributes.end());
+
+		return m_shaderNormMap.handle();
+	}
+	//Just use diffuse mapping
+	else
+	{
+		tsassert(mesh.vertexAttributes.find("TEXCOORD0") != mesh.vertexAttributes.end());
+
+		return m_shader.handle();
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -62,8 +85,8 @@ Renderable ForwardRenderer::createRenderable(const Mesh& mesh, const PhongMateri
 
 	//Material shader resources
 	bindIf(BIND_DIFFUSE_MAP, phong.diffuseMap);
-	bindIf(BIND_NORMAL_MAP, phong.diffuseMap);
-	bindIf(BIND_SPECULAR_MAP, phong.diffuseMap);
+	bindIf(BIND_NORMAL_MAP, phong.normalMap);
+	bindIf(BIND_SPECULAR_MAP, phong.specularMap);
 	bindIf(BIND_DISPLACEMENT_MAP, phong.displacementMap);
 
 	//Material shader constants
@@ -80,7 +103,7 @@ Renderable ForwardRenderer::createRenderable(const Mesh& mesh, const PhongMateri
 		Renderable item parameters
 	*/
 	item.resources = makeResourceSet(mesh, item.mat);
-	item.pso = makePipeline(mesh, item.mat);
+	item.pso = makePipeline(mesh, phong);
 	item.params = mesh.getParams();
 
 	return move(item);
@@ -131,7 +154,7 @@ void findAttribute(const char* semantic, VertexAttributeType type, const VertexA
 	}
 }
 
-RPtr<PipelineHandle> ForwardRenderer::makePipeline(const Mesh& mesh, const MaterialInstance& mat)
+RPtr<PipelineHandle> ForwardRenderer::makePipeline(const Mesh& mesh, const PhongMaterial& mat)
 {
 	RenderDevice* device = m_gfx->device();
 
@@ -147,7 +170,7 @@ RPtr<PipelineHandle> ForwardRenderer::makePipeline(const Mesh& mesh, const Mater
 	pso.samplerCount = samplers.count();
 
 	//States
-	pso.blend.enable = false;
+	pso.blend.enable = mat.enableAlpha;
 	pso.depth.enableDepth = true;
 	pso.depth.enableStencil = false;
 	pso.raster.enableScissor = false;
@@ -170,7 +193,7 @@ RPtr<PipelineHandle> ForwardRenderer::makePipeline(const Mesh& mesh, const Mater
 	//Vertex topology
 	pso.topology = mesh.vertexTopology;
 
-	return device->createPipeline(m_shader.handle(), pso);
+	return device->createPipeline(selectShader(mesh, mat), pso);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

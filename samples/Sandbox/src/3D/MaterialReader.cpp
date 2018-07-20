@@ -70,10 +70,8 @@ MaterialReader::MaterialReader(GraphicsSystem* gfx, const Path& fileName)
 			Properties
 		*/
 
-		float alpha;
-		float shininess;
-		matReader.getProperty(fmtKey("alpha"), alpha);
-		matReader.getProperty(fmtKey("shininess"), shininess);
+		matReader.getProperty(fmtKey("alpha"), matInfo.enableAlpha);
+		matReader.getProperty(fmtKey("shininess"), matInfo.specularPower);
 
 		if (matReader.getProperty(fmtKey("diffuseColour"), propValue))
 			matInfo.diffuseColour = getVectorProperty(propValue);
