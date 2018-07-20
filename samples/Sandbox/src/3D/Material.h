@@ -24,5 +24,7 @@ namespace ts
 		RGBA specularColour;
 		RGBA emissiveColour;
 		float specularPower = 0.0f;
+
+		bool enableAlpha = false;
 	};
 }

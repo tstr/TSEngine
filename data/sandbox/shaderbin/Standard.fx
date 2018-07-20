@@ -2,8 +2,8 @@
 	Standard Shader
 */
 
+#include "Lighting.h"
 #include "CommonLayouts.h"
-#include "Common.h"
 
 Texture2D diffuse : register(t0);
 SamplerState texsample : register(s0);
@@ -46,38 +46,10 @@ PixelInput_PosTexNorm VS(VertexInput_PosTexNorm input)
 [stage("pixel")]
 float4 PS(PixelInput_PosTexNorm input) : SV_Target0
 {
-	//Normalize view space normal
-	input.vnorm = normalize(input.vnorm);
-
-	float4 baseColour = diffuse.Sample(texsample, input.texcoord);
-	
-	float3 light = float3(0, 0, 0);
-	
-	light += computeDirectLight(input.vnorm, input.vpos.xyz, scene.directLight);
-	light += accumulateDynamicLights(input.vnorm, input.vpos.xyz);
-	//light = computeDynamicLight(input.vnorm, input.vpos.xyz, scene.dynamicLights[0]);
-
-	return float4(baseColour.rgb * (scene.ambient.rgb + light), baseColour.a);
-
-	/*
-	//Calculate diffuse lighting
-	float diffuseIntensity = saturate(dot(normalize(input.vnorm), ldir));
-	float specularIntensity = 0.0f;
-	//return float4(diffuseIntensity.xxx, 1.0f);
-
-	//Calculate specular lighting
-	if (diffuseIntensity > 0.0f)
-	{
-		float3 reflection = normalize(2 * diffuseIntensity * input.vnorm - ldir); //Reflection Vector
-
-		const float specularPower = 128;
-
-		//Calculate specular factor, using Phong shading algorithm
-		specularIntensity = pow(saturate(dot(reflection, -vdir)), specularPower);
-	}
-
-	return (scene.ambient * baseColour) + (baseColour * scene.direct.colour * (diffuseIntensity + specularIntensity));
-	*/
-	//return float4(input.vnorm, 1.0f);
+	Surface s;
+	s.pos = input.vpos;
+	s.normal = normalize(input.vnorm);
+	s.colour = diffuse.Sample(texsample, input.texcoord);
+	return computeLighting(s);
 }
 

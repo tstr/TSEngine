@@ -349,8 +349,9 @@ bool Model::exportMaterials(std::ostream& outputstream)
 			if (formatTexPath(tex, texpath))
 				outputstream << "displacementMap = " << texpath.str() << endl;
 
+			//Workaround for the OBJ mtl importer because normal maps aren't actually supported
 			tex.Clear();
-			aimaterial->GetTexture(aiTextureType::aiTextureType_NORMALS, 0, &tex);
+			aimaterial->GetTexture(aiTextureType::aiTextureType_HEIGHT, 0, &tex);
 			if (formatTexPath(tex, texpath))
 				outputstream << "normalMap = " << texpath.str() << endl;
 
