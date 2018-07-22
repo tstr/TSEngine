@@ -64,12 +64,14 @@ float3 phongShading(float3 normal, float3 vdir, float3 ldir, float3 lcolour)
 
 float3 computeDirectLight(float3 vnormal, float3 vpos, DirectLight source)
 {
-	return phongShading(
+	float3 illum = phongShading(
 		vnormal,
 		normalize(vpos),
 		normalize(-source.dir),
 		source.colour
 	);
+
+	return illum;
 }
 
 float computeAttenuation(float dist, DynamicLight source)
@@ -108,11 +110,11 @@ float3 accumulateDynamicLights(float3 vnormal, float3 vpos)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-float4 computeLighting(Surface surface)
+float4 computeLighting(Surface surface, float directFactor)
 {
 	float3 light = float3(0, 0, 0);
 
-	light += computeDirectLight(surface.normal, surface.pos.xyz, scene.directLight);
+	light += (computeDirectLight(surface.normal, surface.pos.xyz, scene.directLight) * directFactor);
 	light += accumulateDynamicLights(surface.normal, surface.pos.xyz);
 	//light = computeDynamicLight(input.vnorm, input.vpos.xyz, scene.dynamicLights[0]);
 

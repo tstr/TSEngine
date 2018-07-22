@@ -3,10 +3,12 @@
 */
 
 #include "Lighting.h"
+#include "Shadows.h"
 #include "CommonLayouts.h"
 
 Texture2D diffuseMap : register(t0);
 Texture2D normalMap  : register(t1);
+
 SamplerState texsample : register(s0);
 
 /*
@@ -41,6 +43,7 @@ PixelInput_PosTexNormTangent VS(VertexInput_PosTexNormTangent input)
 	//save view position of vertex
 	output.vpos = output.pos;
 	output.pos = mul(output.pos, scene.projection);
+	output.lpos = mul(output.vpos, scene.directLightView);
 
 	output.texcoord = input.texcoord;
 	output.texcoord.y = 1.0f - output.texcoord.y;
@@ -54,6 +57,8 @@ PixelInput_PosTexNormTangent VS(VertexInput_PosTexNormTangent input)
 [stage("pixel")]
 float4 PS(PixelInput_PosTexNormTangent input) : SV_Target0
 {
+	float factor = calculateDirectLightShadow(input.lpos);
+
 	//transforms tangent space => view space
 	float3x3 tbn = float3x3(normalize(input.vtangent), normalize(input.vbitangent), normalize(input.vnorm)); 
 	//tbn = transpose(tbn); //inverse matrix - view to tangent
@@ -71,6 +76,5 @@ float4 PS(PixelInput_PosTexNormTangent input) : SV_Target0
 	s.normal = normalize(mul(tangentNormal, tbn)); //convert tangent space normal to view space
 	s.colour = diffuseMap.Sample(texsample, input.texcoord);
 
-	return computeLighting(s);
-}
+	return computeLighting(s, factor);
 

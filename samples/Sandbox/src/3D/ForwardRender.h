@@ -9,35 +9,20 @@
 
 #include <tscore/path.h>
 #include <tsgraphics/Graphics.h>
-#include <tsgraphics/BindingSet.h>
 #include <tsgraphics/Buffer.h>
 #include <tsgraphics/Shader.h>
 #include <tsgraphics/Model.h>
 #include <tsgraphics/RenderTarget.h>
 
+#include "Renderable.h"
 #include "Material.h"
+#include "ShadowMap.h"
 
 #include "ForwardRenderConstants.h"
 
 namespace ts
 {
 	using ForwardRenderTarget = RenderTargets<1>;
-
-    struct MaterialInstance
-    {
-        BindingSet<ImageView> images;
-        Buffer buffer;
-    };
-
-    struct Renderable
-    {
-		MaterialInstance mat;
-
-        RPtr<PipelineHandle> pso;
-        RPtr<ResourceSetHandle> resources;
-
-		DrawParams params;
-    };
 
     class ForwardRenderer
     {
@@ -100,6 +85,8 @@ namespace ts
 		ShaderProgram m_shader;
 		ShaderProgram m_shaderNormMap;
 
+		ShadowMap m_shadowMap;
+
 		///////////////////////////////////////////////////////////////////////////////
 		//	Properties
 		///////////////////////////////////////////////////////////////////////////////
@@ -115,10 +102,28 @@ namespace ts
 
 		///////////////////////////////////////////////////////////////////////////////
 
+		struct QueueElement
+		{
+			const Renderable* item = nullptr;
+			Matrix transform;
+
+			QueueElement() = default;
+			QueueElement(const Renderable* i, const Matrix& t) :
+				item(i),
+				transform(t)
+			{}
+		};
+
+		std::vector<QueueElement> m_renderQueue;
+
+		///////////////////////////////////////////////////////////////////////////////
+
 		void preloadShaders();
 		
 		ShaderHandle selectShader(const Mesh& mesh, const PhongMaterial& mat);
         RPtr<PipelineHandle> makePipeline(const Mesh& mesh, const PhongMaterial& mat);
 		RPtr<ResourceSetHandle> makeResourceSet(const Mesh& mesh, const MaterialInstance& mat);
+
+		void makeShadowPipelineAndResources(Renderable& item, const Mesh& mesh);
     };
 }

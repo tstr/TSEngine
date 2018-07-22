@@ -19,12 +19,15 @@ SET(src_list
 	src/2D/Painter.h
 	src/2D/Painter.cpp
 
+	src/3D/Renderable.h
 	src/3D/Material.h
 	src/3D/MaterialReader.h
 	src/3D/MaterialReader.cpp
 	src/3D/ForwardRender.h
 	src/3D/ForwardRender.cpp
 	src/3D/ForwardRenderConstants.h
+	src/3D/ShadowMap.h
+	src/3D/ShadowMap.cpp
 )
 
 ADD_SAMPLE(
@@ -36,3 +39,5 @@ ADD_SAMPLE(
 ASSIGN_SOURCE_GROUPS(${src_list})
 
 TARGET_LINK_LIBRARIES(Sandbox PUBLIC tsengine)
+
+ADD_DEPENDENCIES(Sandbox DATA_BUILD)

@@ -45,6 +45,7 @@ struct SceneParams
 {
 	matrix view;
 	matrix projection;
+    matrix directLightView;
 	float4 ambient;
 	DirectLight directLight;
 	DynamicLight dynamicLights[4];

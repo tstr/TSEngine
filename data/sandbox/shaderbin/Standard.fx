@@ -3,9 +3,11 @@
 */
 
 #include "Lighting.h"
+#include "Shadows.h"
 #include "CommonLayouts.h"
 
-Texture2D diffuse : register(t0);
+Texture2D diffuseMap : register(t0);
+
 SamplerState texsample : register(s0);
 
 /*
@@ -33,6 +35,7 @@ PixelInput_PosTexNorm VS(VertexInput_PosTexNorm input)
 	//save view position of vertex
 	output.vpos = output.pos;
 	output.pos = mul(output.pos, scene.projection);
+	output.lpos = mul(output.vpos, scene.directLightView);
 	
 	output.texcoord = input.texcoord;
 	output.texcoord.y = 1.0f - output.texcoord.y;
@@ -46,10 +49,12 @@ PixelInput_PosTexNorm VS(VertexInput_PosTexNorm input)
 [stage("pixel")]
 float4 PS(PixelInput_PosTexNorm input) : SV_Target0
 {
+	float factor = calculateDirectLightShadow(input.lpos);
+
 	Surface s;
 	s.pos = input.vpos;
 	s.normal = normalize(input.vnorm);
-	s.colour = diffuse.Sample(texsample, input.texcoord);
-	return computeLighting(s);
+	s.colour = diffuseMap.Sample(texsample, input.texcoord);
+	return computeLighting(s, factor);
 }
 

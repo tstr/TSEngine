@@ -26,6 +26,7 @@ struct PixelInput_PosTex
 
 struct PixelInput_PosTexNorm
 {
+    float4 lpos : LIGHT_POSITION;
 	float4 pos : SV_POSITION;
 	float4 vpos : VIEW_POSITION;
 	float3 vnorm : VIEW_NORMAL;
@@ -34,6 +35,7 @@ struct PixelInput_PosTexNorm
 
 struct PixelInput_PosTexNormTangent
 {
+    float4 lpos : LIGHT_POSITION;
 	float4 pos : SV_POSITION;
 	float4 vpos : VIEW_POSITION;
 	float3 vnorm : VIEW_NORMAL;

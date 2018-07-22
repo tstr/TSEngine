@@ -42,22 +42,6 @@ int Sandbox::onInit()
 	m_camera.setSpeed(15.0f);
 	m_scale = 0.1f;
 
-	///////////////////////////////////////////////////////////////////
-
-	/*
-	String model;
-	if (getEnv().getVars()->get("Sandbox.model", model))
-	{
-		if (int err = loadModel(model))
-			return err;
-	}
-	else
-	{
-		tserror("Variable \"Sandbox.model\" does not exist");
-		return -1;
-	}
-	//*/
-
 	//////////////////////////////////////////////////////////////////////////////
 	// Configure forward renderer settings
 	//////////////////////////////////////////////////////////////////////////////
@@ -78,8 +62,8 @@ int Sandbox::onInit()
 		Vector(-10, 5, -10, 1)
 	};
 
-	m_render.setAmbientColour(RGBA(38, 38, 38));
-	m_render.setDirectionalLightColour(RGBA(174, 183, 190));
+	m_render.setAmbientColour(RGBA(30, 30, 30));
+	m_render.setDirectionalLightColour(RGBA(205, 215, 225));
 	m_render.setDirectionalLightDir(Vector(1.0f, -1.0f, -1.0f, 0));
 
 	//Dynamic lighting
