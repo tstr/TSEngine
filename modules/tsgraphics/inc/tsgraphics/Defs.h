@@ -277,11 +277,11 @@ namespace ts
 		DepthState depth;
 		BlendState blend;
 
-		const SamplerState* samplers;
-		size_t samplerCount;
+		const SamplerState* samplers = nullptr;
+		size_t samplerCount = 0;
 
-		const VertexAttribute* vertexAttributeList;
-		size_t vertexAttributeCount;
+		const VertexAttribute* vertexAttributeList = nullptr;
+		size_t vertexAttributeCount = 0;
 
 		VertexTopology topology;
 	};
@@ -354,16 +354,16 @@ namespace ts
 	*/
 	struct ResourceSetCreateInfo
 	{
-        const ImageView* resources;  //shader resources
-        uint32 resourceCount;
+        const ImageView* resources = nullptr;  //shader resources
+        uint32 resourceCount = 0;
         
-        const ResourceHandle* constantBuffers; //Constant buffers
-        uint32 constantBuffersCount;
+        const ResourceHandle* constantBuffers = nullptr; //Constant buffers
+        uint32 constantBuffersCount = 0;
         
-        const VertexBufferView* vertexBuffers;
-        uint32 vertexBufferCount;
+        const VertexBufferView* vertexBuffers = nullptr;
+        uint32 vertexBufferCount = 0;
         
-        ResourceHandle indexBuffer;
+        ResourceHandle indexBuffer = ResourceHandle();
 	};
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

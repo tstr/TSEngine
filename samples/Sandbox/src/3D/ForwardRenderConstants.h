@@ -14,7 +14,9 @@ namespace ts
 		BIND_DIFFUSE_MAP      = 0,
 		BIND_NORMAL_MAP       = 1,
 		BIND_SPECULAR_MAP     = 2,
-		BIND_DISPLACEMENT_MAP = 3
+		BIND_DISPLACEMENT_MAP = 3,
+
+		BIND_SHADOW_MAP       = 7,
 	};
 
 	enum BufferBindings
@@ -52,6 +54,7 @@ namespace ts
     {
         Matrix view;
         Matrix projection;
+		Matrix lightView;
         //Vector viewPos;
         Vector ambient;
         //Directional light

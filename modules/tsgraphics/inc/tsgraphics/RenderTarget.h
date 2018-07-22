@@ -59,7 +59,7 @@ namespace ts
 		void resize(uint32 width, uint32 height);
 
 		//Get image view
-		ImageView getView()
+		ImageView getView() const
 		{
 			ImageView view;
 			view.image = Base::handle();
@@ -147,6 +147,8 @@ namespace ts
 
 			return Base::handle();
 		}
+
+		void refresh() { this->handle(); }
 
 		//Read render target properties
 		const ImageView* attachedOutputs() const { return m_outputs; }

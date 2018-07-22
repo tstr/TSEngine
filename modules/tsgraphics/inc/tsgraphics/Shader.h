@@ -18,6 +18,7 @@ namespace ts
 		ShaderProgram() {}
 		ShaderProgram(const ShaderProgram&) = delete;
 		ShaderProgram(ShaderProgram&& rhs) : m_program(std::move(rhs.m_program)) {}
+		void operator=(ShaderProgram&& rhs) { m_program = std::move(rhs.m_program); }
 		
 		//Construct a shader from the given file
 		explicit ShaderProgram(RenderDevice* device, const String& shaderFile) { load(device, shaderFile); }
