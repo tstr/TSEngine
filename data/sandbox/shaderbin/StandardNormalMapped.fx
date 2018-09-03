@@ -25,7 +25,9 @@ PixelInput_PosTexNormTangent VS(VertexInput_PosTexNormTangent input)
 
 	//transform position
 	output.pos = mul(output.pos, mesh.world);
+	float4 wpos = output.pos;
 	output.pos = mul(output.pos, scene.view);
+	output.vpos = output.pos;
 
 	//transform normal
 	output.vnorm = input.normal;
@@ -40,10 +42,8 @@ PixelInput_PosTexNormTangent VS(VertexInput_PosTexNormTangent input)
 	//calculate bitangent vector
 	output.vbitangent = normalize(cross(output.vnorm, output.vtangent));
 
-	//save view position of vertex
-	output.vpos = output.pos;
 	output.pos = mul(output.pos, scene.projection);
-	output.lpos = mul(output.vpos, scene.directLightView);
+	output.lpos = mul(wpos, scene.directLightView);
 
 	output.texcoord = input.texcoord;
 	output.texcoord.y = 1.0f - output.texcoord.y;
@@ -60,7 +60,7 @@ float4 PS(PixelInput_PosTexNormTangent input) : SV_Target0
 	float factor = calculateDirectLightShadow(input.lpos);
 
 	//transforms tangent space => view space
-	float3x3 tbn = float3x3(normalize(input.vtangent), normalize(input.vbitangent), normalize(input.vnorm)); 
+	float3x3 tbn = float3x3(normalize(input.vtangent), normalize(input.vbitangent), normalize(input.vnorm));
 	//tbn = transpose(tbn); //inverse matrix - view to tangent
 
 	//Flip v coord - todo: fix issue with inverted normal maps
@@ -68,7 +68,7 @@ float4 PS(PixelInput_PosTexNormTangent input) : SV_Target0
 
 	float3 tangentNormal = normalMap.Sample(texsample, input.texcoord).xyz;
 	tangentNormal = normalize(tangentNormal * 2 - 1); //convert 0~1 to -1~+1.
-	
+
 	input.texcoord.y = 1.0f - input.texcoord.y; //restore
 
 	Surface s;
@@ -77,4 +77,4 @@ float4 PS(PixelInput_PosTexNormTangent input) : SV_Target0
 	s.colour = diffuseMap.Sample(texsample, input.texcoord);
 
 	return computeLighting(s, factor);
-
+}

@@ -24,7 +24,7 @@ ForwardRenderer::ForwardRenderer(GraphicsSystem* gfx) :
 	tsassert(m_perScene);
 	tsassert(m_perMesh);
 
-	m_shadowMap = ShadowMap(m_gfx, 1024, 1024);
+	m_shadowMap = ShadowMap(m_gfx, 2048, 2048);
 
 	preloadShaders();
 }
@@ -244,23 +244,19 @@ void ForwardRenderer::end()
 	//	Shadow pass
 	//////////////////////////////////////////////////////////////////////////
 
-	float zFar = 150.0f;
-	float zNear = 0.1f;
+	const float zFar = 150.0f;
+	const float zNear = 0.001f;
 
 	Matrix lightView, lightProjection;
 
+	//todo: calculate from view frustum
+
 	//Converts world space => light space
-	//lightView = Matrix(Vector(0, 0, 0), m_directLightDir, Vector(0, 1, 0));
-	//lightProjection = Matrix::orthographic(100, 100, 0.1f, 100.0f);
+	lightView = Matrix::lookAt(Vector(0, 140, 0), Vector(), Vector(1, 0, 0));
 
-	//lightView = Matrix::translation(10, 10, 0).inverse();
-	lightView = Matrix::lookTo(Vector(20, 5, 0), Vector(1, 0, -0.5), Vector(0, 1, 0));
-	//lightView = Matrix::lookTo(Vector(20, 25, 0), Vector(1, -0.5, -0.5), Vector(0, 1, 0));
-	//lightView = Matrix::lookAt(Vector(0, 0, 0), m_directLightDir * zFar, Vector(0, 1, 0));
+	//lightProjection = Matrix::perspectiveFieldOfView(Pi / 2, 1, zNear, zFar);
+	lightProjection = Matrix::orthographic(400, 400, zNear, zFar);
 
-	lightProjection = Matrix::perspectiveFieldOfView(Pi / 2, 1, zNear, zFar);
-	//lightProjection = Matrix::orthographic(zFar, zFar, zNear, zFar);
-	
 	constants.view = lightView;
 	constants.projection = lightProjection;
 	Matrix::transpose(constants.view);
@@ -268,8 +264,6 @@ void ForwardRenderer::end()
 
 	//Update scene constants
 	ctx->resourceUpdate(m_perScene.handle(), &constants);
-
-	bool debugShadowMap = false;
 
 	//*
 	//shadow pass
@@ -280,7 +274,7 @@ void ForwardRenderer::end()
 		ctx->resourceUpdate(m_perMesh.handle(), &constants);
 
 		ctx->draw(
-			debugShadowMap ? m_targets : m_shadowMap.getTarget(),
+			m_shadowMap.getTarget(),
 			r.item->shadowPso.handle(),
 			r.item->shadowInputs.handle(),
 			r.item->params
@@ -296,11 +290,7 @@ void ForwardRenderer::end()
 	constants.ambient = m_ambientColour;
 	constants.view = m_viewMatrix;
 	constants.projection = m_projMatrix;
-	constants.lightView = constants.view.inverse() * lightView * lightProjection;
-
-	Vector vec(0, 0, 0, 1);
-	vec = Matrix::transform4D(vec, constants.view);
-	vec = Matrix::transform4D(vec, constants.lightView);
+	constants.lightView = lightView * lightProjection;
 
 	//Directional light
 	constants.direct.colour = m_directLightColour;
@@ -325,7 +315,6 @@ void ForwardRenderer::end()
 	//Update scene constants
 	ctx->resourceUpdate(m_perScene.handle(), &constants);
 
-	if (!debugShadowMap)
 	for (const auto& r : m_renderQueue)
 	{
 		//Update mesh constants
@@ -377,7 +366,7 @@ void ForwardRenderer::makeShadowPipelineAndResources(Renderable& item, const Mes
 	pso.depth.enableDepth = true;
 	pso.depth.enableStencil = false;
 	pso.raster.enableScissor = false;
-	pso.raster.cullMode = CullMode::BACK;
+	pso.raster.cullMode = CullMode::FRONT;
 	pso.raster.fillMode = FillMode::SOLID;
 
 	//Vertex layout

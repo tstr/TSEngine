@@ -24,7 +24,9 @@ PixelInput_PosTexNorm VS(VertexInput_PosTexNorm input)
 	
 	//transform position
 	output.pos = mul(output.pos, mesh.world);
+	float4 wpos = output.pos;
 	output.pos = mul(output.pos, scene.view);
+	output.vpos = output.pos;
 
 	//transform normal
 	output.vnorm = input.normal;
@@ -32,10 +34,8 @@ PixelInput_PosTexNorm VS(VertexInput_PosTexNorm input)
 	output.vnorm = mul(output.vnorm, (float3x3)scene.view);
 	output.vnorm = normalize(output.vnorm);
 
-	//save view position of vertex
-	output.vpos = output.pos;
 	output.pos = mul(output.pos, scene.projection);
-	output.lpos = mul(output.vpos, scene.directLightView);
+	output.lpos = mul(wpos, scene.directLightView);
 	
 	output.texcoord = input.texcoord;
 	output.texcoord.y = 1.0f - output.texcoord.y;

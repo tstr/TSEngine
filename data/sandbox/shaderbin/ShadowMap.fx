@@ -42,26 +42,22 @@ PSinput VS(VSinput input)
 float2 PS(PSinput input) : SV_TARGET
 {
 	//float factor = saturate(dot(normalize(scene.lightPos - input.pos), normalize(input.pos - scene.eyePos)));
-	//float depth = input.pos.z / input.pos.w;
+	//float depth = length(input.vpos.xyz) / SHADOW_FAR_PLANE;
 
-	/*
-	float dist = length(input.vpos);
+	float d = input.pos.z / input.pos.w;
 
-	float m1 = dist;
-	float m2 = dist * dist;
+	//*
+	float m1 = d;
+	float m2 = d * d;
 
-	float dx = ddx(dist);
-	float dy = ddy(dist);
+	float dx = ddx(d);
+	float dy = ddy(d);
 	m2 += ((dx * dx + dy * dy) / 4.0f);
 
 	return float2(m1, m2);
-	*/
-
-	//Normalized distance of pixel from camera
-	float d = length(input.vpos) / SHADOW_FAR_PLANE;
-
-	//Return distance and distance^2
+	/*/
 	return float2(d, d * d);
+	//*/
 }
 
 ///////////////////////////////////////////////////////////////////////////////

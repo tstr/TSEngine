@@ -154,7 +154,7 @@ namespace ts
 
 		//Left hand
 		VECTOR_INLINE static Matrix VECTOR_CALL lookAt(Vector position, Vector target, Vector up) { return Matrix(internal::XMMatrixLookAtLH(position, target, up)); }
-		VECTOR_INLINE static Matrix VECTOR_CALL lookTo(Vector position, Vector target, Vector up) { return Matrix(internal::XMMatrixLookToLH(position, target, up)); }
+		VECTOR_INLINE static Matrix VECTOR_CALL lookTo(Vector position, Vector direction, Vector up) { return Matrix(internal::XMMatrixLookToLH(position, direction, up)); }
 		//VECTOR_INLINE static Matrix VECTOR_CALL CreateWorld(Vector position, Vector forward, Vector up) {}
 		
 		/////////////////////////////////////////////////////////////////////////////////////
