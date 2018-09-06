@@ -2,7 +2,7 @@
 	Shadow Mapping pipeline
 */
 
-#include "ShadowMap.h"
+#include "ShadowPass.h"
 
 #include <tscore/debug/assert.h>
 
@@ -10,7 +10,7 @@ using namespace ts;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ShadowMap::ShadowMap(GraphicsSystem* gfx, uint32 width, uint32 height)
+ShadowPass::ShadowPass(GraphicsSystem* gfx, uint32 width, uint32 height)
 {
 	tsassert(gfx);
 

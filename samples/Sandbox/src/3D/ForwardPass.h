@@ -16,22 +16,22 @@
 
 #include "Renderable.h"
 #include "Material.h"
-#include "ShadowMap.h"
+#include "ShadowPass.h"
 
-#include "ForwardRenderConstants.h"
+#include "ForwardPassConstants.h"
 
 namespace ts
 {
 	using ForwardRenderTarget = RenderTargets<1>;
 
-    class ForwardRenderer
+    class ForwardPass
     {
     public:
 
-		ForwardRenderer() {}
-		ForwardRenderer(const ForwardRenderer&) = delete;
+		ForwardPass() {}
+		ForwardPass(const ForwardPass&) = delete;
 
-		ForwardRenderer(GraphicsSystem* gfx);
+		ForwardPass(GraphicsSystem* gfx);
 
 		/*
 			Set global constants
@@ -85,7 +85,7 @@ namespace ts
 		ShaderProgram m_shader;
 		ShaderProgram m_shaderNormMap;
 
-		ShadowMap m_shadowMap;
+		ShadowPass m_shadowMap;
 
 		///////////////////////////////////////////////////////////////////////////////
 		//	Properties

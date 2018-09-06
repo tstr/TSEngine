@@ -6,7 +6,8 @@
 
 #include <vector>
 
-#include "3D/ForwardRender.h"
+#include "Renderable.h"
+#include "SceneRender.h"
 
 namespace ts
 {

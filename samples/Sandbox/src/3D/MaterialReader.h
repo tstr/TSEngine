@@ -5,7 +5,8 @@
 #pragma once
 
 #include <tscore/Path.h>
-#include "ForwardRender.h"
+#include <tsgraphics/Graphics.h>
+#include "Material.h"
 
 namespace ts
 {

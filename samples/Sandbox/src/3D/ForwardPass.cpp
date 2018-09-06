@@ -4,14 +4,14 @@
 
 #include <tscore/debug/assert.h>
 
-#include "ForwardRender.h"
+#include "ForwardPass.h"
 
 using namespace std;
 using namespace ts;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ForwardRenderer::ForwardRenderer(GraphicsSystem* gfx) :
+ForwardPass::ForwardPass(GraphicsSystem* gfx) :
 	m_gfx(gfx)
 {
 	tsassert(m_gfx);
@@ -24,14 +24,14 @@ ForwardRenderer::ForwardRenderer(GraphicsSystem* gfx) :
 	tsassert(m_perScene);
 	tsassert(m_perMesh);
 
-	m_shadowMap = ShadowMap(m_gfx, 2048, 2048);
+	m_shadowMap = ShadowPass(m_gfx, 2048, 2048);
 
 	preloadShaders();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void ForwardRenderer::preloadShaders()
+void ForwardPass::preloadShaders()
 {
 	RenderDevice* device = m_gfx->device();
 
@@ -45,7 +45,7 @@ void ForwardRenderer::preloadShaders()
 	load(m_shaderNormMap, "shaderbin/StandardNormalMapped.shader");
 }
 
-ShaderHandle ForwardRenderer::selectShader(const Mesh& mesh, const PhongMaterial& mat)
+ShaderHandle ForwardPass::selectShader(const Mesh& mesh, const PhongMaterial& mat)
 {
 	//If material specifies a normal map
 	if (mat.normalMap.image != ResourceHandle())
@@ -66,7 +66,7 @@ ShaderHandle ForwardRenderer::selectShader(const Mesh& mesh, const PhongMaterial
 
 ///////////////////////////////////////////////////////////////////////////////
 
-Renderable ForwardRenderer::createRenderable(const Mesh& mesh, const PhongMaterial& phong)
+Renderable ForwardPass::createRenderable(const Mesh& mesh, const PhongMaterial& phong)
 {
 	tsassert(m_gfx);
 
@@ -116,7 +116,7 @@ Renderable ForwardRenderer::createRenderable(const Mesh& mesh, const PhongMateri
 	return move(item);
 }
 
-RPtr<ResourceSetHandle> ForwardRenderer::makeResourceSet(const Mesh& mesh, const MaterialInstance& mat)
+RPtr<ResourceSetHandle> ForwardPass::makeResourceSet(const Mesh& mesh, const MaterialInstance& mat)
 {
 	RenderDevice* device = m_gfx->device();
 
@@ -161,7 +161,7 @@ void findAttribute(const char* semantic, VertexAttributeType type, const VertexA
 	}
 }
 
-RPtr<PipelineHandle> ForwardRenderer::makePipeline(const Mesh& mesh, const PhongMaterial& mat)
+RPtr<PipelineHandle> ForwardPass::makePipeline(const Mesh& mesh, const PhongMaterial& mat)
 {
 	RenderDevice* device = m_gfx->device();
 
@@ -211,12 +211,12 @@ RPtr<PipelineHandle> ForwardRenderer::makePipeline(const Mesh& mesh, const Phong
 //	Draw submission
 ///////////////////////////////////////////////////////////////////////////////
 
-void ForwardRenderer::draw(const Renderable& item, const Matrix& transform)
+void ForwardPass::draw(const Renderable& item, const Matrix& transform)
 {
 	m_renderQueue.emplace_back(&item, transform);
 }
 
-void ForwardRenderer::begin(ForwardRenderTarget& targets)
+void ForwardPass::begin(ForwardRenderTarget& targets)
 {
 	m_targets = targets.handle();
 
@@ -234,7 +234,7 @@ void ForwardRenderer::begin(ForwardRenderTarget& targets)
 	ctx->clearColourTarget(m_shadowMap.getTarget(), RGBA(255, 255, 255));
 }
 
-void ForwardRenderer::end()
+void ForwardPass::end()
 {
 	auto ctx = m_gfx->device()->context();
 
@@ -338,7 +338,7 @@ void ForwardRenderer::end()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void ForwardRenderer::makeShadowPipelineAndResources(Renderable& item, const Mesh& mesh)
+void ForwardPass::makeShadowPipelineAndResources(Renderable& item, const Mesh& mesh)
 {
 	auto device = m_gfx->device();
 

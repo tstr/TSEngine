@@ -11,7 +11,6 @@ SET(src_list
 	src/Camera.cpp
 	src/Entity.h
 	src/TransformComponent.h
-	src/RenderComponent.h
 	
 	src/util/IniReader.h
 	src/util/IniReader.cpp
@@ -19,15 +18,18 @@ SET(src_list
 	src/2D/Painter.h
 	src/2D/Painter.cpp
 
+	src/3D/SceneRender.h
+	src/3D/SceneRender.cpp
 	src/3D/Renderable.h
+	src/3D/RenderComponent.h
 	src/3D/Material.h
 	src/3D/MaterialReader.h
 	src/3D/MaterialReader.cpp
-	src/3D/ForwardRender.h
-	src/3D/ForwardRender.cpp
-	src/3D/ForwardRenderConstants.h
-	src/3D/ShadowMap.h
-	src/3D/ShadowMap.cpp
+	src/3D/ForwardPass.h
+	src/3D/ForwardPass.cpp
+	src/3D/ForwardPassConstants.h
+	src/3D/ShadowPass.h
+	src/3D/ShadowPass.cpp
 )
 
 ADD_SAMPLE(

@@ -11,19 +11,19 @@
 
 namespace ts
 {
-	class ShadowMap
+	class ShadowPass
 	{
 	public:
 
-		ShadowMap() {}
-		ShadowMap(const ShadowMap&) = delete;
+		ShadowPass() {}
+		ShadowPass(const ShadowPass&) = delete;
 
 		/*
 			Construct a shadow map
 		*/
-		ShadowMap(GraphicsSystem* gfx, uint32 width, uint32 height);
+		ShadowPass(GraphicsSystem* gfx, uint32 width, uint32 height);
 
-		void operator=(ShadowMap&& rhs)
+		void operator=(ShadowPass&& rhs)
 		{
 			m_shadowBuffer = std::move(rhs.m_shadowBuffer);
 			m_shadowDepth = std::move(rhs.m_shadowDepth);

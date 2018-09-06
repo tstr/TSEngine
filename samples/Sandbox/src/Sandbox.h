@@ -7,10 +7,9 @@
 #include <tsengine.h>
 
 #include "Camera.h"
-#include "3D/ForwardRender.h"
+#include "3D/SceneRender.h"
 
 #include "Entity.h"
-#include "RenderComponent.h"
 #include "TransformComponent.h"
 
 namespace ts
@@ -21,7 +20,7 @@ namespace ts
 
 
 		Camera m_camera;
-		ForwardRenderer m_render;
+		ForwardPass m_render;
 		RenderTargets<> m_renderTarget;
 
 		//Entities + Components
