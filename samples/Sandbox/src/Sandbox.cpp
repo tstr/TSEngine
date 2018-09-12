@@ -75,12 +75,6 @@ int Sandbox::onInit()
 		m_render.enableDynamicLight(i);
 	}
 
-	//Initialize render target
-	m_renderTarget = RenderTargets<>(graphics()->device());
-	m_renderTarget.attach(0, graphics()->getDisplayView());
-	m_renderTarget.attachDepth(graphics()->getDisplayTargetPool()->newDepthTarget(true));
-	m_renderTarget.setViewport(graphics()->getDisplayViewport());
-
 	//////////////////////////////////////////////////////////////////////////////
 
 	m_entityManager.create(m_modelEntity);
@@ -157,12 +151,6 @@ void Sandbox::onUpdate(double deltatime)
 	m_render.setCameraView(m_camera.getViewMatrix());
 	m_render.setCameraProjection(m_camera.getProjectionMatrix());
 
-	//Update render target viewport
-	m_renderTarget.setViewport(dviewport);
-
-	//Begin rendering
-	m_render.begin(m_renderTarget);
-
 	// Submit entities for rendering
 	for (Entity e : { m_modelEntity, m_boxEntity })
 	{
@@ -183,8 +171,8 @@ void Sandbox::onUpdate(double deltatime)
 		}
 	}
 
-	//Finish rendering
-	m_render.end();
+	//Commit renderables
+	m_render.update();
 
 	//tsprofile("x:% y:% z:%", m_camera.getPosition().x(), m_camera.getPosition().y(), m_camera.getPosition().z());
 }

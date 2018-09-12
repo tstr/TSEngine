@@ -11,6 +11,7 @@
 
 #include "Entity.h"
 #include "TransformComponent.h"
+#include "RenderComponent.h"
 
 namespace ts
 {
@@ -18,10 +19,8 @@ namespace ts
 	{
 	private:
 
-
 		Camera m_camera;
-		ForwardPass m_render;
-		RenderTargets<> m_renderTarget;
+		SceneRender m_render;
 
 		//Entities + Components
 		EntityManager m_entityManager;

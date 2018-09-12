@@ -9,15 +9,9 @@
 
 namespace ts
 {
-	struct MaterialInstance
-	{
-		BindingSet<ImageView> images;
-		Buffer buffer;
-	};
-
 	struct Renderable
 	{
-		MaterialInstance mat;
+		Buffer materialBuffer;
 
 		RPtr<PipelineHandle> pso;
 		RPtr<ResourceSetHandle> inputs;

@@ -10,16 +10,16 @@ using namespace ts;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-ShadowPass::ShadowPass(GraphicsSystem* gfx, uint32 width, uint32 height)
+ShadowPass::ShadowPass(RenderDevice* device, uint32 width, uint32 height)
 {
-	tsassert(gfx);
+	tsassert(device);
 
 	/*
 		Create render targets
 	*/
 
 	m_shadowBuffer = ImageTarget::createColourTarget(
-		gfx->device(),
+		device,
 		width, height,
 		ImageFormat::FLOAT2,
 		1,
@@ -27,7 +27,7 @@ ShadowPass::ShadowPass(GraphicsSystem* gfx, uint32 width, uint32 height)
 	);
 
 	m_shadowDepth = ImageTarget::createDepthTarget(
-		gfx->device(),
+		device,
 		width, height,
 		ImageFormat::DEPTH32
 	);
@@ -36,20 +36,11 @@ ShadowPass::ShadowPass(GraphicsSystem* gfx, uint32 width, uint32 height)
 	viewp.w = width;
 	viewp.h = height;
 
-	m_shadowTarget = RenderTargets<>(gfx->device());
+	m_shadowTarget = RenderTargets<>(device);
 	m_shadowTarget.attach(0, m_shadowBuffer.getView());
 	m_shadowTarget.attachDepth(m_shadowDepth.getView());
 	m_shadowTarget.setViewport(viewp);
 	m_shadowTarget.refresh();
-
-	/*
-		Create shader
-	*/
-
-	Path shaderPath(gfx->getRootPath());
-	shaderPath.addDirectories("shaderbin/ShadowMap.shader");
-
-	tsassert(m_shadowShader.load(gfx->device(), shaderPath.str()));
 }
 
 ///////////////////////////////////////////////////////////////////////////////

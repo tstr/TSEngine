@@ -71,4 +71,53 @@ namespace ts
 			return Buffer::create(device, (const void*)&data, sizeof(StructType), type);
 		}
 	};
+
+	/*
+		Typed constant buffer
+	*/
+	template<typename StructType>
+	class ConstantBuffer : private Buffer
+	{
+	public:
+
+		ConstantBuffer() {}
+		ConstantBuffer(const ConstantBuffer&) = delete;
+
+		ConstantBuffer(ConstantBuffer&& rhs)
+		{
+			((Buffer&)*this) = (Buffer&&)rhs;
+			m_constants = rhs.m_constants;
+		}
+
+		ConstantBuffer& operator=(ConstantBuffer&& rhs)
+		{
+			((Buffer&)*this) = (Buffer&&)rhs;
+			m_constants = rhs.m_constants;
+			return *this;
+		}
+
+		ConstantBuffer(RenderDevice* device, const StructType& initial)
+		{
+			m_constants = initial;
+			((Buffer&)*this) = Buffer::create(device, initial, BufferType::CONSTANTS);
+		}
+
+		StructType& get() { return m_constants; }
+		const StructType& get() const { return m_constants; }
+		void set(const StructType& data) { m_constants = data; }
+
+		void commit(RenderContext* context)
+		{
+			context->resourceUpdate(Buffer::handle(), &m_constants);
+		}
+
+		using Buffer::handle;
+		using Buffer::device;
+		using Buffer::null;
+		using Buffer::operator bool;
+
+	private:
+
+		StructType m_constants;
+	};
 }

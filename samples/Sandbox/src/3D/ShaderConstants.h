@@ -1,6 +1,5 @@
 /*
-    Constant buffer parameters
-    for the forward rendering pipeline
+    Constant buffer parameters for the rendering pipeline
 */
 
 #pragma once
