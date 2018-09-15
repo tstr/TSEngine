@@ -22,6 +22,7 @@ SET(src_list
 	src/3D/SceneRender.h
 	src/3D/SceneRender.cpp
 	src/3D/Renderable.h
+	src/3D/RenderableList.h
 	src/3D/Material.h
 	src/3D/MaterialManager.h
 	src/3D/MaterialManager.cpp

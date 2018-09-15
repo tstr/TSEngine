@@ -54,56 +54,32 @@ void SceneRender::update()
 	ctx->clearDepthTarget(m_shadowPass.getTarget(), 1.0f);
 	ctx->clearColourTarget(m_shadowPass.getTarget(), RGBA(255, 255, 255));
 
+	//Shadow pass
+	executeShadowPass(
+		m_visibleRenderables
+	);
+
+	//Colour pass
+	executeColourPass(
+		m_targets.handle(),
+		m_visibleRenderables
+	);
+
+	m_visibleRenderables.clear();
+}
+
+
+void SceneRender::executeColourPass(TargetHandle target, const RenderableList& renderables)
+{
+	auto ctx = m_gfx->device()->context();
+
 	SceneConstants constants;
-
-	//////////////////////////////////////////////////////////////////////////
-	//	Shadow pass
-	//////////////////////////////////////////////////////////////////////////
-
-	const float zFar = 150.0f;
-	const float zNear = 0.001f;
-
-	Matrix lightView, lightProjection;
-
-	//todo: calculate from view frustum
-
-	//Converts world space => light space
-	lightView = Matrix::lookAt(Vector(0, 140, 0), Vector(), Vector(1, 0, 0));
-	//lightProjection = Matrix::perspectiveFieldOfView(Pi / 2, 1, zNear, zFar);
-	lightProjection = Matrix::orthographic(400, 400, zNear, zFar);
-
-	constants.view = lightView;
-	constants.projection = lightProjection;
-	Matrix::transpose(constants.view);
-	Matrix::transpose(constants.projection);
-
-	//Update scene constants
-	ctx->resourceUpdate(m_perScene.handle(), &constants);
-
-	//shadow pass
-	for (const auto& r : m_renderQueue)
-	{
-		MeshConstants constants;
-		constants.world = r.transform.transpose();
-		ctx->resourceUpdate(m_perMesh.handle(), &constants);
-
-		ctx->draw(
-			m_shadowPass.getTarget(),
-			r.item->shadowPso.handle(),
-			r.item->shadowInputs.handle(),
-			r.item->params
-		);
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//	colour pass
-	//////////////////////////////////////////////////////////////////////////
 
 	//Ambient light
 	constants.ambient = m_ambientColour;
 	constants.view = m_viewMatrix;
 	constants.projection = m_projMatrix;
-	constants.lightView = lightView * lightProjection;
+	constants.lightView = m_lightView * m_lightProjection;
 
 	//Directional light
 	constants.direct.colour = m_directLightColour;
@@ -128,7 +104,7 @@ void SceneRender::update()
 	//Update scene constants
 	ctx->resourceUpdate(m_perScene.handle(), &constants);
 
-	for (const auto& r : m_renderQueue)
+	for (const auto& r : m_visibleRenderables)
 	{
 		//Update mesh constants
 		MeshConstants constants;
@@ -137,16 +113,52 @@ void SceneRender::update()
 		ctx->resourceUpdate(m_perMesh.handle(), &constants);
 
 		ctx->draw(
-			m_targets.handle(),
+			target,
 			r.item->pso.handle(),
 			r.item->inputs.handle(),
 			r.item->params
 		);
 	}
+}
 
-	//////////////////////////////////////////////////////////////////////////
+void SceneRender::executeShadowPass(const RenderableList& renderables)
+{
+	auto ctx = m_gfx->device()->context();
 
-	m_renderQueue.clear();
+	SceneConstants constants;
+
+	const float zFar = 150.0f;
+	const float zNear = 0.001f;
+
+	//todo: calculate from view frustum
+
+	//Converts world space => light space
+	m_lightView = Matrix::lookAt(Vector(0, 140, 0), Vector(), Vector(1, 0, 0));
+	//lightProjection = Matrix::perspectiveFieldOfView(Pi / 2, 1, zNear, zFar);
+	m_lightProjection = Matrix::orthographic(400, 400, zNear, zFar);
+
+	constants.view = m_lightView;
+	constants.projection = m_lightProjection;
+	Matrix::transpose(constants.view);
+	Matrix::transpose(constants.projection);
+
+	//Update scene constants
+	ctx->resourceUpdate(m_perScene.handle(), &constants);
+
+	//shadow pass
+	for (const auto& r : m_visibleRenderables)
+	{
+		MeshConstants constants;
+		constants.world = r.transform.transpose();
+		ctx->resourceUpdate(m_perMesh.handle(), &constants);
+
+		ctx->draw(
+			m_shadowPass.getTarget(),
+			r.item->shadowPso.handle(),
+			r.item->shadowInputs.handle(),
+			r.item->params
+		);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

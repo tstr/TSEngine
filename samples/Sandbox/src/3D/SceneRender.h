@@ -7,7 +7,7 @@
 #include <tsgraphics/Graphics.h>
 #include <tsgraphics/Buffer.h>
 
-#include "Renderable.h"
+#include "RenderableList.h"
 #include "ShaderConstants.h"
 #include "Material.h"
 #include "MaterialManager.h"
@@ -38,23 +38,17 @@ namespace ts
 
 		ShadowPass m_shadowPass;
 
-		struct RenderItem
-		{
-			Matrix transform;
-			const Renderable* item;
-		};
-
-		std::vector<RenderItem> m_renderQueue;
+		RenderableList m_visibleRenderables;
 
 		/*
 			Properties
 		*/
 		Vector m_ambientColour;
-		Matrix m_viewMatrix;
-		Matrix m_projMatrix;
+		Matrix m_viewMatrix, m_projMatrix;
 		RGBA m_directLightColour;
 		Vector m_directLightDir;
 		DynamicLight m_dynamicLights[MAX_LIGHTS];
+		Matrix m_lightView, m_lightProjection;
 
 	public:
 
@@ -77,15 +71,13 @@ namespace ts
 		void setDirectionalLightColour(RGBA colour) { m_directLightColour = colour; }
 		void setDirectionalLightDir(const Vector& dir) { m_directLightDir = dir; }
 
-		using LightID = uint32;
+		void enableDynamicLight(LightSource light) { m_dynamicLights[light].enabled = true; }
+		void disableDynamicLight(LightSource light) { m_dynamicLights[light].enabled = false; }
 
-		void enableDynamicLight(LightID light) { m_dynamicLights[light].enabled = true; }
-		void disableDynamicLight(LightID light) { m_dynamicLights[light].enabled = false; }
+		void setLightColour(LightSource light, RGBA colour) { m_dynamicLights[light].colour = Vector(colour); }
+		void setLightPosition(LightSource light, const Vector& pos) { m_dynamicLights[light].pos = pos; }
 
-		void setLightColour(LightID light, RGBA colour) { m_dynamicLights[light].colour = Vector(colour); }
-		void setLightPosition(LightID light, const Vector& pos) { m_dynamicLights[light].pos = pos; }
-
-		void setLightAttenuation(LightID light, float quadratic, float linear, float constant)
+		void setLightAttenuation(LightSource light, float quadratic, float linear, float constant)
 		{
 			m_dynamicLights[light].attConstant = constant;
 			m_dynamicLights[light].attLinear = linear;
@@ -98,9 +90,14 @@ namespace ts
 		//Draw a renderable
 		void draw(const Renderable& item, const Matrix& transform)
 		{
-			m_renderQueue.emplace_back(RenderItem{ transform, &item });
+			m_visibleRenderables.submit(transform, item);
 		}
 
 		void update();
+
+	private:
+
+		void executeColourPass(TargetHandle target, const RenderableList& renderables);
+		void executeShadowPass(const RenderableList& renderables);
 	};
 }

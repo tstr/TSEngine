@@ -69,10 +69,10 @@ int Sandbox::onInit()
 	//Dynamic lighting
 	for (size_t i = 0; i < 4; i++)
 	{
-		m_render.setLightAttenuation(i, 0.01f, 0.1f, 1.0f);
-		m_render.setLightPosition(i, dynamicPos[i]);
-		m_render.setLightColour(i, dynamicColours[i]);
-		m_render.enableDynamicLight(i);
+		m_render.setLightAttenuation((LightSource)i, 0.01f, 0.1f, 1.0f);
+		m_render.setLightPosition((LightSource)i, dynamicPos[i]);
+		m_render.setLightColour((LightSource)i, dynamicColours[i]);
+		m_render.enableDynamicLight((LightSource)i);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
