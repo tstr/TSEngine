@@ -18,11 +18,8 @@ namespace ts
 		uint64 b;    //lparam
 	};
 
-	struct WindowRect
+	struct WindowSize
 	{
-		uint32 x;
-		uint32 y;
-
 		uint32 w;
 		uint32 h;
 	};
@@ -30,7 +27,7 @@ namespace ts
 	struct WindowInfo
 	{
 		String title;
-		WindowRect rect;
+		WindowSize size;
 	};
 
 	/*

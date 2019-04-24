@@ -126,19 +126,12 @@ Application::Application(int argc, char** argv)
 	/////////////////////////////////////////////////////////////////////////
 	
 	//Set application window parameters
-	SDisplayInfo dispinf;
-	getSystemDisplayInfo(dispinf);
-	uint32 width = 800;
-	uint32 height = 600;
-	m_vars->get("video.resolutionW", width);
-	m_vars->get("video.resolutionH", height);
-
 	WindowInfo winInf;
 	winInf.title = format("%  ::::  %", cfgpath.str(), args.getArguments());
-	winInf.rect.x = (dispinf.width - width) / 2;
-	winInf.rect.y = (dispinf.height - height) / 2;
-	winInf.rect.w = width;
-	winInf.rect.h = height;
+	winInf.size.w = 800;
+	winInf.size.h = 600;
+	m_vars->get("video.resolutionW", winInf.size.w);
+	m_vars->get("video.resolutionH", winInf.size.h);
 	
 	//Create application window object
 	m_window.reset(new EngineWindow(*this, winInf));
@@ -174,8 +167,8 @@ Application::Application(int argc, char** argv)
 
 	GraphicsConfig gcfg;
 	gcfg.surface = m_window.get();
-	gcfg.display.width = width;
-	gcfg.display.height = height;
+	gcfg.display.width  = winInf.size.w;
+	gcfg.display.height = winInf.size.h;
 	gcfg.display.mode = (DisplayMode)displaymode;
 	gcfg.display.multisampleLevel = samplecount;
 	gcfg.id = RenderDriverID::DX11;

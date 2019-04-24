@@ -19,9 +19,11 @@ namespace ts
 
 	public:
 
-		void create(Entity& e)
+		Entity create()
 		{
+			Entity e;
 			m_allocator.alloc(e);
+			return e;
 		}
 
 		bool alive(Entity e) const
@@ -142,21 +144,7 @@ namespace ts
 		*/
 		bool setComponent(Entity e, const Component_t& cmp)
 		{
-			//If entity exists
-			if (m_manager && m_manager->alive(e))
-			{
-				const size_t idx = HandleInfo<Entity>(e).index;
-
-				//If component array is not correct size then resize 
-				if (m_entries.size() <= idx)
-					m_entries.resize(idx + 1);
-
-				m_entries.at(idx) = Entry(e, cmp);
-
-				return true;
-			}
-			
-			return false;
+			return setComponent(e, Component_t(cmp));
 		}
 
 		bool setComponent(Entity e, Component_t&& cmp)

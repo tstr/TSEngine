@@ -72,13 +72,13 @@ struct Window::Impl
 	string windowClassname;
 	string windowTitle;
 
-	WindowRect size;
+	WindowSize size;
 	
 	Impl(Window* window, const WindowInfo& info) :
 		window(window),
 		windowClassname("tsAppWindow"),
 		windowTitle(info.title),
-		size(info.rect)
+		size(info.size)
 	{
 		windowModule = (HMODULE)GetModuleHandle(0);
 
@@ -195,12 +195,19 @@ struct Window::Impl
 		UINT styles = WS_VISIBLE | WS_OVERLAPPEDWINDOW;
 		UINT exStyles = WS_EX_APPWINDOW;
 
+		RECT dt;
+		GetClientRect(GetDesktopWindow(), &dt);
+		LONG dtw = dt.right  - dt.left;
+		LONG dth = dt.bottom - dt.top;
+
+		LONG x = max((dtw - (LONG)size.w) / 2, 0);
+		LONG y = max((dth - (LONG)size.h) / 2, 0);
+
 		RECT r = {
-			(LONG)size.x,
-			(LONG)size.y,
+			x, y,
 			//Convert width/height into coordinates of bottom right corner
-			(LONG)size.x + (LONG)size.w,
-			(LONG)size.y + (LONG)size.h
+			x + size.w,
+			y + size.h
 		};
 
 		//Set size of the client area of the window - prevents visual artifacting

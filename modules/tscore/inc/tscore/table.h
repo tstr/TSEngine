@@ -230,13 +230,11 @@ namespace ts
 			return this->set(h, value_t(val));
 		}
 
-		// Get the value of a given table entry
-		// Returns true if the entry exists
-		const value_t& get(Handle_t h) const
+		const value_t& get(Handle_t h, const value_t& def = value_t()) const
 		{
 			if (!m_allocator.exists(h))
 			{
-				return value_t();
+				return def;
 			}
 
 			return m_table.at(getIdx(h)).value;

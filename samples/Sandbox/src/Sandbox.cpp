@@ -77,8 +77,8 @@ int Sandbox::onInit()
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	m_entityManager.create(m_modelEntity);
-	m_entityManager.create(m_boxEntity);
+	m_modelEntity = m_entityManager.create();
+	m_boxEntity   = m_entityManager.create();
 
 	{
 		if (!addModelRenderComponent(m_modelEntity, "sponza/sponza.model"))
